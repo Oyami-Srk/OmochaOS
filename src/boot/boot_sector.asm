@@ -83,7 +83,6 @@ _start32:
   mov ss, ax
   mov esp, stack_base
 
-  mov esp, start               ; C调用约定
   call boot_main                ; 跳入C语言继续处理
 
   ; boot_main并不返回，但是出错时除外。
@@ -96,5 +95,6 @@ _start32:
   out dx, ax
 
   jmp $
+  ;;
   ;;
   ;; 凑够一百行
