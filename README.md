@@ -5,3 +5,4 @@
   ------
   
   This project is a personal study project. A x64 based micro kernel and system softwares.
+  Currently, study at x86-32, but my target is not just it.
