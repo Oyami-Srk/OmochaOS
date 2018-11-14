@@ -6,6 +6,9 @@
 %define entry_memory_addr 0x7c00 ; maybe be put to const.inc later
 %define screen_memory_addr 0xB8000
 
+
+  ;; ELF模式下不可以用org来制定加载位置
+  ;; 使用link来使.text段在0x7c00处加载
 ; org entry_memory_addr
   stack_base equ entry_memory_addr ; 栈顶
 
@@ -37,6 +40,7 @@ scrn_desc: Descriptor screen_memory_addr, 0xFFFF, DA_DPL_0 | DA_D_RW ; Data - Re
   S_Data equ data_desc - _gdt
   S_Scrn equ scrn_desc - _gdt
 
+  ;; 只有一个.text段，用于链接到执行地址
 [SECTION .text]
 [BITS 16]
 global start
@@ -51,9 +55,9 @@ start:
   ; 写入Infos结构体，Infos结构体仅能被内核访问
   ; 并且要求内核访问完毕后在结构体地址建立可以被驱动
   ; 访问的Infos，以此类推。
-  ; cli                           ; 关中断以跳入保护模式
+  cli                           ; 关中断以跳入保护模式
   lgdt [pGDT]
-  cli
+  ; cli
 
   in al, 92h
   or al, 0x02
@@ -92,3 +96,5 @@ _start32:
   out dx, ax
 
   jmp $
+  ;;
+  ;; 凑够一百行
