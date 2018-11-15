@@ -1,6 +1,6 @@
 #include "elf.h"
 #include "memory_map.h"
-#include "ATA.h"
+#include "asm_x86.h"
 /* #include "const.h" */
 
 void boot_main(){

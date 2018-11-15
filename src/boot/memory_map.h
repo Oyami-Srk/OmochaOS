@@ -1,3 +1,5 @@
+#ifndef __OMO_MEMORY_MAP_H__
+#define __OMO_MEMORY_MAP_H__
 /*
   内存映射定义
   用于Loader和Boot_sector
@@ -39,3 +41,5 @@
 // Loader从硬盘读取加载的内存地址，64k
 #define OMO_LOADER_LOAD_POINT 0x80000
 #define OMO_LOADER_LOAD_SIZE 0x10000
+
+#endif // __OMO_MEMORY_MAP_H__
