@@ -1,4 +1,5 @@
 *.bin
 *.o
 *.img
+*.disasm
 bochsrc_*
