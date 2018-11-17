@@ -58,7 +58,7 @@ void boot_main(){
   if(elf->magic != ELF_MAGIC)
     return;
 
-  ph = (ELF32_Prog*)((u_byte)elf + elf->phoff);
+  ph = (ELF32_Prog*)((u_byte*)elf + elf->phoff);
   eph = ph + elf->phnum;
   for(;ph<eph;ph++){
     addr = (u_byte*)ph->paddr;

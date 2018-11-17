@@ -8,3 +8,7 @@ i386-elf-objcopy -S -O binary -j .text bs.o bs.bin
 rm 80m.img
 bximage -mode=create -hd=80M -q 80m.img
 dd if=bs.bin of=80m.img count=1 seek=0 conv=notrunc
+
+i386-elf-gcc -fno-pic -O -nostdinc -I. -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector loader.c -o loader.o
+i386-elf-ld -o loader.elf loader.o
+dd if=loader.elf of=80m.img seek=1 conv=notrunc

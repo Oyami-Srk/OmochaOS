@@ -3,3 +3,4 @@
 *.img
 *.disasm
 bochsrc_*
+*.elf
