@@ -8,12 +8,9 @@ typedef unsigned short u_word;
 typedef unsigned int u_dword;
 typedef unsigned int uint;
 
-void waitdisk(void){
-  while((inb(0x1F7) & 0xC0) != 0x40);
-}
 
 void readsect(u_byte *addr, uint offset){
-  waitdisk();
+  while((inb(0x1F7) & 0xC0) != 0x40); // 等待磁盘
   outb(0x1F2, 1); // count
   outb(0x1F3, offset);
   outb(0x1F4, offset>>8);
@@ -21,7 +18,7 @@ void readsect(u_byte *addr, uint offset){
   outb(0x1F6, (offset >> 24) | 0xE0);
   outb(0x1F7, 0x20); // cmd 0x20: 读取扇区
 
-  waitdisk();
+  while((inb(0x1F7) & 0xC0) != 0x40);
   insl(0x1F0, addr, 512 / 4);
 }
 

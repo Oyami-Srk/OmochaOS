@@ -2,5 +2,6 @@
 *.o
 *.img
 *.disasm
-bochsrc_*
+bochsrc
 *.elf
+.DS_Store
