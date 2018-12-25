@@ -5,3 +5,4 @@
 bochsrc
 *.elf
 .DS_Store
+*.out
