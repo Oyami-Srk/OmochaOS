@@ -40,6 +40,25 @@ typedef struct {
   //size 44
 }superblock;
 
+#define CACHE_SIZE 8
+
+typedef struct {
+  uchar magic[8];   // OMOCHAFS
+  uint size;        //
+  uint ninodes;     // inodes
+  uint nblocks;     // data blocks
+  uint njournal;    // journal
+  uint offset_inodes;
+  uint offset_bitmap;
+  uint offset_inodebm;
+  uint offset_data;
+  uint offset_journal;
+  // size 44
+  // only represent in memory:
+  uchar *pInode_Bitmap;
+  uchar *pBitmap;
+}sb_in_mem;
+
 #define BDIRECT 10
 #define BINDIRECT 2
 #define BTRIDIRECT 1
@@ -113,8 +132,57 @@ void write(int offset, int size, const void *data){
 
 
 // file system functions
+/*
+inline uint index_first_zero(uchar bin){
+  uint pos = 0;
+  __asm__("bsfl %1, %0\n\t"
+          "jne 1f\n\t"
+          "movl $32, %0\n"
+          "1:"
+          :"=r"(pos)
+          :"r"(~(bin)));
+  if(pos > 7)
+    return 8;
+  return (uint)pos;
+}
+*/
+uint index_first_zero(uchar bin){
+  uchar r = (bin+1) & (~bin);
+  uint pos = 0;
+  for(; ((r >> pos ) & 0x1) == 0;pos++);
+  return pos;
+}
 
 uint uabs(int num) { return (uint)(num < 0 ? -num : num); }
+
+uint balloc(sb_in_mem *sb){
+  uint size_bitmap = sb->nblocks / 8 + (sb->nblocks % 8 == 0 ? 0 : 1);
+  for(uchar *pBitmap = sb->pBitmap; pBitmap < sb->pBitmap + size_bitmap; pBitmap++)
+    if(*pBitmap != 0xFF){
+      uint bp =  pBitmap - sb->pBitmap;
+      uint index = index_first_zero(*pBitmap);
+      INFO(2, "[balloc] Found free block(%d) in bitmap %d",bp*8+index, bp);
+      *pBitmap = *pBitmap |( 0x1 << index);
+      sb->pBitmap[bp] = *pBitmap;
+      // update sbim to sb in disk is not my business!
+      INFO(2, "[balloc] Allocated! bitmap is now: 0x%.2x", sb->pBitmap[bp]);
+      return bp+index;
+    }
+  return sb->nblocks; // not found;
+}
+
+void bfree(sb_in_mem *sb, uint b){
+  ;
+}
+
+uint ialloc(sb_in_mem *sb, uint type){
+  return 0;
+}
+
+void ifree(sb_in_mem *sb, uint i){
+  ;
+}
+
 
 void mkfs(){
 
@@ -122,17 +190,14 @@ void mkfs(){
   uint size_inodes = INODE_COUNT * sizeof(inode);
   uint size_inodebm = INODE_BITMAP_SIZE;
   uint num_blocks = (TEST_FILE_SIZE / BLOCK_SIZE);
-  uint size_bitmap = num_blocks / 8;
+  uint size_bitmap = num_blocks / 8 + (num_blocks % 8 == 0? 0 : 1);
   uint size_journal = 0; // we currently have no journal
 
   uint offset_inodes = BLOCK_SIZE;
   uint offset_inodebm = BLOCK_SIZE * ( offset_inodes / BLOCK_SIZE + INODE_BLOCKS);
   uint offset_bitmap =
       BLOCK_SIZE * (offset_inodebm / BLOCK_SIZE + size_inodebm / BLOCK_SIZE +
-                    ( size_inodebm % BLOCK_SIZE ==
-                            0
-                        ? 0
-                      : 1));
+                    (size_inodebm % BLOCK_SIZE == 0 ? 0 : 1));
   uint offset_data =
       BLOCK_SIZE * (offset_bitmap / BLOCK_SIZE + size_bitmap / BLOCK_SIZE +
                     (size_bitmap % BLOCK_SIZE == 0 ? 0 : 1));
@@ -179,7 +244,23 @@ void mkfs(){
 
   const char *test_data = "test data";
   write(offset_data, 10, test_data);
-  INFO(1, "Test data is Okey in 0x%x", offset_data);
+  INFO(1, "Test data is Okey at 0x%x", offset_data);
+
+  sb_in_mem sbim;
+  memset(&sbim, 0, sizeof(sb_in_mem));
+  memcpy(&sbim, &sb, sizeof(superblock));
+  sbim.pInode_Bitmap = (uchar*)malloc(size_inodebm);
+  sbim.pBitmap = (uchar*)malloc(size_bitmap);
+
+  read(sbim.offset_inodebm, size_inodebm, sbim.pInode_Bitmap);
+  read(sbim.offset_bitmap, size_bitmap, sbim.pBitmap);
+
+  INFO(1, "Superblock in memory copied and initialized!");
+
+  uint root_dir = balloc(&sbim);
+
+  for(uint i = 0; i < 9; i++)
+    balloc(&sbim);
 
 }
 
