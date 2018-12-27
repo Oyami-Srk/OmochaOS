@@ -168,11 +168,21 @@ uint balloc(sb_in_mem *sb){
       INFO(2, "[balloc] Allocated! bitmap is now: 0x%.2x", sb->pBitmap[bp]);
       return bp+index;
     }
+  // panic("no allocatable block");
   return sb->nblocks; // not found;
 }
 
 void bfree(sb_in_mem *sb, uint b){
-  ;
+  uint index = b/8 +(((b % BPB == 0 ) || (b < 8)) ? 0 : 1);
+  uchar pBitmap = sb->pBitmap[index];
+  uchar n = 1 << (b % 8);
+  INFO(2, "[bfree] Got index like %d, bitmap like 0x%.2x (%d)", b % 8, pBitmap,index);
+  if(!(pBitmap & n ))
+    return; // panic("block already free");
+  pBitmap ^= n;
+  sb->pBitmap[index] = pBitmap;
+  INFO(2, "[bfree] Found unfree block(%d) in bitmap %d", b, index);
+  INFO(2, "[bfree] Freed! bitmap is now: 0x%.2x", sb->pBitmap[index]);
 }
 
 uint ialloc(sb_in_mem *sb, uint type){
@@ -259,7 +269,14 @@ void mkfs(){
 
   uint root_dir = balloc(&sbim);
 
-  for(uint i = 0; i < 9; i++)
+  for(uint i = 0; i < 4; i++)
+    balloc(&sbim);
+
+  bfree(&sbim,1);
+  bfree(&sbim,2);
+  bfree(&sbim,0);
+
+  for(uint i = 0; i < 5; i++)
     balloc(&sbim);
 
 }
