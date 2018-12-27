@@ -1,15 +1,3 @@
-ASM			 	= nasm
-CC				= i386-elf-gcc
-LD				= i386-elf-ld
-OBJDUMP	  = i386-elf-objdump
-OBJCOPY   = i386-elf-objcopy
-DD				= dd
-BOCHS			= bochs
-CAT				= cat
-SED				= sed
-BXIMAGE		= bximage
-
-BUILD			= $(shell pwd)/build
 TOOLS			= $(shell pwd)/tools
 
 
@@ -17,8 +5,7 @@ CC-FLAG-BOOT_STAGE1	= -fno-pic -O -nostdinc -c -static -MD -fno-builtin -fno-str
 CC-FLAG-BOOT_STAGE2 = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector
 BOOT_COMMON_HEADER	=	$(shell pwd)/common_header/
 
-export ASM CC LD OBJDUMP OBJCOPY BUILD CC-FLAG-BOOT_STAGE1 BOOT_COMMON_HEADER
-
+export TOOLS CC-FLAG-BOOT_STAGE1 CC-FLAG-BOOT_STAGE2 BOOT_COMMON_HEADER
 
 .PHONY: all
 

@@ -1,2 +1,1 @@
 -std=C99 -m32 -fno-builtin
--I/Users/shiroko/Projects/OmochaOS/src/boot/common_header

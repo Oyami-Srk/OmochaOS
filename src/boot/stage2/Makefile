@@ -18,7 +18,7 @@ $(BOOT_BUILD)/%.o: %.c
 
 $(BOOT_BUILD)/%.d: %.c
 	@set -e; rm -f $@; $(CC) -MM $< -I$(BOOT_COMMON_HEADER)  > $@.$$$$; \
-	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	$(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
   rm -f $@.$$$$
 
 -include $(OBJS:.o=.d)
