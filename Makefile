@@ -14,7 +14,13 @@ BXIMAGE		= bximage
 
 BUILD			= $(shell pwd)/build
 
+MAKEFLAGS = KERNEL_AS_LOADER
+
 export ASM CC LD OBJDUMP OBJCOPY BUILD DD BOCHS CAT SED BXIMAGE
+
+KERN_BASE_ADDR = 0x80000000
+
+export KERN_BASE_ADDR
 
 .PHONY: all
 all:
@@ -27,3 +33,7 @@ clean:
 .PHONY: boot
 boot:
 	make -C src/boot boot
+
+.PHONY: img
+img:
+	make -C src/boot img

@@ -9,7 +9,7 @@ export TOOLS CC-FLAG-BOOT_STAGE1 CC-FLAG-BOOT_STAGE2 BOOT_COMMON_HEADER
 
 .PHONY: all
 
-all: binary img
+all: binary
 
 binary:
 	make -C stage1
@@ -18,6 +18,12 @@ binary:
 
 img:
 	test -n `find $(BUILD)/boot/boot.bin -a -size -440c`
+# currently kernel is save directly on sector1 without FS
+# so copy kernel.out to loader.out which as replacement
+
+	test -n `find $(BUILD)/kern/kernel.out -a -size -65536c`
+	cp $(BUILD)/kern/kernel.out $(BUILD)/boot/loader.out
+
 	test -n `find $(BUILD)/boot/loader.out -a -size -65536c`
 ifneq ($(BUILD)/HD.img,$(wildcard $(BUILD)/HD.img))
 	@echo "Create virtual flat image"
@@ -27,7 +33,7 @@ endif
 	$(DD) if=$(BUILD)/boot/boot.bin count=1 bs=440 seek=0 conv=notrunc of=$(BUILD)/HD.img
 	$(DD) if=$(BUILD)/boot/loader.out seek=1 conv=notrunc of=$(BUILD)/HD.img
 
-boot:
+boot: img
 	test -e $(BUILD)/HD.img
 	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\".*\"/\"$(subst /,\/,$(BUILD))\/HD.img\"/g' > $(BUILD)/bochsrc
 	$(BOCHS) -q -f $(BUILD)/bochsrc
