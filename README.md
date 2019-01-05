@@ -10,3 +10,7 @@
   Currently, study at x86-32, but my target is not just it.
   
   Studying from xv6, I am not going to rewrite it.
+  
+  ------
+  
+  2018
