@@ -9,19 +9,6 @@ typedef unsigned int u_dword;
 typedef unsigned int uint;
 
 
-void readsect(u_byte *addr, uint offset){
-  while((inb(0x1F7) & 0xC0) != 0x40); // 等待磁盘
-  outb(0x1F2, 1); // count
-  outb(0x1F3, offset);
-  outb(0x1F4, offset>>8);
-  outb(0x1F5, offset>>16);
-  outb(0x1F6, (offset >> 24) | 0xE0);
-  outb(0x1F7, 0x20); // cmd 0x20: 读取扇区
-
-  while((inb(0x1F7) & 0xC0) != 0x40);
-  insl(0x1F0, addr, 512 / 4);
-}
-
 void readseg(u_byte *addr, uint count, uint offset){
   u_byte *end_addr;
   end_addr = addr+count;
@@ -29,8 +16,18 @@ void readseg(u_byte *addr, uint count, uint offset){
   addr -= offset % 512;
   // 转换字节偏移到扇区偏移
   offset = (offset / 512) + 1;
-  for(;addr < end_addr; addr += 512, offset++)
-    readsect(addr, offset);
+  for(;addr < end_addr; addr += 512, offset++){
+    while((inb(0x1F7) & 0xC0) != 0x40); // 等待磁盘
+    outb(0x1F2, 1); // count
+    outb(0x1F3, offset);
+    outb(0x1F4, offset>>8);
+    outb(0x1F5, offset>>16);
+    outb(0x1F6, (offset >> 24) | 0xE0);
+    outb(0x1F7, 0x20); // cmd 0x20: 读取扇区
+
+    while((inb(0x1F7) & 0xC0) != 0x40);
+    insl(0x1F0, addr, 512 / 4);
+  }
 }
 
 

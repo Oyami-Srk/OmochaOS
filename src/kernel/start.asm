@@ -24,13 +24,25 @@ stack_top:
 [SECTION .text]
 global _start                   ; load to 0x80000000 + RA
 extern main                     ; link to kernel.c
-extern __KERN_LINK_BASE__
+extern temp_page_dir
 
 _start equ start - KERNEL_BASE
 
 global start
 start:
-  jmp $                         ; debug 目的
-  
+  ; jmp $                         ; debug 目的
+  mov eax, cr4
+  or eax, 0x10                  ; extend page size to 4 megabyte
+  mov cr4, eax
+
+  mov eax, temp_page_dir - KERNEL_BASE ; temp_page_dir in kernel.c
+  mov cr3, eax
+
+  mov eax, cr0
+  or eax, 0x80000000            ; enable paging
+  mov cr0, eax
+
+  mov esp, stack_top
+
   mov eax, main
-  jmp eax                       ; jmpf or jmpn?
+  jmp eax                       ; jump to kernel.c -> main

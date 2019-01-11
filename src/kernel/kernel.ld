@@ -7,14 +7,14 @@ ENTRY(_start)
 SECTIONS
 {
 	. = 0x80100000;
-  PROVIDE(__KERN_LINK_BASE__ = .);
 
-	.text : AT(0x100000) {
+	.text : AT(0x100000) { /* Phyaddr */
 		*(.text .stub .text.* .gnu.linkonce.t.*)
 	}
 
-	PROVIDE(etext = .);	/* Define the 'etext' symbol to this value */
+  PROVIDE(__KERN_LINK_BASE__ = .);
 
+  /* Readonly data area, accessable after enable paging */
 	.rodata : {
 		*(.rodata .rodata.* .gnu.linkonce.r.*)
 	}
