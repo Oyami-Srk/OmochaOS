@@ -12,6 +12,20 @@ typedef struct {
   unsigned char BaseH;
 }__attribute__((packed)) GDT_Descriptor;
 
+static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
+                                        unsigned int Base,
+                                        unsigned int Limit,
+                                        unsigned short Attr){
+
+  pDesc->LimitL = Limit & 0xFFFF;
+  pDesc->BaseL = Base & 0xFFFF;
+  pDesc->BaseM = (Base >> 16) & 0x0FF;
+  pDesc->BaseH = (Base >> 24) & 0x0FF;
+  pDesc->Attr1 = Attr & 0xFF;
+  pDesc->LimitH_Attr2 = ((Limit >> 16) & 0x0F) | ((Attr >> 8) & 0xF0);
+  return pDesc;
+}
+
 /* GDT */
 
 #define DA_32 0x4000

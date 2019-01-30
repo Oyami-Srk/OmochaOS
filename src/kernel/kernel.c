@@ -2,42 +2,24 @@
 #include "paging.h"
 #include "memlayout.h"
 #include "protect.h"
+#include "klib.h"
 
-typedef struct {
-  unsigned int BaseL;
-  unsigned int BaseH;
-  unsigned int LengthL;
-  unsigned int LengthH;
-  unsigned int Type;
-  unsigned int ACPI;
-}__attribute__((packed)) SMAP_entry;
 
 void make_desc(unsigned int ID, unsigned int Base, unsigned int Limit, unsigned short Attr){
-  GDT_Descriptor *pDesc = KERN_GDT_BASE + ID * sizeof(GDT_Descriptor);
-  pDesc->LimitL = Limit & 0xFFFF;
-  pDesc->BaseL = Base & 0xFFFF;
-  pDesc->BaseM = (Base >> 16) & 0x0FF;
-  pDesc->BaseH = (Base >> 24) & 0x0FF;
-  pDesc->Attr1 = Attr & 0xFF;
-  pDesc->LimitH_Attr2 = ((Limit >> 16) & 0x0F) | ((Attr >> 8) & 0xF0);
+  MAKE_DESC((GDT_Descriptor*)KERN_GDT_BASE + ID * sizeof(GDT_Descriptor),
+            Base, Limit, Attr);
 }
-
 
 unsigned char gdt_ptr[6];
 
-void write_string( int colour, const char *string )
-{
-  volatile char *video = (volatile char*)0xB8000;
-  while( *string != 0 )
-    {
-      *video++ = *string++;
-      *video++ = colour;
-    }
-}
 
 int main(void){
-  unsigned int *mem_infos_count = BOOT_LOADER_MEM_INFO_COUNT;
-  SMAP_entry *mem_infos = BOOT_LOADER_MEM_INFO;
+  unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
+  SMAP_entry *mem_infos = (SMAP_entry*)BOOT_LOADER_MEM_INFO;
+
+  clr_scr();
+
+  /* kinit_paging(*mem_infos_count, mem_infos); */
 
   make_desc(0, 0, 0, 0); // Dummy Null Desc
   make_desc(1, 0, 0x80F00000, DA_32 | DA_4K | DA_C); // Code Desc
@@ -51,9 +33,42 @@ int main(void){
 
   __asm__ __volatile__("lgdtl (gdt_ptr)");
 
-  *((int*)0xb8000)=0x07690748;
+  write_string(0x0F, "Hello world!\n");
+  write_string(0x0F, "We got memory info like: \n");
+  char buf[16];
+  SMAP_entry *tmp = mem_infos;
+  for(;mem_infos < tmp + (*mem_infos_count);){
+    itoa(mem_infos->BaseH << 16 | mem_infos->BaseL, buf, 16);
+    write_string(0x0F, "Base addr: ");
+    write_string(0x0F, buf);
+    write_string(0x0F, "  Length: ");
+    itoa(mem_infos->LengthH << 16 | mem_infos->LengthL , buf, 16);
+    write_string(0x0F, buf);
+    write_string(0x0F, "  Type: ");
+    switch(mem_infos->Type){
+    case 1:
+      write_string(0x0F, "USABLE\n");
+      break;
+    case 2:
+      write_string(0x0F, "RESERVED\n");
+      break;
+    case 3:
+      write_string(0x0F, "ACPI RECLAM\n");
+      break;
+    case 4:
+      write_string(0x0F, "ACPI NVS\n");
+      break;
+    case 5:
+      write_string(0x0F, "Bad\n");
+      break;
+    defult:
+      write_string(0x0F, "Unrecognized\n");
+      break;
+    }
+    mem_infos++;
+  }
 
-  write_string(0x0F, "Hello world!");
+
 
   while(1);
 }

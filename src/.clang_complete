@@ -1,2 +1,2 @@
--std=C99 -m32 -fno-builtin
+-std=gnu11 -m32 -fno-builtin
 -I/Users/shiroko/Projects/OmochaOS/src/header

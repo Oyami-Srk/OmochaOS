@@ -13,4 +13,16 @@
 #define PG_U 0x004 // 用户级位
 #define PG_PS 0x080 // 页大小位
 
+typedef struct {
+  unsigned int BaseL;
+  unsigned int BaseH;
+  unsigned int LengthL;
+  unsigned int LengthH;
+  unsigned int Type;
+  unsigned int ACPI;
+}__attribute__((packed)) SMAP_entry;
+
+
+void kinit_paging(unsigned int smap_entry_count, SMAP_entry *first);
+
 #endif

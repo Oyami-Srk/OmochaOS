@@ -15,6 +15,7 @@
 
 // 内核基址
 #define KERN_BASE 0x80000000
+#define KERN_END  0x8F000000
 
 // sizeof descriptor is 8byte 32bit
 
