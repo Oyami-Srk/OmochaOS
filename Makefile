@@ -11,12 +11,13 @@ BOCHS			= bochs
 CAT				= cat
 SED				= sed
 BXIMAGE		= bximage
+PY				= python3
 
 BUILD			= $(shell pwd)/build
 
 MAKEFLAGS = KERNEL_AS_LOADER
 
-export ASM CC LD OBJDUMP OBJCOPY BUILD DD BOCHS CAT SED BXIMAGE
+export ASM PY CC LD OBJDUMP OBJCOPY BUILD DD BOCHS CAT SED BXIMAGE
 
 export KERN_BASE_ADDR
 

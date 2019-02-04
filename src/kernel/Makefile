@@ -15,13 +15,13 @@ LIB_OBJS := $(wildcard $(LIB_BUILD)/*.o)
 all: pre $(KERNEL_BUILD)/kernel.out
 	@echo "Kernel is built"
 
-$(KERNEL_BUILD)/kernel.out: $(KERNEL_BUILD)/start.o $(KERNEL_BUILD)/kernel.o $(OBJS) kernel.ld
-	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(KERNEL_BUILD)/start.o $(OBJS) $(LIB_OBJS)
+$(KERNEL_BUILD)/kernel.out: $(KERNEL_BUILD)/kernel.o $(KERNEL_BUILD)/start.o $(KERNEL_BUILD)/vector_table.o $(OBJS) kernel.ld
+	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(KERNEL_BUILD)/start.o $(KERNEL_BUILD)/vector_table.o $(OBJS) $(LIB_OBJS)
 
 $(KERNEL_BUILD)/%.o: %.c
 	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(HEADER)
 
-$(KERNEL_BUILD)/start.o: start.asm
+$(KERNEL_BUILD)/%.o: %.asm
 	$(ASM) -f elf $< -I $(HEADER)/ -o $@
 
 $(KERNEL_BUILD)/%.d: %.c
@@ -36,5 +36,6 @@ clean:
 	rm -rf $(KERNEL_BUILD)/*.d $(KERNEL_BUILD)/*.d.*
 	rm -rf $(KERNEL_BUILD)/*.lds
 
-pre:
+pre tools/generate_vector.py:
 	mkdir -p $(KERNEL_BUILD)
+	$(PY) tools/generate_vector.py > vector_table.asm
