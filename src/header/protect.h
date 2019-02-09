@@ -43,4 +43,11 @@ static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
 #define DA_CCO 0x9C
 #define DA_CCOR 0x9E
 
+#define DPL3 0x03
+#define DPL2 0x02
+#define DPL1 0x01
+#define DPL0 0x00
+
+#define DPL_USER DPL3
+
 #endif

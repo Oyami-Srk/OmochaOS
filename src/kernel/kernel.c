@@ -3,6 +3,7 @@
 #include "memlayout.h"
 #include "protect.h"
 #include "klib.h"
+#include "interrupt.h"
 
 
 void make_desc(unsigned int ID, unsigned int Base, unsigned int Limit, unsigned short Attr){
@@ -11,7 +12,8 @@ void make_desc(unsigned int ID, unsigned int Base, unsigned int Limit, unsigned 
 }
 
 unsigned char gdt_ptr[6];
-
+unsigned char idt_ptr[6];
+extern uint vector_table[];
 
 int main(void){
   unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
@@ -22,8 +24,8 @@ int main(void){
   /* kinit_paging(*mem_infos_count, mem_infos); */
 
   make_desc(0, 0, 0, 0); // Dummy Null Desc
-  make_desc(1, 0, 0x80F00000, DA_32 | DA_4K | DA_C); // Code Desc
-  make_desc(2, 0, 0x80F00000, DA_32 | DA_4K | DA_DRW); // Data Desc
+  make_desc(1, 0, KERN_END, DA_32 | DA_4K | DA_C); // Code Desc
+  make_desc(2, 0, KERN_END, DA_32 | DA_4K | DA_DRW); // Data Desc
   make_desc(3, 0xB8000, 0xFFFF, DA_DRW | DA_DPL3); // Video Desc
 
   unsigned short *gdt_limit = (unsigned short *)(&gdt_ptr[0]);
@@ -33,9 +35,26 @@ int main(void){
 
   __asm__ __volatile__("lgdtl (gdt_ptr)");
 
+  Gate_Descriptor *idt = (Gate_Descriptor*)KERN_IDT_BASE;
+  char b[32];
+
+  for(int i = 0; i < IDT_COUNT; i++){
+    MAKE_GATE(&idt[i], 1 << 3, vector_table[i], 0,GATE_INT32);
+  }
+
+  unsigned short *idt_limit = (unsigned short*)(&idt_ptr[0]);
+  unsigned int *idt_base = (unsigned int*)(&idt_ptr[2]);
+  *idt_limit = IDT_COUNT * sizeof(Gate_Descriptor) - 1;
+  *idt_base = (unsigned int) KERN_IDT_BASE;
+
+  __asm__ __volatile__("lidt (idt_ptr)");
+
+  init_8259A();
+
   write_string(0x0F, "Hello world!\n");
   write_string(0x0F, "We got memory info like: \n");
   char buf[16];
+
   SMAP_entry *tmp = mem_infos;
   for(;mem_infos < tmp + (*mem_infos_count);){
     itoa(mem_infos->BaseH << 16 | mem_infos->BaseL, buf, 16);
@@ -69,6 +88,7 @@ int main(void){
   }
 
 
+  __asm__ __volatile__ ("int $0x10");
 
   while(1);
 }

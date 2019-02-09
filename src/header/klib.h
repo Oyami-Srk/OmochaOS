@@ -3,7 +3,7 @@
 
 #define PUBLIC
 
-PUBLIC char *itoa(int value, char *str, int base);
+PUBLIC char *itoa(unsigned int value, char *str, int base);
 PUBLIC volatile char *pDisp;
 PUBLIC void write_string( int colour, char *string );
 PUBLIC void clr_scr(void);

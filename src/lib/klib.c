@@ -1,6 +1,6 @@
 #include "klib.h"
 
-PUBLIC char *itoa(int value, char *str, int base){
+PUBLIC char *itoa(unsigned int value, char *str, int base){
   char *rc;
   char *ptr;
   char *low;
