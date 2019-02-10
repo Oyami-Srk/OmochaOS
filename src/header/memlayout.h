@@ -4,6 +4,8 @@
 #define __OMOCHA_OS__MEMLAYOUT_H__
 
 #include "const.h"
+#include "protect.h"
+#include "interrupt.h"
 
 // 启动区块常量
 #ifndef __EXT_BOOT_LOADER__
@@ -15,14 +17,14 @@
 
 // 内核基址
 #define KERN_BASE 0x80000000
-#define KERN_END  0x8F000000
+#define KERN_END  0x80400000
 
 // sizeof descriptor is 8byte 32bit
 
 #define KERN_GDT_BASE 0x80200000
-#define KERN_IDT_BASE (KERN_GDT_BASE + (GDT_COUNT * 8))
+#define KERN_IDT_BASE (KERN_GDT_BASE + (GDT_COUNT * sizeof(GDT_Descriptor)))
 // 内核页目录表和页表基地址
-#define KERN_PAGE_DIR_BASE (KERN_IDT_BASE + (IDT_COUNT * 8))
+#define KERN_PAGE_DIR_BASE (KERN_IDT_BASE + (IDT_COUNT * sizeof(Gate_Descriptor)))
 #define KERN_PAGE_TBL_BASE (KERN_PAGE_DIR_BASE + 0x1000)
 
 #endif

@@ -31,6 +31,3 @@ vector_handler:
   popad
   add esp, 8                    ; tapno and err
   iretd
-
-
-
