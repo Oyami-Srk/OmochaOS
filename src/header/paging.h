@@ -3,10 +3,9 @@
 #ifndef __OMOCHA_OS__PAGING_H__
 #define __OMOCHA_OS__PAGING_H__
 
-// 分页地址前10bit是页目录地址，后10bit是页表地址，最后12bit是偏移地址
+#include "type.h"
 
-#define PG_SIZE 0x1000
-#define PDE_SIZE 1024
+// 分页地址前10bit是页目录地址，后10bit是页表地址，最后12bit是偏移地址
 
 #define PG_P 0x001 // 页存在位
 #define PG_W 0x002 // 可写入位
@@ -23,6 +22,7 @@ typedef struct {
 }__attribute__((packed)) SMAP_entry;
 
 
-void kinit_paging(unsigned int smap_entry_count, SMAP_entry *first);
+void kinit_paging(unsigned int smap_entry_count, SMAP_entry *first, cpu_env *env);
+void kprint_meminfo(SMAP_entry *mem_info_start, unsigned int count);
 
 #endif

@@ -3,18 +3,7 @@
 
 #include "type.h"
 
-typedef struct {
-  uint offset_low : 16;
-  uint sel : 16;
-  // attr
-  uint some_thing_should_be_zero : 8;
-  uint type : 4;
-  uint s: 1; // system , be zero
-  uint dpl: 2; // 描述符特权级
-  uint p: 1; // present
-  // attr end
-  uint offset_high: 16;
-}__attribute__((packed)) Gate_Descriptor;
+extern uint vector_table[]; // generated in vector_table.asm
 
 #define GATE_TASK   0x5
 #define GATE_INT16  0x6
@@ -73,6 +62,10 @@ typedef struct {
 #define IO_PIC_M 0x20
 #define IO_PIC_S 0xA0
 
-void init_8259A();
+#define IRQ0 32
+#define IRQ_TIMER (IRQ0 + 0)
+#define IRQ_KBD (IRQ0 + 1)
+
+void kinit_interrupt(cpu_env *env);
 
 #endif

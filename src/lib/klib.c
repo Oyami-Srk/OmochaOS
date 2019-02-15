@@ -51,3 +51,111 @@ PUBLIC void clr_scr(void){
 }
 
 volatile char *pDisp = (volatile char*)0xB8000;
+
+PUBLIC int ckprintf(int color, const char *fmt, ...){
+  int i;
+  char buf[256];
+  va_list arg = (va_list)((char*)(&fmt) + 4);
+  i = vsprintf(buf, fmt, arg);
+  buf[i] = 0;
+  write_string(color, buf);
+  return i;
+}
+
+PUBLIC int kprintf(const char *fmt, ...){
+  int i;
+  char buf[256];
+  va_list arg = (va_list)((char*)(&fmt) + 4);
+  i = vsprintf(buf, fmt, arg);
+  buf[i] = 0;
+  write_string(0x0F, buf);
+  return i;
+}
+
+
+PUBLIC void panic_proto(const char* str, const char* s_fn, const char* b_fn, const int ln){
+  __asm__ __volatile__("cli"); // close interrupt
+  pDisp = (volatile char*)0xB8000;
+  ckprintf(0x1C, "!PANIC! %s :: File -> %s, BaseFile -> %s, Line -> %d", str, s_fn, b_fn, ln);
+  while(1);
+}
+
+PUBLIC int vsprintf(char *buf, const char *fmt, va_list args){
+  va_list arg = args;
+  int m;
+
+  char inner_buf[1024]; // hardcode is not good
+  char cs;
+  int align;
+
+  char *p;
+  for(p = buf; *fmt; fmt++){
+    if(*fmt != '%') {
+      *p++ = *fmt;
+      continue;
+    } else {
+      align = 0;
+    }
+    fmt++;
+    if(*fmt == '%'){
+      *p++ = *fmt;
+      continue;
+    } else if (*fmt == '0') {
+      cs = '0';
+      fmt++;
+    } else{
+      cs = ' ';
+    }
+
+    while (((unsigned char)(*fmt) >= '0') && ((unsigned char)(*fmt) <= '9')) {
+      align *= 10;
+      align += *fmt - '0';
+      fmt++;
+    }
+
+    char *q = inner_buf;
+    memset((void*)q, 0, sizeof(inner_buf));
+
+    switch (*fmt) {
+    case 'c':
+      *q++ = *((char*)arg);
+      arg += 4;
+      break;
+    case 'x':
+      m = *((int*)arg);
+      itoa(m, q, 16);
+      arg += 4;
+      break;
+    case 'd':
+      m = *((int*)arg);
+      if (m < 0){
+        m = m * (-1);
+        *q++ = '-';
+      }
+      itoa(m, q, 10);
+      arg += 4;
+      break;
+    case 's':
+      strcpy(q, (*((char**)arg)));
+      q += strlen(*((char**)arg));
+      arg += 4;
+    default:
+      break;
+    }
+
+    for(int k = 0; k < ((align > strlen(inner_buf)) ? (align - strlen(inner_buf)) : 0); k++)
+      *p++ = cs;
+    q = inner_buf;
+    while(*q)
+      *p++ = *q++;
+
+  }
+
+  *p = 0;
+  return (p - buf);
+}
+
+PUBLIC int sprintf(char *buf, const char *fmt, ...){
+  va_list arg = (va_list)((char*)(&fmt) + 4);
+  return vsprintf(buf, fmt, arg);
+}

@@ -3,14 +3,10 @@
 #ifndef __OMOCHA_OS__PROTECT_H__
 #define __OMOCHA_OS__PROTECT_H__
 
-typedef struct {
-  unsigned short LimitL;
-  unsigned short BaseL;
-  unsigned char BaseM;
-  unsigned char Attr1;
-  unsigned char LimitH_Attr2;
-  unsigned char BaseH;
-}__attribute__((packed)) GDT_Descriptor;
+#include "interrupt.h"
+#include "const.h"
+#include "type.h"
+
 
 static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
                                         unsigned int Base,
@@ -49,5 +45,7 @@ static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
 #define DPL0 0x00
 
 #define DPL_USER DPL3
+
+void kinit_gdt(cpu_env *env);
 
 #endif

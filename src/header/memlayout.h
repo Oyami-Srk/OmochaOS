@@ -17,7 +17,9 @@
 
 // 内核基址
 #define KERN_BASE 0x80000000
-#define KERN_END  0x80400000
+
+#define P2V(a) ((void *)(((char *) (a)) + KERN_BASE))
+#define V2P(a) ((void *)(((char *) (a)) - KERN_BASE))
 
 // sizeof descriptor is 8byte 32bit
 
@@ -26,5 +28,7 @@
 // 内核页目录表和页表基地址
 #define KERN_PAGE_DIR_BASE (KERN_IDT_BASE + (IDT_COUNT * sizeof(Gate_Descriptor)))
 #define KERN_PAGE_TBL_BASE (KERN_PAGE_DIR_BASE + 0x1000)
+
+extern char KERN_END[]; // kernel end addr, provided by kernel.ld
 
 #endif

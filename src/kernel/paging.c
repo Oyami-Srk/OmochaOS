@@ -1,6 +1,8 @@
 #include "paging.h"
 #include "memlayout.h"
 #include "klib.h"
+#include "kmem.h"
+#include "string.h"
 
 #define ADDR_TO_DIR(va) (((unsigned int)(va) >> 22) & 0x3FF)
 #define ADDR_TO_TBL(va) (((unsigned int)(va) >> 12) & 0x3FF)
@@ -33,8 +35,24 @@ void vm_map(unsigned int *vstart,
   }
 }
 
+// I admit it that it copy from xv6 ;_;
+static pte* get_tbl_by_va(pde* pgdir, const void* va, int alloc){
+  pde *d;
+  pte *tab;
 
-void kinit_paging(unsigned int sec, SMAP_entry *first){
+  d = &pgdir[ADDR_TO_DIR(va)]; // 获取页目录项
+  if(*d & PG_P) { // 页存在
+    tab = (pte*)P2V(ADDR_TO_TBL(*d));
+  }else {
+    if(!alloc || (tab = (pte*)kalloc()) == 0)
+      return 0;
+    memset(tab, 0, PG_SIZE);
+    *d = (uint)V2P(tab) | PG_P | PG_W | PG_U;
+  }
+  return &tab[ADDR_TO_TBL(va)];
+}
+
+void kinit_paging(unsigned int sec, SMAP_entry *first, cpu_env *env){
   // Kernel init paging
   // Found memory size
   unsigned int memory_size = 0;
@@ -85,4 +103,41 @@ void kinit_paging(unsigned int sec, SMAP_entry *first){
   write_string(0x0F, "\n");
 
   __asm__ __volatile__("mov %%eax, %%cr3"::"a"(KERN_PAGE_DIR_BASE - KERN_BASE));
+}
+
+void kprint_meminfo(SMAP_entry *mem_info_start, uint count){
+  write_string(0x0F, "We got memory info like: \n");
+  char buf[16];
+  SMAP_entry *mem_infos = mem_info_start;
+  SMAP_entry *tmp = mem_infos;
+  for(;mem_infos < tmp + count;){
+    itoa(mem_infos->BaseH << 16 | mem_infos->BaseL, buf, 16);
+    write_string(0x0F, "Base addr: ");
+    write_string(0x0F, buf);
+    write_string(0x0F, "  Length: ");
+    itoa(mem_infos->LengthH << 16 | mem_infos->LengthL , buf, 16);
+    write_string(0x0F, buf);
+    write_string(0x0F, "  Type: ");
+    switch(mem_infos->Type){
+    case 1:
+      write_string(0x0F, "USABLE\n");
+      break;
+    case 2:
+      write_string(0x0F, "RESERVED\n");
+      break;
+    case 3:
+      write_string(0x0F, "ACPI RECLAM\n");
+      break;
+    case 4:
+      write_string(0x0F, "ACPI NVS\n");
+      break;
+    case 5:
+      write_string(0x0F, "Bad\n");
+      break;
+    defult:
+      write_string(0x0F, "Unrecognized\n");
+      break;
+    }
+    mem_infos++;
+  }
 }

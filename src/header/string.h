@@ -3,9 +3,10 @@
 
 #define PUBLIC
 
+PUBLIC char* strcpy(char *dst, char *src);
+PUBLIC int strlen(const char* s);
 PUBLIC void* memcpy(void *dst, const void *src, int size);
 PUBLIC void* memset(void *dst, char ch, int size);
-PUBLIC int   strlen(char *str);
 
 #endif
 

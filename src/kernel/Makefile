@@ -17,6 +17,7 @@ all: pre $(KERNEL_BUILD)/kernel.out
 
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
 	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(KERNEL_BUILD)/start.o $(filter-out $(KERNEL_BUILD)/start.o, $(OBJS)) $(LIB_OBJS)
+	$(OBJDUMP) -S $(KERNEL_BUILD)/kernel.out > $(KERNEL_BUILD)/kernel.disasm
 
 $(KERNEL_BUILD)/%.o: %.c
 	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(HEADER)

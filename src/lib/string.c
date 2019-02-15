@@ -17,6 +17,21 @@ void* memcpy(void *dst, const void *src, int size){
   return dst;
 }
 
+char* strcpy(char *dst, char *src){
+  char *odst;
+  if(src < dst)
+    while((*dst++=*src++) != '\0');
+  else
+    memcpy(dst, src, strlen(src) + 1);
+  return odst;
+}
+
+int strlen(const char *s){
+  const char *eos = s;
+  while(*eos++);
+  return (eos - s - 1);
+}
+
 void* memset(void *dst, char ch, int size){
   if((int)dst % 4 == 0 && size % 4 == 0){ // 当对齐的时候，一口气写入long而不是byte
     ch &= 0xFF;
@@ -24,10 +39,4 @@ void* memset(void *dst, char ch, int size){
   } else
     stosb(dst, ch, size);
   return dst;
-}
-
-int strlen(char *str){
-  int len = 0;
-  for(; str[len]; len++);
-  return len;
 }
