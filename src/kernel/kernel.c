@@ -5,33 +5,119 @@
 #include "protect.h"
 #include "klib.h"
 #include "interrupt.h"
+#include "kmem.h"
 
 cpu_env cpu;
+char *task_stack[PROC_COUNT];
+
+void TestA();
+void TestB();
+
+uint tasks[PROC_COUNT];
+char *kernel_stack;
+
+void load_process_context(){
+  kprintf("Initialize proc table");
+  for(int i = 0; i < PROC_COUNT; i++){
+    process *p = &cpu.processes[i];
+    p->selector_ldt = SEL_LDT1 + (i << 3);
+    kprintf("We got %d's ldt sel is 0x%02x", i, p->selector_ldt);
+    MAKE_DESC(&p->ldts[0], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C);
+    p->ldts[0].Attr1 = DA_C | (1 << 5);
+    MAKE_DESC(&p->ldts[1], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW);
+    p->ldts[1].Attr1 = DA_DRW | (1 << 5);
+
+    p->stack.cs = (0 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.ds = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.es = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.fs = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.ss = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.gs = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
+    p->stack.eip = tasks[i];
+    p->stack.esp = (uint)kalloc();
+    p->stack.eflags = 0x1202;
+    p->kernel_stack = (char*)kalloc();
+  }
+}
+
+void delay(int time){
+  uint j,k;
+  for(j = 0; j < time * 1000; j++)
+    for(k = 0 ; k < 10000; k++)
+      __asm__ __volatile__("nop");
+}
+
+void TestA(){
+  int i = 0;
+  while(1){
+    kprintf("A0x%02x. ", i);
+    delay(1);
+    i++;
+  }
+}
+
+void TestB(){
+  int i = 0;
+  while(1){
+    kprintf("B0x%02x. ", i);
+    delay(1);
+    i++;
+  }
+}
+
+
+volatile uint p_proc_ready;
+extern void vector_handler_ret();
+
+void switch_to(process *p){
+  __asm__ __volatile__("jmp %0"
+                       :
+                       :"r"(vector_handler_ret));
+  return;
+}
 
 int main(void){
   cpu.cpu_id = 0;
+  cpu.interrupt_count = (uint)1;
+  cpu.current_running_proc = (volatile uint)&cpu.processes[0];
+
 
   unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
   SMAP_entry *mem_infos = (SMAP_entry*)BOOT_LOADER_MEM_INFO;
+  clr_scr();
+  kprintf("Hello world!\n");
+  kprintf("a:0x%x, b: 0x%x\n", cpu.current_running_proc, cpu.processes);
+  kprintf("interrupt count is 0x%08x", cpu.interrupt_count);
+
 
   kinit_gdt(&cpu);
   kinit_interrupt(&cpu);
   kinit_mem(KERN_END, P2V(4 * 1024 * 1024));
   /* kinit_paging(*mem_infos_count, mem_infos, &cpu); */
 
-  clr_scr();
+  kernel_stack = kalloc();
 
-  write_string(0x0F, "Hello world!\n");
-  char buf[32];
-  itoa((uint)KERN_END, buf, 16);
-  write_string(0x0F, "Kern end addr is ");
-  write_string(0x0F, buf);
-  write_string(0x0F, "\n");
-  kprint_meminfo(mem_infos, *mem_infos_count);
+  kprintf("Kern end addr is 0x%8x\n");
+  kprintf("Task stack addr is 0x%08x", task_stack);
+  kprintf("\ngdt is%x\n", &cpu.gdt);
+  kprintf("sizeofis %d\n", ((uint)&cpu.tss.esp0 - (uint)&cpu));
+  kprintf("addr in tss.esp0 is 0x%08x\n", &cpu.tss.esp0);
 
-  panic("test panic");
+  tasks[0] = (uint)TestA;
+  tasks[1] = (uint)TestB;
 
-  while(1);
+
+  load_process_context();
+  kprintf("\nReady to jump ring 3...\n");
+  switch_to(&cpu.processes[0]);
+
+  uint i = 0;
+  while(1){
+    switch_to(&cpu.processes[i]);
+    i++;
+    if(i > PROC_COUNT)
+      i = 0;
+  }
 }
 
 /*

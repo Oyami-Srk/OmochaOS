@@ -24,9 +24,9 @@
 // sizeof descriptor is 8byte 32bit
 
 #define KERN_GDT_BASE 0x80200000
-#define KERN_IDT_BASE (KERN_GDT_BASE + (GDT_COUNT * sizeof(GDT_Descriptor)))
+#define KERN_IDT_BASE (KERN_GDT_BASE + (GDT_COUNT * sizeof(Descriptor)))
 // 内核页目录表和页表基地址
-#define KERN_PAGE_DIR_BASE (KERN_IDT_BASE + (IDT_COUNT * sizeof(Gate_Descriptor)))
+#define KERN_PAGE_DIR_BASE (KERN_IDT_BASE + (IDT_COUNT * sizeof(Gate)))
 #define KERN_PAGE_TBL_BASE (KERN_PAGE_DIR_BASE + 0x1000)
 
 extern char KERN_END[]; // kernel end addr, provided by kernel.ld

@@ -7,8 +7,7 @@
 #include "const.h"
 #include "type.h"
 
-
-static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
+static inline Descriptor* MAKE_DESC(Descriptor *pDesc,
                                         unsigned int Base,
                                         unsigned int Limit,
                                         unsigned short Attr){
@@ -45,6 +44,23 @@ static inline GDT_Descriptor* MAKE_DESC(GDT_Descriptor *pDesc,
 #define DPL0 0x00
 
 #define DPL_USER DPL3
+
+#define DA_LDT 0x82
+#define DA_TaskGate 0x85
+#define DA_386TSS 0x89
+#define DA_386CGate 0x8C
+#define DA_386IGate 0x8E
+#define DA_386TGate 0x8F
+
+#define SA_RPL_MASK 0xFFFC
+#define SA_RPL0 0
+#define SA_RPL1 1
+#define SA_RPL2 2
+#define SA_RPL3 3
+
+#define	SA_TI_MASK	0xFFFB
+#define	SA_TIG		0
+#define	SA_TIL		4
 
 void kinit_gdt(cpu_env *env);
 

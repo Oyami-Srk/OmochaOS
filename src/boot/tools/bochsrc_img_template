@@ -8,3 +8,4 @@ cpu: count=1, ips=500000000
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, path="80m.img", mode=flat
 boot: disk
+#gdbstub: enabled=1, port=1234, text_base=0, data_base=0, bss_base=0

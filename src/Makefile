@@ -2,7 +2,7 @@
 # src/
 
 HEADER = $(shell pwd)/header
-CC_FLAGS = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector
+CC_FLAGS = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
 
 export HEADER CC_FLAGS
 
