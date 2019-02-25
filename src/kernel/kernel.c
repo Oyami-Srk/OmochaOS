@@ -21,7 +21,6 @@ void load_process_context(){
   for(int i = 0; i < PROC_COUNT; i++){
     process *p = &cpu.processes[i];
     p->selector_ldt = SEL_LDT1 + (i << 3);
-    kprintf("We got %d's ldt sel is 0x%02x", i, p->selector_ldt);
     MAKE_DESC(&p->ldts[0], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C);
     p->ldts[0].Attr1 = DA_C | (1 << 5);
     MAKE_DESC(&p->ldts[1], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW);
@@ -85,10 +84,7 @@ int main(void){
   unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
   SMAP_entry *mem_infos = (SMAP_entry*)BOOT_LOADER_MEM_INFO;
   clr_scr();
-  kprintf("Hello world!\n");
-  kprintf("a:0x%x, b: 0x%x\n", cpu.current_running_proc, cpu.processes);
-  kprintf("interrupt count is 0x%08x", cpu.interrupt_count);
-
+  kprintf(" <- bumping char means clock^-^ Hello world!\n");
 
   kinit_gdt(&cpu);
   kinit_interrupt(&cpu);
@@ -98,10 +94,6 @@ int main(void){
   kernel_stack = kalloc();
 
   kprintf("Kern end addr is 0x%8x\n");
-  kprintf("Task stack addr is 0x%08x", task_stack);
-  kprintf("\ngdt is%x\n", &cpu.gdt);
-  kprintf("sizeofis %d\n", ((uint)&cpu.tss.esp0 - (uint)&cpu));
-  kprintf("addr in tss.esp0 is 0x%08x\n", &cpu.tss.esp0);
 
   tasks[0] = (uint)TestA;
   tasks[1] = (uint)TestB;

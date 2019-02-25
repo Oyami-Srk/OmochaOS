@@ -40,7 +40,6 @@ void kinit_gdt(cpu_env *env){
   *gdt_limit = gdt_count * sizeof(Descriptor) - 1;
   *gdt_base = (unsigned int)env->gdt;
 
-  kprintf("GDT Limit is %d, count is %d, sizeof desc is %d", *gdt_limit, gdt_count, sizeof(Descriptor));
 
   __asm__ __volatile__("lgdtl (%0)":: "r"(gdt_ptr));
 
