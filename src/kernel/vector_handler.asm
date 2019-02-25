@@ -94,24 +94,26 @@ vector_handler:
   mov es, ax
   mov fs, ax
   mov ecx, esp
-  ; cmp dword [cpu + cpu_env.interrupt_count], 0
-  ; jne .non_zero
-  mov esp, kernel_stack + 4096
+  cmp dword [cpu + cpu_env.interrupt_count], 0
+  jne .non_zero
+  mov esp, kernel_stack + 4096  ; page size
 .non_zero:
-  ; inc dword [cpu + cpu_env.interrupt_count]
+  inc dword [cpu + cpu_env.interrupt_count]
   push ecx
   call interrupt_handler
   add esp, 4                    ; C调用规约
 
 vector_handler_ret:
   dec dword [cpu + cpu_env.interrupt_count]
+  cmp dword [cpu + cpu_env.interrupt_count], 0
+  jne .non_zero
   mov eax, [cpu + cpu_env.current_running_proc]
   mov ebx, [eax + process.selector_ldt]
   lldt bx
   mov esp, eax
   add eax, process.selector_ldt
   mov dword [cpu + cpu_env.tss + tss.esp0 + 4], eax
-
+.non_zero:
   pop gs
   pop fs
   pop es
