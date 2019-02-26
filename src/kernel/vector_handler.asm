@@ -79,7 +79,6 @@ endstruc
 extern interrupt_handler
 extern kernel_stack             ; 内核栈
 extern cpu
-; extern k_reenter
 global vector_handler
 global vector_handler_ret
 vector_handler:
@@ -107,12 +106,19 @@ vector_handler_ret:
   dec dword [cpu + cpu_env.interrupt_count]
   cmp dword [cpu + cpu_env.interrupt_count], 0
   jne .non_zero
-  mov eax, [cpu + cpu_env.current_running_proc]
-  mov ebx, [eax + process.selector_ldt]
+  ; check if syscall and move retval
+  mov ecx, [cpu + cpu_env.current_running_proc]
+
+  cmp dword [ecx + process.stack + stack_frame.trapno], 0xE9 ; syscall const
+  jne .non_syscall
+  mov dword [ecx + process.stack + stack_frame.eax], eax
+.non_syscall:
+  mov ebx, [ecx + process.selector_ldt]
   lldt bx
-  mov esp, eax
-  add eax, process.selector_ldt
-  mov dword [cpu + cpu_env.tss + tss.esp0 + 4], eax
+  mov esp, ecx
+  add ecx, process.selector_ldt
+  mov dword [cpu + cpu_env.tss + tss.esp0 + 4], ecx
+
 .non_zero:
   pop gs
   pop fs

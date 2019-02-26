@@ -116,6 +116,8 @@ typedef struct {
   pde *pgdir;
   process processes[PROC_COUNT];
   struct tss tss;
+
+  uint beats;
 } cpu_env;
 
 

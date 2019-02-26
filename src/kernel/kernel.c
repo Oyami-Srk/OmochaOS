@@ -7,6 +7,8 @@
 #include "interrupt.h"
 #include "kmem.h"
 
+#include "syscall.h"
+
 cpu_env cpu;
 char *task_stack[PROC_COUNT];
 
@@ -48,9 +50,17 @@ void delay(int time){
 
 void TestA(){
   int i = 0;
+  volatile int r = 10010;
   while(1){
-    kprintf("A0x%02x. ", i);
-    delay(1);
+    kprintf("ProcessA-" );
+    __asm__("movl $0, %%eax\n\t"
+            "int $0xE9\n\t"
+            "movl %0, %%eax"
+            :"=r"(r)
+            :
+            :"memory");
+    kprintf("%d ", r);
+    /* delay(1); */
     i++;
   }
 }
@@ -58,27 +68,19 @@ void TestA(){
 void TestB(){
   int i = 0;
   while(1){
-    kprintf("B0x%02x. ", i);
-    delay(1);
+    kprintf("ProcessB ");
+    /* delay(1); */
     i++;
   }
 }
 
 
-volatile uint p_proc_ready;
 extern void vector_handler_ret();
-
-void switch_to(process *p){
-  __asm__ __volatile__("jmp %0"
-                       :
-                       :"r"(vector_handler_ret));
-  return;
-}
 
 int main(void){
   cpu.cpu_id = 0;
   cpu.interrupt_count = (uint)1;
-  cpu.current_running_proc = (volatile uint)&cpu.processes[0];
+  cpu.beats = 0;
 
 
   unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
@@ -101,15 +103,16 @@ int main(void){
 
   load_process_context();
   kprintf("\nReady to jump ring 3...\n");
-  switch_to(&cpu.processes[0]);
 
-  uint i = 0;
-  while(1){
-    switch_to(&cpu.processes[i]);
-    i++;
-    if(i > PROC_COUNT)
-      i = 0;
-  }
+  kprintf("ProcA.eax addr is: 0x%08x\n", &cpu.processes[0].stack.eax);
+
+  cpu.current_running_proc = (volatile uint)&cpu.processes[0];
+  __asm__ __volatile__("jmp %0"
+                       :
+                       :"r"(vector_handler_ret));
+
+
+  while(1);
 }
 
 /*
