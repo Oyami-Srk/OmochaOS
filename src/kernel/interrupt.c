@@ -3,6 +3,7 @@
 #include "protect.h"
 #include "asm.h"
 #include "syscall.h"
+#include "process.h"
 
 #define __EXCEPTION_CASE__ case INT_F_DE:\
 panic("#DE");\
@@ -64,7 +65,8 @@ void interrupt_handler(stack_frame *intf) {
       cpu.beats++;
       volatile char *ch = (volatile char*)(0xB8000);
       *ch = *ch + 1;
-      cpu.current_running_proc = (uint)&cpu.processes[i];
+      if(cpu.processes[i].status & PROC_STATUS_RUNNING)
+        cpu.current_running_proc = (uint)&cpu.processes[i];
       i++;
       if(i >= PROC_COUNT)
         i = 0;

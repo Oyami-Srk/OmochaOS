@@ -8,6 +8,7 @@
 #include "kmem.h"
 
 #include "syscall.h"
+#include "process.h"
 
 cpu_env cpu;
 char *task_stack[PROC_COUNT];
@@ -35,9 +36,10 @@ void load_process_context(){
     p->stack.ss = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
     p->stack.gs = (8 & SA_RPL_MASK & SA_TI_MASK) | SA_TIL | SA_RPL1;
     p->stack.eip = tasks[i];
-    p->stack.esp = (uint)kalloc();
+    p->stack.esp = (uint)kalloc() + 4096;
     p->stack.eflags = 0x1202;
-    p->kernel_stack = (char*)kalloc();
+
+    p->status = 0;
   }
 }
 
@@ -51,9 +53,7 @@ void TestA(){
   int i = 0;
   volatile int r = 10010;
   while(1){
-    kprintf("ProcessA-" );
-    r = test_parm(2,3,4);
-    kprintf("%d",r);
+    kprintf("A ");
     delay_ms(500);
     i++;
   }
@@ -62,8 +62,8 @@ void TestA(){
 void TestB(){
   int i = 0;
   while(1){
-    test_parm(2,3,4);
-    delay_ms(1000);
+    kprintf("B ");
+    delay_ms(500);
     i++;
   }
 }
@@ -93,12 +93,11 @@ int main(void){
 
   tasks[0] = (uint)TestA;
   tasks[1] = (uint)TestB;
-
-
   load_process_context();
+  cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
-  kprintf("ProcA.eax addr is: 0x%08x\n", &cpu.processes[0].stack.eax);
+  message msg;
 
   cpu.current_running_proc = (volatile uint)&cpu.processes[0];
   __asm__ __volatile__("jmp %0"

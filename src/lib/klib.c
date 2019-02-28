@@ -188,3 +188,15 @@ uint test_parm(int v2, int v3, int v4){
                        :"memory");
   return rv;
 }
+
+uint send_msg(message *msg){
+  volatile uint rv;
+  __asm__ __volatile__("movl %%ecx, %%ecx\n\t"::"c"(msg));
+  __asm__ __volatile__("movl $2, %%eax\n\t"
+                       "int $0xE9\n\t"
+                       "movl %0, %%eax"
+                       :"=r"(rv)
+                       :
+                       :"memory");
+  return rv;
+}

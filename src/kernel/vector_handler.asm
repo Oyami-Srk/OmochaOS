@@ -53,13 +53,22 @@ struc tss
 .iobase resw 1
 endstruc
 
+struc message
+.sender resd 1
+.receiver resd 1
+.type resd 1
+.major_data resd 1
+.data resb 16
+endstruc
+
 struc process
 .stack resb stack_frame_size
 .selector_ldt resw 1
+.status resd 1
 .ldts resb 2 * 8
 .pid resd 1
 .name resb 16
-.kernel_stack resd 1
+.message resb message_size
 endstruc
 
 struc cpu_env

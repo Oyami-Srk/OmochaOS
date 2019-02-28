@@ -11,6 +11,7 @@ PUBLIC void write_string( int colour, char *string );
 PUBLIC void clr_scr(void);
 
 #define panic(str) panic_proto(#str, __FILE__, __BASE_FILE__, __LINE__)
+#define assert(exp) if(!(exp))panic(assert exp)
 #define PANIC_COLOR 0x1F
 PUBLIC void panic_proto(const char *str, const char *s_fn, const char *b_fn, const int ln);
 

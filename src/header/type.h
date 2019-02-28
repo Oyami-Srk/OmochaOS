@@ -10,6 +10,13 @@ typedef unsigned short ushort;
 typedef unsigned int pte; // for hint
 typedef unsigned int pde;
 
+struct __list {
+  void* data;
+  struct __list *next;
+};
+
+typedef struct __list list;
+
 typedef struct {
   unsigned short LimitL;
   unsigned short BaseL;
@@ -95,14 +102,40 @@ struct tss {
 	/*char	iomap[2];*/
 };
 
+// message 32 bytes
+
+typedef struct {
+  uint sender;   // pid
+  uint receiver; // pid
+  uint type;
+  uint major_data;
+  // above is 4 + 4 + 4 + 4 = 16 bytes
+  // below is 16 bytes
+  union {
+    struct {
+      uint d1;
+      int d2;
+      int d3;
+      int d4;
+    }m1;
+    struct {
+      uint d1;
+      char d2[12];
+    }m2;
+    char m3[16]; // cast to everything ~ 030
+  }data;
+}message;
+
 typedef struct {
   stack_frame stack;
-  unsigned short selector_ldt;
+  ushort selector_ldt;
+  uint status;
   Descriptor ldts[LDT_SIZE];
   uint pid;
   char name[PROCESS_NAME_SIZE];
 
-  char *kernel_stack;
+  message p_msg;
+  process* quene_sending_to_this_process;
 } process;
 
 

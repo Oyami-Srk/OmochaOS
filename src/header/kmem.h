@@ -4,12 +4,6 @@
 #include "type.h"
 #include "const.h"
 
-struct __list {
-  struct __list *next;
-};
-
-typedef struct __list list;
-
 void kinit_mem(void *vsatrt, void *vend);
 void kfree(void *v);
 char *kalloc(void);
