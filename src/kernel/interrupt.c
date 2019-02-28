@@ -73,11 +73,20 @@ void interrupt_handler(stack_frame *intf) {
     }
   case SYSCALL_INT:{
     volatile uint ret_val = 0;
-    __asm__ __volatile__("call %1\n\t"
-                         "movl %%eax, %0"
+    __asm__ __volatile__("push %%edx\n\t"
+                         "push %%ebx\n\t"
+                         "push %%ecx\n\t"
+                         "push %%eax\n\t"
+                         "call %1\n\t"
+                         "movl %%eax, %0\n\t"
+                         "add $16, %%esp"
                          :"=r"(ret_val)
-                         :"r"(syscall_table[intf->eax])
-                         :"memory", "eax");
+                         :"r"(syscall_table[intf->eax]),
+                          "c"(intf->ecx),
+                          "b"(intf->ebx),
+                          "d"(intf->edx),
+                          "a"(intf)
+                         :"memory");
     break;
   }
   }

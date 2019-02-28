@@ -19,4 +19,8 @@ PUBLIC int sprintf(char *buf, const char *fmt, ...);
 PUBLIC int kprintf(const char *fmt, ...);
 PUBLIC int ckprintf(int color, const char *fmt, ...);
 
+// syscalls
+PUBLIC uint get_ticks();
+PUBLIC uint test_parm(int v2, int v3, int v4);
+
 #endif

@@ -159,3 +159,32 @@ PUBLIC int sprintf(char *buf, const char *fmt, ...){
   va_list arg = (va_list)((char*)(&fmt) + 4);
   return vsprintf(buf, fmt, arg);
 }
+
+
+// syscalls
+
+uint get_ticks(){
+  volatile uint beats;
+  __asm__("movl $0, %%eax\n\t"
+          "int $0xE9\n\t"
+          "movl %0, %%eax"
+          :"=r"(beats)
+          :
+          :"memory");
+  return beats;
+}
+
+
+uint test_parm(int v2, int v3, int v4){
+  volatile uint rv;
+  __asm__ __volatile__("movl %%ecx, %%ecx\n\t"::"c"(v2));
+  __asm__ __volatile__("movl %%ebx, %%ebx\n\t"::"b"(v3));
+  __asm__ __volatile__("movl %%edx, %%edx\n\t"::"d"(v4));
+  __asm__ __volatile__("movl $1, %%eax\n\t"
+                       "int $0xE9\n\t"
+                       "movl %0, %%eax"
+                       :"=r"(rv)
+                       :
+                       :"memory");
+  return rv;
+}

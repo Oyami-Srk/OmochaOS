@@ -3,10 +3,15 @@
 
 extern cpu_env cpu;
 
-int get_ticks(void){
+int __get_ticks(void){
   return cpu.beats;
 }
 
+int __test_parm(void *v1, int v2, int v3, int v4){
+  return v2+v3+v4;
+}
+
 void* syscall_table[] = {
-                         get_ticks
+                         __get_ticks,
+                         __test_parm
 };

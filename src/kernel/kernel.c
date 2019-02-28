@@ -41,11 +41,10 @@ void load_process_context(){
   }
 }
 
-void delay(int time){
-  uint j,k;
-  for(j = 0; j < time * 1000; j++)
-    for(k = 0 ; k < 10000; k++)
-      __asm__ __volatile__("nop");
+void delay_ms(uint ms){
+  uint k = get_ticks();
+  uint t = ms / 10;
+  while((k + t) > get_ticks());
 }
 
 void TestA(){
@@ -53,14 +52,9 @@ void TestA(){
   volatile int r = 10010;
   while(1){
     kprintf("ProcessA-" );
-    __asm__("movl $0, %%eax\n\t"
-            "int $0xE9\n\t"
-            "movl %0, %%eax"
-            :"=r"(r)
-            :
-            :"memory");
-    kprintf("%d ", r);
-    /* delay(1); */
+    r = test_parm(2,3,4);
+    kprintf("%d",r);
+    delay_ms(500);
     i++;
   }
 }
@@ -68,8 +62,8 @@ void TestA(){
 void TestB(){
   int i = 0;
   while(1){
-    kprintf("ProcessB ");
-    /* delay(1); */
+    test_parm(2,3,4);
+    delay_ms(1000);
     i++;
   }
 }
