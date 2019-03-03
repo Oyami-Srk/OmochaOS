@@ -126,7 +126,7 @@ typedef struct {
   }data;
 }message;
 
-typedef struct {
+struct __process{
   stack_frame stack;
   ushort selector_ldt;
   uint status;
@@ -134,9 +134,11 @@ typedef struct {
   uint pid;
   char name[PROCESS_NAME_SIZE];
 
-  message p_msg;
-  process* quene_sending_to_this_process;
-} process;
+  message* p_msg;
+  struct __process* quene_sending_to_this_process;
+};
+
+typedef struct __process process;
 
 
 typedef struct {

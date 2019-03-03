@@ -1,23 +1,24 @@
 #include "klib.h"
 
-PUBLIC char *itoa(unsigned int value, char *str, int base){
+PUBLIC char *itoa(unsigned int value, char *str, int base) {
   char *rc;
   char *ptr;
   char *low;
-  if(base < 2 || base > 36){
+  if (base < 2 || base > 36) {
     *str = '\0';
     return str;
   }
   rc = ptr = str;
-  if(value < 0 && base == 10)
+  if (value < 0 && base == 10)
     *ptr++ = '-';
   low = ptr;
-  do{
-    *ptr++ = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[35 + value % base];
+  do {
+    *ptr++ = "ZYXWVUTSRQPONMLKJIHGFEDCBA9876543210123456789ABCDEFGHIJKLMNOPQRST"
+             "UVWXYZ"[35 + value % base];
     value /= base;
-  }while(value);
+  } while (value);
   *ptr-- = '\0';
-  while(low < ptr) {
+  while (low < ptr) {
     char tmp = *low;
     *low++ = *ptr;
     *ptr-- = tmp;
@@ -27,11 +28,12 @@ PUBLIC char *itoa(unsigned int value, char *str, int base){
 
 // for temperary debug usage
 
-PUBLIC void write_string( int colour, char *string ) {
+PUBLIC void write_string(int colour, char *string) {
   char ch = *string;
   while (*string != 0) {
-    if(ch == '\n'){
-      pDisp = (volatile char*)0xB8000 + 80 * 2 * (((int)pDisp - 0xB8000) / 160 + 1);
+    if (ch == '\n') {
+      pDisp = (volatile char *)0xB8000 +
+              80 * 2 * (((int)pDisp - 0xB8000) / 160 + 1);
       ch = *++string;
       continue;
     }
@@ -41,46 +43,48 @@ PUBLIC void write_string( int colour, char *string ) {
   }
 }
 
-PUBLIC void clr_scr(void){
-  volatile char *p = (volatile char*)0xB8000;
-  pDisp = (volatile char*)0xB8000;
-  for(int i = 0; i < 80 * 25; i++){
+PUBLIC void clr_scr(void) {
+  volatile char *p = (volatile char *)0xB8000;
+  pDisp = (volatile char *)0xB8000;
+  for (int i = 0; i < 80 * 25; i++) {
     *p++ = 0x00;
     *p++ = 0x00;
   }
 }
 
-volatile char *pDisp = (volatile char*)0xB8000;
+volatile char *pDisp = (volatile char *)0xB8000;
 
-PUBLIC int ckprintf(int color, const char *fmt, ...){
+PUBLIC int ckprintf(int color, const char *fmt, ...) {
   int i;
   char buf[256];
-  va_list arg = (va_list)((char*)(&fmt) + 4);
+  va_list arg = (va_list)((char *)(&fmt) + 4);
   i = vsprintf(buf, fmt, arg);
   buf[i] = 0;
   write_string(color, buf);
   return i;
 }
 
-PUBLIC int kprintf(const char *fmt, ...){
+PUBLIC int kprintf(const char *fmt, ...) {
   int i;
   char buf[256];
-  va_list arg = (va_list)((char*)(&fmt) + 4);
+  va_list arg = (va_list)((char *)(&fmt) + 4);
   i = vsprintf(buf, fmt, arg);
   buf[i] = 0;
   write_string(0x0F, buf);
   return i;
 }
 
-
-PUBLIC void panic_proto(const char* str, const char* s_fn, const char* b_fn, const int ln){
+PUBLIC void panic_proto(const char *str, const char *s_fn, const char *b_fn,
+                        const int ln) {
   __asm__ __volatile__("cli"); // close interrupt
-  pDisp = (volatile char*)0xB8000;
-  ckprintf(0x1C, "!PANIC! %s :: File -> %s, BaseFile -> %s, Line -> %d", str, s_fn, b_fn, ln);
-  while(1);
+  pDisp = (volatile char *)0xB8000;
+  ckprintf(0x1C, "!PANIC! %s :: File -> %s, BaseFile -> %s, Line -> %d", str,
+           s_fn, b_fn, ln);
+  while (1)
+    ;
 }
 
-PUBLIC int vsprintf(char *buf, const char *fmt, va_list args){
+PUBLIC int vsprintf(char *buf, const char *fmt, va_list args) {
   va_list arg = args;
   int m;
 
@@ -89,21 +93,21 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args){
   int align;
 
   char *p;
-  for(p = buf; *fmt; fmt++){
-    if(*fmt != '%') {
+  for (p = buf; *fmt; fmt++) {
+    if (*fmt != '%') {
       *p++ = *fmt;
       continue;
     } else {
       align = 0;
     }
     fmt++;
-    if(*fmt == '%'){
+    if (*fmt == '%') {
       *p++ = *fmt;
       continue;
     } else if (*fmt == '0') {
       cs = '0';
       fmt++;
-    } else{
+    } else {
       cs = ' ';
     }
 
@@ -114,21 +118,21 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args){
     }
 
     char *q = inner_buf;
-    memset((void*)q, 0, sizeof(inner_buf));
+    memset((void *)q, 0, sizeof(inner_buf));
 
     switch (*fmt) {
     case 'c':
-      *q++ = *((char*)arg);
+      *q++ = *((char *)arg);
       arg += 4;
       break;
     case 'x':
-      m = *((int*)arg);
+      m = *((int *)arg);
       itoa(m, q, 16);
       arg += 4;
       break;
     case 'd':
-      m = *((int*)arg);
-      if (m < 0){
+      m = *((int *)arg);
+      if (m < 0) {
         m = m * (-1);
         *q++ = '-';
       }
@@ -136,67 +140,79 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args){
       arg += 4;
       break;
     case 's':
-      strcpy(q, (*((char**)arg)));
-      q += strlen(*((char**)arg));
+      strcpy(q, (*((char **)arg)));
+      q += strlen(*((char **)arg));
       arg += 4;
     default:
       break;
     }
 
-    for(int k = 0; k < ((align > strlen(inner_buf)) ? (align - strlen(inner_buf)) : 0); k++)
+    for (int k = 0;
+         k < ((align > strlen(inner_buf)) ? (align - strlen(inner_buf)) : 0);
+         k++)
       *p++ = cs;
     q = inner_buf;
-    while(*q)
+    while (*q)
       *p++ = *q++;
-
   }
 
   *p = 0;
   return (p - buf);
 }
 
-PUBLIC int sprintf(char *buf, const char *fmt, ...){
-  va_list arg = (va_list)((char*)(&fmt) + 4);
+PUBLIC int sprintf(char *buf, const char *fmt, ...) {
+  va_list arg = (va_list)((char *)(&fmt) + 4);
   return vsprintf(buf, fmt, arg);
 }
 
-
 // syscalls
 
-uint get_ticks(){
+uint get_ticks() {
   volatile uint beats;
   __asm__("movl $0, %%eax\n\t"
           "int $0xE9\n\t"
           "movl %0, %%eax"
-          :"=r"(beats)
+          : "=r"(beats)
           :
-          :"memory");
+          : "memory");
   return beats;
 }
 
-
-uint test_parm(int v2, int v3, int v4){
+uint test_parm(int v2, int v3, int v4) {
   volatile uint rv;
-  __asm__ __volatile__("movl %%ecx, %%ecx\n\t"::"c"(v2));
-  __asm__ __volatile__("movl %%ebx, %%ebx\n\t"::"b"(v3));
-  __asm__ __volatile__("movl %%edx, %%edx\n\t"::"d"(v4));
+  __asm__ __volatile__("movl %%ecx, %%ecx\n\t" ::"c"(v2));
+  __asm__ __volatile__("movl %%ebx, %%ebx\n\t" ::"b"(v3));
+  __asm__ __volatile__("movl %%edx, %%edx\n\t" ::"d"(v4));
   __asm__ __volatile__("movl $1, %%eax\n\t"
                        "int $0xE9\n\t"
                        "movl %0, %%eax"
-                       :"=r"(rv)
+                       : "=r"(rv)
                        :
-                       :"memory");
+                       : "memory");
   return rv;
 }
 
-uint send_msg(message *msg){
+uint send_msg(message *msg) {
   volatile uint rv;
-  __asm__ __volatile__("movl %%ecx, %%ecx\n\t"::"c"(msg));
+  __asm__ __volatile__("movl %%ecx, %%ecx\n\t" ::"c"(msg));
   __asm__ __volatile__("movl $2, %%eax\n\t"
                        "int $0xE9\n\t"
                        "movl %0, %%eax"
-                       :"=r"(rv)
+                       : "=r"(rv)
                        :
-                       :"memory");
+                       : "memory");
+  return rv;
+}
+
+uint recv_msg(message *msg, uint recv_from) {
+  volatile uint rv;
+  __asm__ __volatile__("movl %%ecx, %%ecx\n\t" ::"c"(msg));
+  __asm__ __volatile__("movl %%ebx, %%ebx\n\t" ::"b"(recv_from));
+  __asm__ __volatile__("movl $3, %%eax\n\t"
+                       "int $0xE9\n\t"
+                       "movl %0, %%eax"
+                       : "=r"(rv)
+                       :
+                       : "memory");
   return rv;
 }

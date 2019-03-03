@@ -68,7 +68,9 @@ struc process
 .ldts resb 2 * 8
 .pid resd 1
 .name resb 16
-.message resb message_size
+; .message resb message_size
+.message resd 1
+.quene_sending_to_this_process resd 1
 endstruc
 
 struc cpu_env
