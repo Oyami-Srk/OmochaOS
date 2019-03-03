@@ -15,8 +15,7 @@ int __test_parm(void *v1, int v2, int v3, int v4){
 }
 
 int __send_msg(process *sender, message *msg){
-  process* receiver = &cpu.processes[msg->receiver];
-  kprintf("STATUS: 0x%04x ", sender->status);
+  process* receiver = &cpu.processes[msg->receiver - 1];
   assert(!(  (sender->status & PROC_STATUS_SENDING) || (sender->status & PROC_STATUS_RECEVING)
 )); // process cannot send or receive msg if it's already in sending or receiving status
   if((receiver->status & PROC_STATUS_RECEVING) &&
@@ -26,6 +25,7 @@ int __send_msg(process *sender, message *msg){
     memcpy((void*)receiver->p_msg, (void*)msg, sizeof(message));
     receiver->status &= ~PROC_STATUS_RECEVING;
     receiver->status |= PROC_STATUS_NORMAL; // receiver back to normal
+    receiver->status |= PROC_STATUS_RUNNING;
     SET_PROC_STATUS_PID(receiver, REFUSE); // refuse any, placeholder
   }else{
     // receiver process is not ready to receive a msg from sender
@@ -60,7 +60,7 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
       receiver->quene_sending_to_this_process = sender->quene_sending_to_this_process;
     }
   }else{
-    sender = &cpu.processes[recv_from];
+    sender = &cpu.processes[recv_from - 1];
     if((sender->status & PROC_STATUS_SENDING) &&
        (GET_PROC_STATUS_PID(sender) == receiver->pid)){
       // remove sender from
@@ -88,6 +88,7 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
     SET_PROC_STATUS_PID(sender, REFUSE);
     sender->status &= ~PROC_STATUS_SENDING;
     sender->status |= PROC_STATUS_NORMAL;
+    sender->status |= PROC_STATUS_RUNNING;
     kprintf(" s:0x%04x ", sender->status);
     kreload_process();
   }else{

@@ -51,9 +51,13 @@ void delay_ms(uint ms){
 
 void TestA(){
   int i = 0;
+  message msg;
+  msg.receiver = 2;
+  msg.major_data = 2333;
   volatile int r = 10010;
   while(1){
     kprintf("A ");
+    send_msg(&msg);
     delay_ms(500);
     i++;
   }
@@ -61,8 +65,11 @@ void TestA(){
 
 void TestB(){
   int i = 0;
+  message msg;
   while(1){
     kprintf("B ");
+    recv_msg(&msg, ANY);
+    kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data);
     delay_ms(500);
     i++;
   }
@@ -94,6 +101,7 @@ int main(void){
   tasks[0] = (uint)TestA;
   tasks[1] = (uint)TestB;
   load_process_context();
+  cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
