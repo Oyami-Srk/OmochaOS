@@ -7,7 +7,7 @@
 
 void kinit_gdt(cpu_env *env){
   // kernel init GDT
-  volatile uint sz = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
+  uint sz = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
   int has_tss = 0;
   int gdt_count = 0;
   for(uint i = 0; i < sz; i++)
@@ -33,10 +33,10 @@ void kinit_gdt(cpu_env *env){
       MAKE_DESC(&env->gdt[i], KERN_GDT[i][0], KERN_GDT[i][1], KERN_GDT[i][2]);
       break;
     }
-  volatile unsigned char gdt_ptr[6];
+  unsigned char gdt_ptr[6];
 
-  volatile unsigned short *gdt_limit = (unsigned short *)(&gdt_ptr[0]);
-  volatile unsigned int *gdt_base = (unsigned int *)(&gdt_ptr[2]);
+  unsigned short *gdt_limit = (unsigned short *)(&gdt_ptr[0]);
+  unsigned int *gdt_base = (unsigned int *)(&gdt_ptr[2]);
   *gdt_limit = gdt_count * sizeof(Descriptor) - 1;
   *gdt_base = (unsigned int)env->gdt;
 
@@ -58,7 +58,7 @@ void kinit_gdt(cpu_env *env){
 
        :
        : "g" (0x08), "g" (0x10)
-       : "eax");
+       : "eax", "memory");
 
   if(has_tss){
     __asm__ __volatile__("ltr %%ax"::"a"(SEL_TSS));

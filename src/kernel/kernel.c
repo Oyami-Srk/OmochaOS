@@ -90,6 +90,7 @@ int main(void){
   cpu.cpu_id = 0;
   cpu.interrupt_count = (uint)1;
   cpu.beats = 0;
+  cpu.current_running_proc = 0;
 
 
   unsigned int *mem_infos_count = (unsigned int*)BOOT_LOADER_MEM_INFO_COUNT;
@@ -127,7 +128,8 @@ int main(void){
   cpu.current_running_proc = (volatile uint)&cpu.processes[0];
   __asm__ __volatile__("jmp %0"
                        :
-                       :"r"(vector_handler_ret));
+                       :"r"(vector_handler_ret)
+                       :"memory");
 
 
   while(1);
