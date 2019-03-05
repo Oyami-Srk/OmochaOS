@@ -69,7 +69,7 @@ typedef struct {
   ushort ss;
   ushort padding6;
 
-} stack_frame;
+} __attribute__((packed)) stack_frame;
 
 struct tss {
 	uint	backlink;
@@ -100,7 +100,7 @@ struct tss {
 	ushort	trap;
 	ushort	iobase;	/* I/O位图基址大于或等于TSS段界限，就表示没有I/O许可位图 */
 	/*char	iomap[2];*/
-};
+}__attribute__((packed));
 
 // message 32 bytes
 
@@ -136,7 +136,7 @@ struct __process{
 
   message* p_msg;
   struct __process* quene_sending_to_this_process;
-};
+}__attribute__((packed));
 
 typedef struct __process process;
 
@@ -153,7 +153,7 @@ typedef struct {
   struct tss tss;
 
   uint beats;
-} cpu_env;
+} __attribute__((packed)) cpu_env;
 
 
 typedef char* va_list;

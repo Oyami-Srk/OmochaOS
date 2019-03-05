@@ -83,6 +83,8 @@ struc cpu_env
 .pgdir resd 1
 .process resb process_size * 3
 .tss resb tss_size
+
+.beats resd 1
 endstruc
 
 [SECTION .text]
@@ -93,6 +95,11 @@ extern cpu
 global vector_handler
 global vector_handler_ret
 vector_handler:
+  jmp .1
+  dd cpu_env_size
+  dd process_size
+  dd stack_frame_size
+.1:
   pushad
   push ds
   push es
@@ -129,7 +136,7 @@ vector_handler_ret:
   lldt bx
   mov esp, ecx
   add ecx, process.selector_ldt
-  mov dword [cpu + cpu_env.tss + tss.esp0 + 6], ecx ; why there should plus 6???
+  mov dword [cpu + cpu_env.tss + tss.esp0], ecx ; GCC自动对齐了结构体的内存
 
 .non_zero:
   pop gs

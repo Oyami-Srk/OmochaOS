@@ -117,6 +117,11 @@ int main(void){
   cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
+  kprintf("Size of cpu_env: %d\n", sizeof(cpu));
+  kprintf("Size of process: %d\n", sizeof(process));
+  kprintf("Size of stack_frame: %d\n", sizeof(stack_frame));
+
+
   message msg;
 
   cpu.current_running_proc = (volatile uint)&cpu.processes[0];
