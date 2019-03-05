@@ -33,6 +33,7 @@ int __send_msg(process *sender, message *msg){
     sender->p_msg = msg;
     sender->status &= ~PROC_STATUS_NORMAL;
     sender->status |= PROC_STATUS_SENDING;
+    kprintf("{%x:%x}",sender, sender->status);
     SET_PROC_STATUS_PID(sender, msg->receiver);
     process *p = receiver->quene_sending_to_this_process;
     if(p){

@@ -6,6 +6,8 @@
 #define HW_CLOCK 0x01000001
 #define HW_DISP  0x01000002
 
+#define HW_8259A 0x02000001
+
 void kinit_hardware(uint hardware);
 
 #endif

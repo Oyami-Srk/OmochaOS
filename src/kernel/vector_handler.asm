@@ -81,7 +81,7 @@ struc cpu_env
 .idt resb 256 * 8
 .gdt resb 128 * 8
 .pgdir resd 1
-.process resb process_size * 2
+.process resb process_size * 3
 .tss resb tss_size
 endstruc
 
@@ -109,7 +109,8 @@ vector_handler:
   mov esp, kernel_stack + 4096  ; page size
 .non_zero:
   inc dword [cpu + cpu_env.interrupt_count]
-  push ecx
+  push dword ecx
+
   call interrupt_handler
   add esp, 4                    ; C调用规约
 
@@ -128,7 +129,7 @@ vector_handler_ret:
   lldt bx
   mov esp, ecx
   add ecx, process.selector_ldt
-  mov dword [cpu + cpu_env.tss + tss.esp0 + 4], ecx
+  mov dword [cpu + cpu_env.tss + tss.esp0 + 6], ecx ; why there should plus 6???
 
 .non_zero:
   pop gs

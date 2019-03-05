@@ -57,6 +57,7 @@ void TestA(){
   volatile int r = 10010;
   while(1){
     kprintf("A ");
+    kprintf(":%x:", &cpu.processes[0]);
     send_msg(&msg);
     delay_ms(500);
     i++;
@@ -72,6 +73,13 @@ void TestB(){
     kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data);
     delay_ms(500);
     i++;
+  }
+}
+
+void TestC(){
+  while(1){
+    kprintf("C ");
+    delay_ms(500);
   }
 }
 
@@ -95,14 +103,18 @@ int main(void){
   /* kinit_paging(*mem_infos_count, mem_infos, &cpu); */
 
   kernel_stack = kalloc();
+  kprintf("Kern stack addr is 0x%08x\n",kernel_stack);
 
-  kprintf("Kern end addr is 0x%8x\n");
+  kprintf("Kern end addr is 0x%8x\n", KERN_END);
+  kprintf("Addr of esp0 is %x\n", &cpu.tss.esp0);
 
   tasks[0] = (uint)TestA;
   tasks[1] = (uint)TestB;
+  tasks[2] = (uint)TestC;
   load_process_context();
   cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
+  cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
   message msg;

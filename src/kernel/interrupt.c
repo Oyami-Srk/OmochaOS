@@ -86,6 +86,9 @@ void interrupt_handler(stack_frame *intf) {
 }
 
 void kreload_process() {
+  /* for(uint i = 0; i < PROC_COUNT; i++) */
+    /* kprintf("[%x]", cpu.processes[i].status); */
+  /* kprintf(" "); */
   if (cpu.processes[i].status & PROC_STATUS_RUNNING)
     cpu.current_running_proc = (uint)&cpu.processes[i];
   i++;
