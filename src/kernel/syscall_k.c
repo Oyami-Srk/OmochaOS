@@ -88,12 +88,12 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
     sender->status &= ~PROC_STATUS_SENDING;
     sender->status |= PROC_STATUS_NORMAL;
     sender->status |= PROC_STATUS_RUNNING;
-    kprintf(" s:0x%04x ", sender->status);
     kreload_process();
   }else{
     SET_PROC_STATUS_PID(receiver, recv_from);
     receiver->p_msg = msg;
-    receiver->status &= PROC_STATUS_RECEVING;
+    receiver->status &= ~PROC_STATUS_RUNNING;
+    receiver->status |= PROC_STATUS_RECEVING;
     kreload_process();
   }
   return 0;

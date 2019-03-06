@@ -55,7 +55,6 @@ static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
 extern void switch_to(process *p);
-uint i = 0;
 extern cpu_env cpu;
 
 void interrupt_handler(stack_frame *intf) {
@@ -88,14 +87,26 @@ void interrupt_handler(stack_frame *intf) {
   return;
 }
 
+int i = -1;
+#define UNRUNABLE (PROC_STATUS_RECEVING | PROC_STATUS_SENDING)
+
 void kreload_process() {
   if(!cpu.current_running_proc)
     return;
-  if (cpu.processes[i].status & PROC_STATUS_RUNNING)
-    cpu.current_running_proc = (uint)&cpu.processes[i];
-  i++;
-  if (i >= PROC_COUNT)
-    i = 0;
+
+  do {
+    i++;
+    if(i >= PROC_COUNT)
+      i = 0;
+  }while(cpu.processes[i].status & UNRUNABLE);
+  cpu.current_running_proc = (uint)&cpu.processes[i];
+
+
+  /* if (cpu.processes[i].status & PROC_STATUS_RUNNING) */
+  /*   cpu.current_running_proc = (uint)&cpu.processes[i]; */
+  /* i++; */
+  /* if (i >= PROC_COUNT) */
+  /*   i = 0; */
 }
 
 void init_8259A() {

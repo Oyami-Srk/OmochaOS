@@ -17,7 +17,7 @@ void SysTask() {
       break;
     default:
       /* panic("Unknown Msg! baka! % >_< %"); */
-      ;
+      kprintf("!");
     }
   }
 }
