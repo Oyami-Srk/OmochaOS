@@ -10,11 +10,8 @@ int __get_ticks(void){
   return cpu.beats;
 }
 
-int __test_parm(void *v1, int v2, int v3, int v4){
-  return v2+v3+v4;
-}
-
 int __send_msg(process *sender, message *msg){
+  msg->sender = (((uint)sender - (uint)&cpu.processes) / sizeof(process)) + 1;
   process* receiver = &cpu.processes[msg->receiver - 1];
   assert(!(  (sender->status & PROC_STATUS_SENDING) || (sender->status & PROC_STATUS_RECEVING)
 )); // process cannot send or receive msg if it's already in sending or receiving status
@@ -51,6 +48,7 @@ int __send_msg(process *sender, message *msg){
 }
 
 int __recv_msg(process* receiver, message* msg, uint recv_from){
+  msg->receiver = (((uint)receiver - (uint)&cpu.processes) / sizeof(process)) + 1;
   uint has_received = 0;
   process* sender = 0;
   if(recv_from == REFUSE)
@@ -103,7 +101,6 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
 
 void* syscall_table[] = {
                          __get_ticks,
-                         __test_parm,
                          __send_msg,
                          __recv_msg
 };

@@ -47,10 +47,12 @@ void delay_ms(uint ms){
   while((k + t) > get_ticks());
 }
 
+extern void SysTask();
+
 void TestA(){
   int i = 0;
   message msg;
-  msg.receiver = 2;
+  msg.receiver = 3;
   msg.major_data = 2333;
   volatile int r = 10010;
   while(1){
@@ -73,14 +75,6 @@ void TestB(){
     i++;
   }
 }
-
-void TestC(){
-  while(1){
-    kprintf("C ");
-    delay_ms(500);
-  }
-}
-
 
 extern void vector_handler_ret();
 
@@ -107,9 +101,9 @@ int main(void){
   kprintf("Kern end addr is 0x%8x\n", KERN_END);
   kprintf("Addr of esp0 is %x\n", &cpu.tss.esp0);
 
-  tasks[0] = (uint)TestA;
-  tasks[1] = (uint)TestB;
-  tasks[2] = (uint)TestC;
+  tasks[0] = (uint)SysTask;
+  tasks[1] = (uint)TestA;
+  tasks[2] = (uint)TestB;
   load_process_context();
   cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
