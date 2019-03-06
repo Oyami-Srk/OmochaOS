@@ -1,6 +1,9 @@
   ; Vector handler used in vector_table
 
   ; struct used
+
+%define proc_count 3
+
 struc stack_frame
 .gs resd 1
 .fs resd 1
@@ -81,7 +84,7 @@ struc cpu_env
 .idt resb 256 * 8
 .gdt resb 128 * 8
 .pgdir resd 1
-.process resb process_size * 3
+.process resb process_size * proc_count
 .tss resb tss_size
 
 .beats resd 1

@@ -1,4 +1,4 @@
-#include "klib.h"
+#include "kernel/klib.h"
 
 PUBLIC char *itoa(unsigned int value, char *str, int base) {
   char *rc;

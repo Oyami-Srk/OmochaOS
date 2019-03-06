@@ -1,14 +1,12 @@
-#include "config.h"
-#include "kmem.h"
-#include "paging.h"
-#include "memlayout.h"
-#include "protect.h"
-#include "klib.h"
-#include "interrupt.h"
-#include "kmem.h"
-
-#include "syscall.h"
-#include "process.h"
+#include "kernel/config.h"
+#include "kernel/kmem.h"
+#include "kernel/paging.h"
+#include "kernel/memlayout.h"
+#include "kernel/protect.h"
+#include "kernel/klib.h"
+#include "kernel/interrupt.h"
+#include "kernel/kmem.h"
+#include "kernel/process.h"
 
 cpu_env cpu;
 char *task_stack[PROC_COUNT];

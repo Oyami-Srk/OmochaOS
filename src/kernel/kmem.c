@@ -1,6 +1,6 @@
-#include "kmem.h"
-#include "memlayout.h"
-#include "string.h"
+#include "kernel/kmem.h"
+#include "kernel/memlayout.h"
+#include "kernel/string.h"
 
 list *kmem_freelist;
 

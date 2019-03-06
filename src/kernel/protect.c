@@ -1,9 +1,10 @@
-#include "memlayout.h"
-#include "protect.h"
-#include "config.h"
-#include "klib.h"
+#include "kernel/memlayout.h"
+#include "kernel/protect.h"
+#include "kernel/config.h"
+#include "kernel/klib.h"
+#include "kernel/type.h"
 #include "string.h"
-#include "type.h"
+
 
 void kinit_gdt(cpu_env *env){
   // kernel init GDT

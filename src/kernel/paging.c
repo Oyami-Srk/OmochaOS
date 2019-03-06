@@ -1,8 +1,8 @@
-#include "paging.h"
-#include "memlayout.h"
-#include "klib.h"
-#include "kmem.h"
-#include "string.h"
+#include "kernel/paging.h"
+#include "kernel/memlayout.h"
+#include "kernel/klib.h"
+#include "kernel/kmem.h"
+#include "kernel/string.h"
 
 #define ADDR_TO_DIR(va) (((unsigned int)(va) >> 22) & 0x3FF)
 #define ADDR_TO_TBL(va) (((unsigned int)(va) >> 12) & 0x3FF)

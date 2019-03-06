@@ -1,9 +1,12 @@
-#include "interrupt.h"
-#include "asm.h"
-#include "klib.h"
-#include "process.h"
-#include "protect.h"
+#include "kernel/interrupt.h"
+#include "kernel/asm.h"
+#include "kernel/klib.h"
+#include "kernel/process.h"
+#include "kernel/protect.h"
+
 #include "syscall.h"
+extern void* syscall_table[];
+
 
 #define __EXCEPTION_CASE__                                                     \
   case INT_F_DE:                                                               \

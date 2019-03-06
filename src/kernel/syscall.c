@@ -1,8 +1,8 @@
+#include "kernel/klib.h"
+#include "kernel/process.h"
+#include "kernel/interrupt.h"
+#include "kernel/type.h"
 #include "syscall.h"
-#include "klib.h"
-#include "process.h"
-#include "interrupt.h"
-#include "type.h"
 
 extern cpu_env cpu;
 

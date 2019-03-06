@@ -3,6 +3,7 @@
 
 #include "protect.h"
 
+// sync to const.h
 static uint KERN_GDT[][3] = {
                            {0, 0, 0}, // Dummy null desc
                            {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C}, // Code desc

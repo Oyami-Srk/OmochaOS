@@ -1,6 +1,6 @@
-#include "hardware.h"
-#include "asm.h"
-#include "config.h"
+#include "kernel/hardware.h"
+#include "kernel/asm.h"
+#include "kernel/config.h"
 
 // Clock PIT
 void _init_clock(){
