@@ -2,7 +2,7 @@
 
   ; struct used
 
-%define proc_count 3
+%define proc_count 4
 
 struc stack_frame
 .gs resd 1

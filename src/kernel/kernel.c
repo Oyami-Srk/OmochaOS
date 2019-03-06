@@ -8,6 +8,8 @@
 #include "kernel/kmem.h"
 #include "kernel/process.h"
 
+#include "syscall.h"
+
 cpu_env cpu;
 char *task_stack[PROC_COUNT];
 
@@ -38,6 +40,7 @@ void load_process_context(){
     p->stack.eflags = 0x1202;
 
     p->status = 0;
+    p->pid = i;
   }
 }
 
@@ -47,32 +50,31 @@ void delay_ms(uint ms){
   while((k + t) > get_ticks());
 }
 
+extern void SysIdle();
 extern void SysTask();
 
 void TestA(){
   int i = 0;
   message msg;
-  msg.receiver = 3;
-  msg.major_data = 2333;
-  volatile int r = 10010;
+  uint ticks = 0;
+  uint old_ticks = 0;
   while(1){
-    kprintf("A ");
-    kprintf(":%x:", &cpu.processes[0]);
-    send_msg(&msg);
-    delay_ms(500);
-    i++;
+    kprintf("A");
+    ticks = get_ticks_msg();
+    if(1){
+      old_ticks = ticks;
+      kprintf("<Ticks:%d>", ticks);
+    }
   }
 }
 
 void TestB(){
-  int i = 0;
   message msg;
   while(1){
     kprintf("B ");
-    recv_msg(&msg, ANY);
-    kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data);
     delay_ms(500);
-    i++;
+    /* recv_msg(&msg, ANY); */
+    /* kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data); */
   }
 }
 
@@ -101,13 +103,15 @@ int main(void){
   kprintf("Kern end addr is 0x%8x\n", KERN_END);
   kprintf("Addr of esp0 is %x\n", &cpu.tss.esp0);
 
-  tasks[0] = (uint)SysTask;
-  tasks[1] = (uint)TestA;
-  tasks[2] = (uint)TestB;
+  tasks[0] = (uint)SysIdle;
+  tasks[1] = (uint)SysTask;
+  tasks[2] = (uint)TestA;
+  tasks[3] = (uint)TestB;
   load_process_context();
   cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
+  cpu.processes[3].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
   kprintf("Size of cpu_env: %d\n", sizeof(cpu));

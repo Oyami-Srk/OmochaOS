@@ -45,6 +45,7 @@ uint get_ticks_msg() {
   msg.major_data = 0;
   msg.receiver = 1;
   send_msg(&msg);
+  
   recv_msg(&msg, 1);
   if(msg.type == SC_DONE)
     return msg.major_data;

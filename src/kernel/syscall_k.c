@@ -11,8 +11,8 @@ int __get_ticks(void){
 }
 
 int __send_msg(process *sender, message *msg){
-  msg->sender = (((uint)sender - (uint)&cpu.processes) / sizeof(process)) + 1;
-  process* receiver = &cpu.processes[msg->receiver - 1];
+  msg->sender = (((uint)sender - (uint)&cpu.processes) / sizeof(process));
+  process* receiver = &cpu.processes[msg->receiver];
   assert(!(  (sender->status & PROC_STATUS_SENDING) || (sender->status & PROC_STATUS_RECEVING)
 )); // process cannot send or receive msg if it's already in sending or receiving status
   if((receiver->status & PROC_STATUS_RECEVING) &&
@@ -24,6 +24,7 @@ int __send_msg(process *sender, message *msg){
     receiver->status |= PROC_STATUS_NORMAL; // receiver back to normal
     receiver->status |= PROC_STATUS_RUNNING;
     SET_PROC_STATUS_PID(receiver, REFUSE); // refuse any, placeholder
+    kprintf("[%d sent to %d]", sender->pid, receiver->pid);
   }else{
     // receiver process is not ready to receive a msg from sender
     // so we just copy msg to send and halt the sender
@@ -41,6 +42,8 @@ int __send_msg(process *sender, message *msg){
     else
       receiver->quene_sending_to_this_process = sender;
 
+    kprintf("[%d sending to %d]", sender->pid, receiver->pid);
+
     //reschedule
     kreload_process();
   }
@@ -48,7 +51,7 @@ int __send_msg(process *sender, message *msg){
 }
 
 int __recv_msg(process* receiver, message* msg, uint recv_from){
-  msg->receiver = (((uint)receiver - (uint)&cpu.processes) / sizeof(process)) + 1;
+  msg->receiver = (((uint)receiver - (uint)&cpu.processes) / sizeof(process));
   uint has_received = 0;
   process* sender = 0;
   if(recv_from == REFUSE)
@@ -59,7 +62,7 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
       receiver->quene_sending_to_this_process = sender->quene_sending_to_this_process;
     }
   }else{
-    sender = &cpu.processes[recv_from - 1];
+    sender = &cpu.processes[recv_from];
     if((sender->status & PROC_STATUS_SENDING) &&
        (GET_PROC_STATUS_PID(sender) == receiver->pid)){
       // remove sender from
@@ -88,12 +91,14 @@ int __recv_msg(process* receiver, message* msg, uint recv_from){
     sender->status &= ~PROC_STATUS_SENDING;
     sender->status |= PROC_STATUS_NORMAL;
     sender->status |= PROC_STATUS_RUNNING;
+    kprintf("[%d recved from %d]", receiver->pid, sender->pid);
     kreload_process();
   }else{
     SET_PROC_STATUS_PID(receiver, recv_from);
     receiver->p_msg = msg;
     receiver->status &= ~PROC_STATUS_RUNNING;
     receiver->status |= PROC_STATUS_RECEVING;
+    kprintf("[%d recv from %d]", receiver->pid, recv_from);
     kreload_process();
   }
   return 0;
