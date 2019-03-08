@@ -47,7 +47,7 @@ void load_process_context(){
 void delay_ms(uint ms){
   uint k = get_ticks();
   uint t = ms / 10;
-  while((k + t) > get_ticks());
+  while((k + t) > get_ticks_msg());
 }
 
 extern void SysIdle();
@@ -59,9 +59,8 @@ void TestA(){
   uint ticks = 0;
   uint old_ticks = 0;
   while(1){
-    kprintf("A");
     ticks = get_ticks_msg();
-    if(1){
+    if(old_ticks + 50 < ticks){
       old_ticks = ticks;
       kprintf("<Ticks:%d>", ticks);
     }
