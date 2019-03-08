@@ -56,7 +56,12 @@ static inline Gate *MAKE_GATE(Gate *pGate,
 #define IRQ_TIMER (IRQ0 + 0)
 #define IRQ_KBD (IRQ0 + 1)
 
+#define HW_IRQ_TIMER 0
+#define HW_IRQ_KBD 1
+
 void kinit_interrupt(cpu_env *env);
+void enable_irq(uint irq);
+void disable_irq(uint irq);
 void kreload_process();
 
 #endif

@@ -25,5 +25,11 @@ PUBLIC static inline void outw(unsigned short port, unsigned short data) {
   __asm__ __volatile__("out %0, %1" :: "a"(data), "d"(port));
 }
 
+PUBLIC static inline unsigned char inb(unsigned short port) {
+  unsigned char r;
+  __asm__ __volatile__("in %1, %0": "=a"(r) : "d"(port));
+  return r;
+}
+
 
 #endif

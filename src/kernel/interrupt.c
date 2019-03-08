@@ -68,6 +68,10 @@ void interrupt_handler(stack_frame *intf) {
     EOI_M();
     break;
   }
+  case IRQ_KBD: {
+    kprintf("*");
+    break;
+  }
   case SYSCALL_INT: {
     volatile uint ret_val = 0;
     __asm__ __volatile__("push %%edx\n\t"
@@ -93,12 +97,14 @@ int i = -1;
 void kreload_process() {
   if(!cpu.current_running_proc)
     return;
+
   if(0){
-  kprintf("[");
-  for(int i = 0; i < PROC_COUNT; i++)
-    kprintf("%x,", cpu.processes[i].status & 0xFF);
-  kprintf("] ");
+    kprintf("[");
+    for(int i = 0; i < PROC_COUNT; i++)
+      kprintf("%x,", cpu.processes[i].status & 0xFF);
+    kprintf("] ");
   }
+
   do {
     i++;
     if(i >= PROC_COUNT)
@@ -125,7 +131,7 @@ void init_8259A() {
   outb(IO_PIC_M + 1, 0x1);
   outb(IO_PIC_S + 1, 0x1);
 
-  outb(IO_PIC_M + 1, 0xFE);
+  outb(IO_PIC_M + 1, 0xFF);
   outb(IO_PIC_S + 1, 0xFF);
 }
 
@@ -145,4 +151,18 @@ void kinit_interrupt(cpu_env *env) {
   __asm__ __volatile__("lidt (%0)" ::"r"(idt_ptr));
   init_8259A();
   __asm__ __volatile__("sti"); // open interrupt closed in boot
+}
+
+void enable_irq(uint irq){
+  if(irq < 8)
+    outb(IO_PIC_M + 1, inb(IO_PIC_M) & ~(1 << irq));
+  else
+    outb(IO_PIC_S + 1, inb(IO_PIC_S) & ~(1 << irq));
+}
+
+void disable_irq(uint irq){
+  if(irq < 8)
+    outb(IO_PIC_M + 1, inb(IO_PIC_M) | (1 << irq));
+  else
+    outb(IO_PIC_S + 1, inb(IO_PIC_S) | (1 << irq));
 }

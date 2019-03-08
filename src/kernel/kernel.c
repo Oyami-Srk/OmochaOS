@@ -62,7 +62,7 @@ void TestA(){
     ticks = get_ticks_msg();
     if(old_ticks + 50 < ticks){
       old_ticks = ticks;
-      kprintf("<Ticks:%d>", ticks);
+      /* kprintf("<Ticks:%d>", ticks); */
     }
   }
 }
@@ -70,7 +70,7 @@ void TestA(){
 void TestB(){
   message msg;
   while(1){
-    kprintf("B ");
+    /* kprintf("B "); */
     delay_ms(500);
     /* recv_msg(&msg, ANY); */
     /* kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data); */
@@ -102,6 +102,9 @@ int main(void){
   kprintf("Kern end addr is 0x%8x\n", KERN_END);
   kprintf("Addr of esp0 is %x\n", &cpu.tss.esp0);
 
+  enable_irq(HW_IRQ_TIMER);
+  enable_irq(HW_IRQ_KBD);
+
   tasks[0] = (uint)SysIdle;
   tasks[1] = (uint)SysTask;
   tasks[2] = (uint)TestA;
@@ -112,11 +115,6 @@ int main(void){
   cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[3].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
-
-  kprintf("Size of cpu_env: %d\n", sizeof(cpu));
-  kprintf("Size of process: %d\n", sizeof(process));
-  kprintf("Size of stack_frame: %d\n", sizeof(stack_frame));
-
 
   message msg;
 
