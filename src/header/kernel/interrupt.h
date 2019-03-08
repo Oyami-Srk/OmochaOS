@@ -31,27 +31,6 @@ static inline Gate *MAKE_GATE(Gate *pGate,
 #define IO_PIC_M 0x20
 #define IO_PIC_S 0xA0
 
-#define INT_F_DE 0
-#define INT_FT_DB 1
-#define INT_I_UCI 2
-#define INT_T_BP 3
-#define INT_T_OF 4
-#define INT_F_BR 5
-#define INT_F_UD 6
-#define INT_F_NM 7
-#define INT_A_DF 8
-#define INT_F_RESV 9
-#define INT_F_TS 10
-#define INT_F_NP 11
-#define INT_F_SS 12
-#define INT_F_GP 13
-#define INT_F_PF 14
-#define INT_F_RESV2 15
-#define INT_F_MF 16
-#define INT_F_AC 17
-#define INT_A_MC 18
-#define INT_F_XF 19
-
 #define IRQ0 32
 #define IRQ_TIMER (IRQ0 + 0)
 #define IRQ_KBD (IRQ0 + 1)
@@ -59,9 +38,13 @@ static inline Gate *MAKE_GATE(Gate *pGate,
 #define HW_IRQ_TIMER 0
 #define HW_IRQ_KBD 1
 
+#define HW_IRQ_COUNT 16
+
 void kinit_interrupt(cpu_env *env);
 void enable_irq(uint irq);
 void disable_irq(uint irq);
 void kreload_process();
+
+extern ushort interrupt_map[2][HW_IRQ_COUNT];
 
 #endif

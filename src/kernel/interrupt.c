@@ -5,50 +5,32 @@
 #include "kernel/protect.h"
 
 #include "syscall.h"
+
+const char* exception_message[] = {
+                                   "#DE: Divide-by-zero Error",
+                                   "#DB: Debug",
+                                   "#--: Non-maskable Interrupt",
+                                   "#BP: Break Point",
+                                   "#OF: Overflow",
+                                   "#BR: Bound Range Exceeded",
+                                   "#UD: Invalid Opcode",
+                                   "#NM: Device Not Avaliable",
+                                   "#DF: Double Fault",
+                                   "#RESV: Reserved",
+                                   "#TS: Invalid TSS",
+                                   "#NP: Segment Not Present",
+                                   "#SS: Stack-Segment Fault",
+                                   "#GP: General Protection Fault",
+                                   "#PF: Page Fault",
+                                   "#RESV: Reserved2",
+                                   "#MF: x87 Floating-Point Exception",
+                                   "#AC: Alignment Check",
+                                   "#MC: Machine Check",
+                                   "#XF: SIMD Floating-Point Exception"
+
+};
+
 extern void* syscall_table[];
-
-
-#define __EXCEPTION_CASE__                                                     \
-  case INT_F_DE:                                                               \
-    panic("#DE");                                                              \
-  case INT_FT_DB:                                                              \
-    panic("#DB");                                                              \
-  case INT_I_UCI:                                                              \
-    panic("Undisabled Interrupt");                                             \
-  case INT_T_BP:                                                               \
-    panic("#BP");                                                              \
-  case INT_T_OF:                                                               \
-    panic("#OF");                                                              \
-  case INT_F_BR:                                                               \
-    panic("#BR");                                                              \
-  case INT_F_UD:                                                               \
-    panic("#UD");                                                              \
-  case INT_F_NM:                                                               \
-    panic("#NM");                                                              \
-  case INT_A_DF:                                                               \
-    panic("#DF");                                                              \
-  case INT_F_RESV:                                                             \
-    panic("Resv-9");                                                           \
-  case INT_F_TS:                                                               \
-    panic("#TS");                                                              \
-  case INT_F_NP:                                                               \
-    panic("#NP");                                                              \
-  case INT_F_SS:                                                               \
-    panic("#SS");                                                              \
-  case INT_F_GP:                                                               \
-    panic("#GP");                                                              \
-  case INT_F_PF:                                                               \
-    panic("#PF");                                                              \
-  case INT_F_RESV2:                                                            \
-    panic("Resv-15");                                                          \
-  case INT_F_MF:                                                               \
-    panic("#MF");                                                              \
-  case INT_F_AC:                                                               \
-    panic("#AC");                                                              \
-  case INT_A_MC:                                                               \
-    panic("#MC");                                                              \
-  case INT_F_XF:                                                               \
-    panic("#XF");
 
 static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 
@@ -56,10 +38,22 @@ static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
 extern void switch_to(process *p);
 extern cpu_env cpu;
+ushort interrupt_map[2][HW_IRQ_COUNT];
 
 void interrupt_handler(stack_frame *intf) {
+  if(intf->trapno <= 19) {
+    cli();
+    extern volatile char* pDisp;
+    pDisp = (volatile char *)0xB8000;
+    for(uint i = 0; i < 80; i++)
+      write_string(0x1C, " ");
+    pDisp = (volatile char *)0xB8000;
+    ckprintf(0x1C, "Exception %s in proc %d", exception_message[intf->trapno],
+             ((uint)intf - (uint)cpu.processes) / sizeof(process));
+    while(1);
+    return;
+  }
   switch (intf->trapno) {
-    __EXCEPTION_CASE__
   case IRQ_TIMER: {
     cpu.beats++;
     volatile char *ch = (volatile char *)(0xB8000);
@@ -69,7 +63,9 @@ void interrupt_handler(stack_frame *intf) {
     break;
   }
   case IRQ_KBD: {
-    kprintf("*");
+    uchar data = inb(0x60);
+    kprintf("0x%02x ", data);
+    EOI_M();
     break;
   }
   case SYSCALL_INT: {

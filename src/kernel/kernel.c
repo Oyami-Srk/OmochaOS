@@ -116,6 +116,7 @@ int main(void){
   cpu.processes[3].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
+
   message msg;
 
   cpu.current_running_proc = (volatile uint)&cpu.processes[0];

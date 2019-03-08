@@ -31,5 +31,12 @@ PUBLIC static inline unsigned char inb(unsigned short port) {
   return r;
 }
 
+PUBLIC static inline void sti() {
+  __asm__ __volatile__("sti");
+}
+
+PUBLIC static inline void cli() {
+  __asm__ __volatile__("cli");
+}
 
 #endif

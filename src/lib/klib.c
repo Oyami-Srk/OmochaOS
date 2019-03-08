@@ -78,6 +78,9 @@ PUBLIC void panic_proto(const char *str, const char *s_fn, const char *b_fn,
                         const int ln) {
   __asm__ __volatile__("cli"); // close interrupt
   pDisp = (volatile char *)0xB8000;
+  for(uint i = 0; i < 80; i++)
+    write_string(0x1C, " ");
+  pDisp = (volatile char *)0xB8000;
   ckprintf(0x1C, "!PANIC! %s :: File -> %s, BaseFile -> %s, Line -> %d", str,
            s_fn, b_fn, ln);
   while (1)
