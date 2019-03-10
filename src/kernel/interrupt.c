@@ -40,15 +40,34 @@ extern void switch_to(process *p);
 extern cpu_env cpu;
 ushort interrupt_map[HW_IRQ_COUNT];
 
-void send_int_to_proc(uint pid){
+uint send_int_to_proc(uint pid, uint irq){ // timer is 0, return 1 means no proc is assinged
+  if(interrupt_map[irq] == 0)
+    return 1;
   process *p = &cpu.processes[pid];
   if(p->status & PROC_STATUS_RECEVING){
+    if(GET_PROC_STATUS_PID(p) == 0 || GET_PROC_STATUS_PID(p) == INTERRUPT){
+      p->p_msg->sender = INTERRUPT;
+      p->p_msg->type = INTERRUPT;
+      p->p_msg->major_data = INTERRUPT - 1;
+      p->status &= ~PROC_STATUS_RECEVING;
+    }else{
+      ; // 虽然正在接受消息但是不是接受任意或者中断消息
+    }
     ; // 正在接受，所以这里要填充消息
+    return 0;
   }else if(p->status & PROC_STATUS_SENDING){
     ; // 这里不需要任何，标记一下就行
+    goto mark;
   }else {
     ; // 没在接受，直接标记
+    goto mark;
   }
+ mark:
+  disable_irq(irq);
+  assert(interrupt_map[irq] < PROC_COUNT);
+  cpu.processes[interrupt_map[irq]].status |= PROC_STATUS_GOTINT;
+  kprintf("!%d!", interrupt_map[irq]);
+  return 0;
 }
 
 void interrupt_handler(stack_frame *intf) {
