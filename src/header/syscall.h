@@ -7,6 +7,7 @@
 
 #define SC_GET_TICKS 0x01
 #define SC_SET_IRQ_FUNC 0x02 // set irq handle func
+#define SC_RELEASE_IRQ_FUNC 0x03
 
 #define SC_DONE 0x0FF00FF0
 

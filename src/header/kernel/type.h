@@ -135,7 +135,8 @@ struct __process{
   char name[PROCESS_NAME_SIZE];
 
   message* p_msg;
-  struct __process* quene_sending_to_this_process;
+  struct __process* quene_head_sending_to_this_process;
+  struct __process* quene_body;
 }__attribute__((packed));
 
 typedef struct __process process;

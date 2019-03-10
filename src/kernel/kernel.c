@@ -40,6 +40,9 @@ void load_process_context(){
     p->stack.eflags = 0x1202;
 
     p->status = 0;
+    p->quene_head_sending_to_this_process = 0;
+    p->quene_body = 0;
+    p->p_msg = 0;
     p->pid = i;
   }
 }
@@ -52,6 +55,7 @@ void delay_ms(uint ms){
 
 extern void SysIdle();
 extern void SysTask();
+extern void Task_KBD();
 
 void TestA(){
   int i = 0;
@@ -109,11 +113,13 @@ int main(void){
   tasks[1] = (uint)SysTask;
   tasks[2] = (uint)TestA;
   tasks[3] = (uint)TestB;
+  tasks[4] = (uint)Task_KBD;
   load_process_context();
   cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   cpu.processes[3].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
+  cpu.processes[4].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
 

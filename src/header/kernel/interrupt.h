@@ -45,6 +45,6 @@ void enable_irq(uint irq);
 void disable_irq(uint irq);
 void kreload_process();
 
-extern ushort interrupt_map[2][HW_IRQ_COUNT];
+extern ushort interrupt_map[HW_IRQ_COUNT];
 
 #endif

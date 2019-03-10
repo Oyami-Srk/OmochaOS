@@ -2,7 +2,7 @@
 
   ; struct used
 
-%define proc_count 4
+%define proc_count 5
 
 struc stack_frame
 .gs resd 1
@@ -73,7 +73,8 @@ struc process
 .name resb 16
 ; .message resb message_size
 .message resd 1
-.quene_sending_to_this_process resd 1
+.quene_head_sending_to_this_process resd 1
+.quene_body resd 1
 endstruc
 
 struc cpu_env

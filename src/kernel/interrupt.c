@@ -38,7 +38,7 @@ static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
 extern void switch_to(process *p);
 extern cpu_env cpu;
-ushort interrupt_map[2][HW_IRQ_COUNT];
+ushort interrupt_map[HW_IRQ_COUNT];
 
 void interrupt_handler(stack_frame *intf) {
   if(intf->trapno <= 19) {
@@ -63,8 +63,14 @@ void interrupt_handler(stack_frame *intf) {
     break;
   }
   case IRQ_KBD: {
-    uchar data = inb(0x60);
-    kprintf("0x%02x ", data);
+    if(interrupt_map[IRQ_KBD - IRQ0]){
+      disable_irq(IRQ_KBD - IRQ0);
+      assert(interrupt_map[IRQ_KBD - IRQ0] < PROC_COUNT);
+      cpu.processes[interrupt_map[IRQ_KBD - IRQ0]].status |= PROC_STATUS_GOTINT;
+    }else{
+      uchar data = inb(0x60);
+      kprintf("0x%02x ", data);
+    }
     EOI_M();
     break;
   }
@@ -94,12 +100,12 @@ void kreload_process() {
   if(!cpu.current_running_proc)
     return;
 
-  if(0){
-    kprintf("[");
-    for(int i = 0; i < PROC_COUNT; i++)
-      kprintf("%x,", cpu.processes[i].status & 0xFF);
-    kprintf("] ");
-  }
+  /* if(0){ */
+  /*   kprintf("["); */
+  /*   for(int i = 0; i < PROC_COUNT; i++) */
+  /*     kprintf("%x,", cpu.processes[i].status & 0xFF); */
+  /*   kprintf("] "); */
+  /* } */
 
   do {
     i++;

@@ -4,7 +4,7 @@
 #define GDT_COUNT 128
 #define IDT_COUNT 256
 
-#define PROC_COUNT 4
+#define PROC_COUNT 5
 
 #define GDT_CODE_INDEX 1
 #define GDT_DATA_INDEX 2
