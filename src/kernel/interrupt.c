@@ -40,6 +40,17 @@ extern void switch_to(process *p);
 extern cpu_env cpu;
 ushort interrupt_map[HW_IRQ_COUNT];
 
+void send_int_to_proc(uint pid){
+  process *p = &cpu.processes[pid];
+  if(p->status & PROC_STATUS_RECEVING){
+    ; // 正在接受，所以这里要填充消息
+  }else if(p->status & PROC_STATUS_SENDING){
+    ; // 这里不需要任何，标记一下就行
+  }else {
+    ; // 没在接受，直接标记
+  }
+}
+
 void interrupt_handler(stack_frame *intf) {
   if(intf->trapno <= 19) {
     cli();
@@ -67,6 +78,7 @@ void interrupt_handler(stack_frame *intf) {
       disable_irq(IRQ_KBD - IRQ0);
       assert(interrupt_map[IRQ_KBD - IRQ0] < PROC_COUNT);
       cpu.processes[interrupt_map[IRQ_KBD - IRQ0]].status |= PROC_STATUS_GOTINT;
+      kprintf("!%d!", interrupt_map[IRQ_KBD - IRQ0]);
     }else{
       uchar data = inb(0x60);
       kprintf("0x%02x ", data);

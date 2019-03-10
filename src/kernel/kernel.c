@@ -63,7 +63,7 @@ void TestA(){
   uint ticks = 0;
   uint old_ticks = 0;
   while(1){
-    ticks = get_ticks_msg();
+    /* ticks = get_ticks_msg(); */
     if(old_ticks + 50 < ticks){
       old_ticks = ticks;
       /* kprintf("<Ticks:%d>", ticks); */
@@ -75,7 +75,7 @@ void TestB(){
   message msg;
   while(1){
     /* kprintf("B "); */
-    delay_ms(500);
+    /* delay_ms(500); */
     /* recv_msg(&msg, ANY); */
     /* kprintf("msg from %d, data is %d\n", msg.sender, msg.major_data); */
   }

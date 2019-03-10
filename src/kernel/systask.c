@@ -86,12 +86,13 @@ void Task_KBD(){
     switch(msg.type){
     case INTERRUPT:
       kprintf("0x%02x ", inb(0x60));
+      enable_irq(IRQ_KBD - IRQ0);
     }
 
     ticks = get_ticks_msg();
     if(old_ticks + 50 < ticks){
       old_ticks = ticks;
-      kprintf("<Ticks:%d>", ticks);
+      kprintf("<-Ticks:%d>", ticks);
     }
 
   }

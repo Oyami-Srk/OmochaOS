@@ -59,7 +59,9 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
   process *sender = 0;
   if (recv_from == REFUSE)
     panic("Recv with refuse");
+  kprintf(".");
   if (receiver->status & PROC_STATUS_GOTINT && (recv_from == INTERRUPT || recv_from == ANY)){
+    kprintf("?");
     msg->type = INTERRUPT;
     msg->major_data = INTERRUPT - 1;
     msg->sender = INTERRUPT;
@@ -96,6 +98,7 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
         }
         if(p != sender)
           panic("Sender not in sending list!");
+        prev_p->quene_body = sender->quene_body;
         sender->quene_body = 0;
       }
     } else {
