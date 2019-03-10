@@ -40,10 +40,12 @@ extern void switch_to(process *p);
 extern cpu_env cpu;
 ushort interrupt_map[HW_IRQ_COUNT];
 
-uint send_int_to_proc(uint pid, uint irq){ // timer is 0, return 1 means no proc is assinged
+uint send_int_to_proc(uint irq){ // timer is 0, return 1 means no proc is assinged
   if(interrupt_map[irq] == 0)
     return 1;
-  process *p = &cpu.processes[pid];
+  assert(interrupt_map[irq] < PROC_COUNT);
+  disable_irq(irq);
+  process *p = &cpu.processes[interrupt_map[irq]];
   if(p->status & PROC_STATUS_RECEVING){
     if(GET_PROC_STATUS_PID(p) == 0 || GET_PROC_STATUS_PID(p) == INTERRUPT){
       p->p_msg->sender = INTERRUPT;
@@ -63,10 +65,8 @@ uint send_int_to_proc(uint pid, uint irq){ // timer is 0, return 1 means no proc
     goto mark;
   }
  mark:
-  disable_irq(irq);
-  assert(interrupt_map[irq] < PROC_COUNT);
   cpu.processes[interrupt_map[irq]].status |= PROC_STATUS_GOTINT;
-  kprintf("!%d!", interrupt_map[irq]);
+  /* kprintf("!%d!", interrupt_map[irq]); */
   return 0;
 }
 
@@ -93,14 +93,9 @@ void interrupt_handler(stack_frame *intf) {
     break;
   }
   case IRQ_KBD: {
-    if(interrupt_map[IRQ_KBD - IRQ0]){
-      disable_irq(IRQ_KBD - IRQ0);
-      assert(interrupt_map[IRQ_KBD - IRQ0] < PROC_COUNT);
-      cpu.processes[interrupt_map[IRQ_KBD - IRQ0]].status |= PROC_STATUS_GOTINT;
-      kprintf("!%d!", interrupt_map[IRQ_KBD - IRQ0]);
-    }else{
+    if(send_int_to_proc(IRQ_KBD - IRQ0) == 1){
       uchar data = inb(0x60);
-      kprintf("0x%02x ", data);
+      /* kprintf("0x%02x ", data); */
     }
     EOI_M();
     break;
