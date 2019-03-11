@@ -16,6 +16,8 @@ uint get_ticks();
 uint send_msg(message *msg);
 uint recv_msg(message *msg, uint recv_from);
 
+#define SYSTASK_PID 1
+
 // fake syscall
 uint get_ticks_msg();
 

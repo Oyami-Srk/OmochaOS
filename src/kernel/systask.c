@@ -65,28 +65,3 @@ void SysTask() {
   }
 }
 
-extern void delay_ms(uint);
-
-void Task_KBD(){
-  int i = 0;
-  message msg;
-  msg.receiver = 1;
-  msg.major_data = IRQ_KBD - IRQ0;
-  msg.type = SC_SET_IRQ_FUNC;
-  send_msg(&msg);
-  recv_msg(&msg, 1);
-
-  uint ticks = 0;
-  uint old_ticks = 0;
-
-  if(msg.type == SC_DONE)
-    kprintf("Got assigned for KBD interrupt!\n");
-  while(1){
-    recv_msg(&msg, ANY);
-    switch(msg.type){
-    case INTERRUPT:
-      kprintf("0x%02x ", inb(0x60));
-      enable_irq(IRQ_KBD - IRQ0);
-    }
-  }
-}
