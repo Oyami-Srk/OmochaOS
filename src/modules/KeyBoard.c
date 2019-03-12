@@ -1,3 +1,10 @@
+/*
+module:
+  name: Keyboard
+  author: Shiroko
+  summary: Module for handling keyboard interrupt
+  module_task: Task_KBD
+*/
 #include "modules/modules.h"
 
 extern int kprintf(const char *fmt, ...);

@@ -28,6 +28,7 @@ clean:
 	rm -rf $(MODULES_BUILD)/*.d $(MODULES_BUILD)/*.d.*
 	rm -rf $(MODULES_BUILD)/*.lds
 
-pre:
+pre parse_modules.py:
 	mkdir -p $(MODULES_BUILD)
+	$(PY) parse_modules.py -m . -a $(HEADER)/modules/modules.h
 
