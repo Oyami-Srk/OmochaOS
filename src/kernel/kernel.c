@@ -9,6 +9,7 @@
 #include "kernel/process.h"
 
 #include "syscall.h"
+#include "modules/modules.h"
 
 cpu_env cpu;
 char *task_stack[PROC_COUNT];
@@ -55,7 +56,6 @@ void delay_ms(uint ms){
 
 extern void SysIdle();
 extern void SysTask();
-extern void Task_KBD();
 
 void TestA(){
   int i = 0;
@@ -115,11 +115,8 @@ int main(void){
   tasks[3] = (uint)TestB;
   tasks[4] = (uint)Task_KBD;
   load_process_context();
-  cpu.processes[0].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
-  cpu.processes[1].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
-  cpu.processes[2].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
-  cpu.processes[3].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
-  cpu.processes[4].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
+  for(uint i = 0; i < PROC_COUNT; i++)
+    cpu.processes[i].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
   kprintf("\nReady to jump ring 3...\n");
 
 
