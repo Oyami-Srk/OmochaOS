@@ -114,6 +114,7 @@ int main(void){
   tasks[2] = (uint)TestA;
   tasks[3] = (uint)TestB;
   tasks[4] = (uint)Task_KBD;
+  tasks[5] = (uint)Task_TTY;
   load_process_context();
   for(uint i = 0; i < PROC_COUNT; i++)
     cpu.processes[i].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
