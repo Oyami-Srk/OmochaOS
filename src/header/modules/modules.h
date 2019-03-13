@@ -6,12 +6,22 @@
 #include "kernel/asm.h"
 #include "syscall.h"
 
-static inline uint register_to(uint irq){
+#define INT_HANDLE_METHOD_DIRECT 0x0
+#define INT_HANDLE_METHOD_CIRCULAR_BUFFER 0x1
+#define INT_HANDLE_METHOD_FUNC 0x2
+#define INT_HANDLE_METHOD_DISPATCH 0x3
+
+extern int kprintf(const char *fmt, ...);
+
+static inline uint register_to(uint irq, ushort method, uint data){
   message msg;
   msg.receiver = SYSTASK_PID;
   msg.type = SC_SET_IRQ_FUNC;
   msg.major_data = irq;
+  msg.data.m1.d1 = data;
+  msg.data.m1.d2 = method;
   send_msg(&msg);
+  memset(&msg, 0, sizeof(message));
   recv_msg(&msg, SYSTASK_PID);
   if(msg.type == SC_DONE)
     return 0;

@@ -102,10 +102,3 @@
 #define PAD_INS		PAD_0			/* Ins		*/
 #define PAD_MID		PAD_5			/* Middle key	*/
 #define PAD_DEL		PAD_DOT			/* Del		*/
-
-struct KBD_Buffer {
-  unsigned char *head;
-  unsigned char *tail;
-  unsigned int count;
-  unsigned char buf[KBD_BUFFER_SIZE];
-};

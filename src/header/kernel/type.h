@@ -6,6 +6,7 @@
 typedef unsigned int uint;
 typedef unsigned char uchar;
 typedef unsigned short ushort;
+typedef unsigned char uchar;
 
 typedef unsigned int pte; // for hint
 typedef unsigned int pde;
@@ -158,5 +159,35 @@ typedef struct {
 
 
 typedef char* va_list;
+
+typedef struct {
+  uchar *head;
+  uchar *tail;
+  uint count;
+  uchar buf[CIRCULAR_BUFFER_SIZE];
+}Circular_BufferB;
+
+static inline uchar read_circular_buffer_b(Circular_BufferB *b) {
+  uchar data;
+  while(b->count <= 0){
+    asm ("nop");
+  }
+  data = *(b->tail);
+  b->tail++;
+  if(b->tail == b->buf + CIRCULAR_BUFFER_SIZE)
+    b->tail = b->buf;
+  b->count--;
+  return data;
+}
+
+static inline void write_circular_buffer_b(Circular_BufferB *b, uchar data){
+  if(b->count >= CIRCULAR_BUFFER_SIZE)
+    read_circular_buffer_b(b); // 抛弃
+  *(b->head) = data;
+  b->head++;
+  if(b->head == b->buf + CIRCULAR_BUFFER_SIZE)
+    b->head = b->buf;
+  b->count++;
+}
 
 #endif

@@ -70,8 +70,6 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
     if (receiver->quene_head_sending_to_this_process) {
       sender = receiver->quene_head_sending_to_this_process;
       receiver->quene_head_sending_to_this_process = sender->quene_body;
-      if(receiver == &cpu.processes[4])
-        kprintf("%d", ((uint)sender - (uint)&cpu.processes) / sizeof(process));
     }
   } else {
     sender = &cpu.processes[recv_from];

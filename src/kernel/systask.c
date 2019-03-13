@@ -35,27 +35,38 @@ void SysTask() {
         panic("Cannot assign clock interrupt to tasks");
       if (msg.major_data >= HW_IRQ_COUNT)
         panic("No more interrupt!");
-      if (interrupt_map[msg.major_data] != 0)
+      if (interrupt_methods[msg.major_data].avail != 0)
         panic("Someone has already been assigned to this interrupt!");
       for (irq_num = 0; irq_num < HW_IRQ_COUNT; irq_num++)
-        if (interrupt_map[irq_num] == msg.sender)
+        if (interrupt_methods[irq_num].pid == msg.sender)
           panic("This process has already been assigned to an interrupt!");
       /* kprintf("Assigned %d int to %d proc", msg.major_data, msg.sender); */
-      interrupt_map[msg.major_data] = msg.sender;
+
+      // assign
+      interrupt_methods[msg.major_data].avail = 1;
+      interrupt_methods[msg.major_data].pid = msg.sender;
+      interrupt_methods[msg.major_data].data = msg.data.m1.d1;
+      interrupt_methods[msg.major_data].method = msg.data.m1.d2;
+
       msg.receiver = msg.sender;
       msg.type = SC_DONE;
       msg.major_data = 0;
+
       send_msg(&msg);
       break;
     case SC_RELEASE_IRQ_FUNC:
       if (msg.major_data >= HW_IRQ_COUNT)
         panic("No more interrupt!");
       for (irq_num = 0; irq_num < HW_IRQ_COUNT; irq_num++)
-        if (interrupt_map[irq_num] == msg.sender)
+        if (interrupt_methods[irq_num].pid == msg.sender)
           break;
-      if (interrupt_map[irq_num] != msg.sender)
+      if (interrupt_methods[irq_num].pid != msg.sender)
         panic("No one has been assigned to this interrupt yet!");
-      interrupt_map[irq_num] = 0;
+      interrupt_methods[irq_num].avail = 0;
+      interrupt_methods[irq_num].pid = 0;
+      interrupt_methods[irq_num].data = 0;
+      interrupt_methods[irq_num].method = 0;
+
       break;
 
     default:

@@ -45,6 +45,13 @@ void enable_irq(uint irq);
 void disable_irq(uint irq);
 void kreload_process();
 
-extern ushort interrupt_map[HW_IRQ_COUNT];
+struct interrupt_method {
+  uint pid;
+  uint data;
+  ushort method;
+  ushort avail;
+}__attribute__((packed));
+
+extern struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
 
 #endif

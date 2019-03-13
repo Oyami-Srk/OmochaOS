@@ -10,25 +10,27 @@ import time
 import re
 import yaml
 
-template:str = """// {info}
+template: str = """// {info}
 extern void {fn}();"""
+
 
 def parse_c_file(fn: str) -> bool:
     yaml_str = ""
     with open(fn, "r") as f:
         s = f.read()
-        regx = re.compile(r'/\*([\w\W]*)\*/');
-        for i in regx.findall(s):
-            yaml_str += i
+        regx = re.compile(r'/\*([\w\W]*?)\*/')
+        yaml_str = regx.findall(s)[0]
     return yaml.load(yaml_str)
+
 
 def generate_from_yaml(obj: dict) -> str:
     if("module" not in obj.keys()):
         return ""
-    info:dict = obj["module"]
+    info: dict = obj["module"]
     return template.format(info=info["summary"], fn=info["module_task"])
 
-def iter_c_files_in_dir(dir:str):
+
+def iter_c_files_in_dir(dir: str):
     import os
     files = os.listdir(dir)
     c = ""
@@ -42,11 +44,16 @@ def iter_c_files_in_dir(dir:str):
                     pass
     return c
 
-def insert_to_header_file(fn:str, content:str):
+
+def insert_to_header_file(fn: str, content: str):
     l = []
     meet_1 = False
     meet_2 = False
     wrote = False
+
+    print("\n\nContent inserted is :\n\n")
+    print(content)
+    print("\n\n")
 
     with open(fn, "r") as f:
         l = f.readlines()
@@ -63,13 +70,13 @@ def insert_to_header_file(fn:str, content:str):
                 meet_2 = True
 
 
-
-
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Automate generate function proto from .c files's head")
-    parser.add_argument('-m', '--modules', dest="MODS", help="dir contains .c files")
-    parser.add_argument('-a', '--header', dest="HEADER", help="Header to insert")
+    parser = argparse.ArgumentParser(
+        description="Automate generate function proto from .c files's head")
+    parser.add_argument('-m', '--modules', dest="MODS",
+                        help="dir contains .c files")
+    parser.add_argument('-a', '--header', dest="HEADER",
+                        help="Header to insert")
     args = parser.parse_args()
     insert_to_header_file(args.HEADER, iter_c_files_in_dir(args.MODS))
-

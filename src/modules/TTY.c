@@ -8,19 +8,13 @@ module:
 #include "modules/modules.h"
 
 extern int kprintf(const char *fmt, ...);
+extern Circular_BufferB kbd_buffer;
+extern void delay_ms(uint);
 
 void Task_TTY() {
   message msg;
   while(1){
-    msg.receiver = 4;
-    msg.major_data = 0;
-    msg.type = 1;
-    kprintf(".");
-    send_msg(&msg);
-    recv_msg(&msg, 4);
-    if(msg.major_data & 0x0100){
-      kprintf("[%c]", msg.major_data);
-    }
+    /* kprintf("%x,", read_circular_buffer_b(&kbd_buffer)); */
   }
 }
 

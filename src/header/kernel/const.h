@@ -23,4 +23,6 @@
 #define LDT_SIZE 2
 #define PROCESS_NAME_SIZE 16
 
+#define CIRCULAR_BUFFER_SIZE 32
+
 #endif

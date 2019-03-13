@@ -9,9 +9,9 @@ module:
 #include "KeyMap.h"
 #include "modules/modules.h"
 
-extern int kprintf(const char *fmt, ...);
 
-struct KBD_Buffer buffer;
+Circular_BufferB kbd_buffer;
+
 uint shift_l, shift_r, alt_l, alt_r, ctrl_l, ctrl_r, caps_lock, num_lock,
     scr_lock;
 uint E0, col;
@@ -42,43 +42,31 @@ void set_leds() {
   kbd_ack();
 }
 
-unsigned char read_buffer() {
-  unsigned char code;
-  while (buffer.count <= 0)
-    ;
-  code = *(buffer.tail);
-  buffer.tail++;
-  if (buffer.tail == buffer.buf + KBD_BUFFER_SIZE)
-    buffer.tail = buffer.buf;
-  buffer.count--;
-  return code;
-}
-
 uint kbd_read() {
   unsigned char code;
   int make;
   uint key = 0;
   uint *keyrow = 0;
-  if (buffer.count > 0) {
+  if (kbd_buffer.count > 0) {
     E0 = 0;
-    code = read_buffer();
+    code = read_circular_buffer_b(&kbd_buffer);
     if (code == 0xE1) {
       unsigned char pausebrk_scode[] = {0xE1, 0x1D, 0x45, 0xE1, 0x9D, 0xC5};
       int is_pausebreak = 1;
       for (uint i = 0; i < 6; i++)
-        if (read_buffer() != pausebrk_scode[i]) {
+        if (read_circular_buffer_b(&kbd_buffer) != pausebrk_scode[i]) {
           is_pausebreak = 0;
           break;
         }
       if (is_pausebreak)
         key = PAUSEBREAK;
     } else if (code == 0xE0) {
-      code = read_buffer();
+      code = read_circular_buffer_b(&kbd_buffer);
 
       // PrintScreen
       if (code == 0x2A) {
-        if (read_buffer() == 0xE0)
-          if (read_buffer() == 0x37) {
+        if (read_circular_buffer_b(&kbd_buffer) == 0xE0)
+          if (read_circular_buffer_b(&kbd_buffer) == 0x37) {
             key = PRINTSCREEN;
             make = 1;
           }
@@ -86,8 +74,8 @@ uint kbd_read() {
 
       // PrintScreen - Release
       if (code == 0xB7)
-        if (read_buffer() == 0xE0)
-          if (read_buffer() == 0xAA) {
+        if (read_circular_buffer_b(&kbd_buffer) == 0xE0)
+          if (read_circular_buffer_b(&kbd_buffer) == 0xAA) {
             key = PRINTSCREEN;
             make = 0;
           }
@@ -168,35 +156,32 @@ uint kbd_read() {
 
   void Task_KBD() {
     message msg;
-    buffer.head = buffer.tail = buffer.buf;
-    buffer.count = 0;
+    kbd_buffer.tail = kbd_buffer.head = kbd_buffer.buf;
+    kbd_buffer.count = 0;
     shift_l = shift_r = alt_l = alt_r = ctrl_l = ctrl_r = caps_lock = num_lock =
         scr_lock = 0;
     num_lock = 1;
-    if (register_to(KBD_IRQ) == 0)
+    if (register_to(KBD_IRQ, INT_HANDLE_METHOD_CIRCULAR_BUFFER, (uint)&kbd_buffer) == 0)
       kprintf("Got assigned for KBD interrupt!\n");
+    else
+      kprintf("Cannot get assigned for KBD interrupt!\n");
     // set leds
     set_leds();
+
+    uint key = 0;
     while (1) {
-      recv_msg(&msg, ANY);
-      switch (msg.type) {
-      case INTERRUPT:
-        if (buffer.count < 32) {
-          *(buffer.head) = inb(0x60);
-          buffer.head++;
-          if (buffer.head == buffer.buf + KBD_BUFFER_SIZE)
-            buffer.head = buffer.buf;
-          buffer.count++;
+      if(!((key = kbd_read()) & 0x0100))
+        kprintf("%c", key);
+      else{
+        int raw = key & MASK_RAW;
+        switch(raw){
+        case ENTER:
+          kprintf("\n");
+          break;
+        case BACKSPACE:
+          kprintf("\b");
+          break;
         }
-        enable_irq(KBD_IRQ);
-        break;
-      case 1: // get key
-        kprintf("as");
-        msg.type = SC_DONE;
-        msg.receiver = msg.sender;
-        msg.major_data = kbd_read();
-        send_msg(&msg);
-        break;
       }
     }
   }
