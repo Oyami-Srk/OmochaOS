@@ -9,16 +9,16 @@
 #include "kernel/process.h"
 
 #include "syscall.h"
+
 #include "modules/modules.h"
 
 cpu_env cpu;
-char *task_stack[PROC_COUNT];
 
-void TestA();
-void TestB();
-
-uint tasks[PROC_COUNT];
+uint tasks[PROC_COUNT + __MODULES_COUNT__];
 char *kernel_stack;
+
+uint proc_count = 4 + __MODULES_COUNT__;
+uint modules_tasks[] = __MODULES_DEFINES__;
 
 void load_process_context(){
   kprintf("Initialize proc table");
@@ -113,11 +113,13 @@ int main(void){
   tasks[1] = (uint)SysTask;
   tasks[2] = (uint)TestA;
   tasks[3] = (uint)TestB;
-  tasks[4] = (uint)Task_KBD;
-  tasks[5] = (uint)Task_TTY;
+  for(uint i = 4; i < proc_count; i++)
+    tasks[i] = modules_tasks[i - 4];
   load_process_context();
-  for(uint i = 0; i < PROC_COUNT; i++)
+  for(uint i = 0; i < proc_count; i++)
     cpu.processes[i].status = PROC_STATUS_NORMAL | PROC_STATUS_RUNNING;
+
+  kprintf("Loaded totally %d processes.\n", proc_count);
   kprintf("\nReady to jump ring 3...\n");
 
 

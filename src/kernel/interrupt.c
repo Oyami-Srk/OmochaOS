@@ -132,6 +132,7 @@ void interrupt_handler(stack_frame *intf) {
   return;
 }
 
+extern uint proc_count;
 int i = -1;
 #define UNRUNABLE (PROC_STATUS_RECEVING | PROC_STATUS_SENDING)
 
@@ -148,7 +149,7 @@ void kreload_process() {
 
   do {
     i++;
-    if (i >= PROC_COUNT)
+    if (i >= proc_count)
       i = 0;
   } while ((cpu.processes[i].status & 0xFF) & UNRUNABLE);
   cpu.current_running_proc = (uint)&cpu.processes[i];

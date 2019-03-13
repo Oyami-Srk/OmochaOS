@@ -14,6 +14,8 @@ template: str = """// {info}
 extern void {fn}();"""
 
 
+modules = []
+
 def parse_c_file(fn: str) -> bool:
     yaml_str = ""
     with open(fn, "r") as f:
@@ -27,6 +29,7 @@ def generate_from_yaml(obj: dict) -> str:
     if("module" not in obj.keys()):
         return ""
     info: dict = obj["module"]
+    modules.append(info["module_task"])
     return template.format(info=info["summary"], fn=info["module_task"])
 
 
@@ -79,4 +82,7 @@ if __name__ == "__main__":
     parser.add_argument('-a', '--header', dest="HEADER",
                         help="Header to insert")
     args = parser.parse_args()
-    insert_to_header_file(args.HEADER, iter_c_files_in_dir(args.MODS))
+    content = "\n" + iter_c_files_in_dir(args.MODS)
+    content += "#define __MODULES_COUNT__ %d\n" % (len(modules))
+    content += "#define __MODULES_DEFINES__ {%s}\n\n" % (','.join(map(lambda x:"(uint)"+x ,modules)))
+    insert_to_header_file(args.HEADER, content)
