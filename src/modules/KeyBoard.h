@@ -1,3 +1,6 @@
+#ifndef __OMOMOD_KBD_H__
+#define __OMOMOD_KBD_H__
+
 #define KBD_IRQ 1
 
 #define KBD_BUFFER_SIZE 32
@@ -102,3 +105,5 @@
 #define PAD_INS		PAD_0			/* Ins		*/
 #define PAD_MID		PAD_5			/* Middle key	*/
 #define PAD_DEL		PAD_DOT			/* Del		*/
+
+#endif
