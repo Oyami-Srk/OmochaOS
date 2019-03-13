@@ -10,6 +10,7 @@
 // on ring-1 user-tasks running on ring-3
 
 extern cpu_env cpu;
+extern uint proc_count;
 
 void SysIdle() {
   while (1)
@@ -66,9 +67,59 @@ void SysTask() {
       interrupt_methods[irq_num].pid = 0;
       interrupt_methods[irq_num].data = 0;
       interrupt_methods[irq_num].method = 0;
-
+      msg.receiver = msg.sender;
+      msg.type = SC_DONE;
+      msg.major_data = 0;
+      send_msg(&msg);
       break;
+    case SC_REGISTER_PROC:{
+      char *name = msg.data.m3;
+      for(uint i = 0; i < proc_count; i++)
+        if(strcmp(name, cpu.processes[i].name) == 0 &&
+           i != msg.sender){
+          msg.receiver = msg.sender;
+          msg.major_data = -1;
+          msg.type = SC_FAILED;
+          send_msg(&msg);
 
+          goto final;
+        }
+      uint len = strlen(name);
+      strcpy(cpu.processes[msg.sender].name, name);
+      msg.receiver = msg.sender;
+      msg.major_data = 0;
+      msg.type = SC_DONE;
+      send_msg(&msg);
+      final:
+      break;
+    }
+    case SC_UNREGISTER_PROC:
+      memset(cpu.processes[msg.sender].name, 0, PROCESS_NAME_SIZE);
+      msg.receiver = msg.sender;
+      msg.major_data = 0;
+      msg.type = SC_DONE;
+      send_msg(&msg);
+      break;
+    case SC_QUERY_PROC:{
+      uint pid = 0;
+      char *name = msg.data.m3;
+      for(uint i = 0; i < proc_count; i++)
+        if(strcmp(name, cpu.processes[i].name) == 0){
+          pid = i;
+          break;
+        }
+      if(pid != 0){
+        msg.receiver = msg.sender;
+        msg.major_data = pid;
+        msg.type = SC_DONE;
+      }else{
+        msg.receiver = msg.sender;
+        msg.major_data = 0;
+        msg.type = SC_FAILED;
+      }
+      send_msg(&msg);
+      break;
+    }
     default:
       panic("Unknown Msg! baka! % >_< %");
       kprintf("!");

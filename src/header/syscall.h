@@ -8,8 +8,12 @@
 #define SC_GET_TICKS 0x01
 #define SC_SET_IRQ_FUNC 0x02 // set irq handle func
 #define SC_RELEASE_IRQ_FUNC 0x03
+#define SC_REGISTER_PROC 0x04
+#define SC_UNREGISTER_PROC 0x05
+#define SC_QUERY_PROC 0x06
 
 #define SC_DONE 0x0FF00FF0
+#define SC_FAILED 0x0FF00FA0
 
 // real syscall
 uint get_ticks();

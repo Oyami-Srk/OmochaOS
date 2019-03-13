@@ -165,6 +165,11 @@ uint kbd_read() {
       kprintf("Got assigned for KBD interrupt!\n");
     else
       kprintf("Cannot get assigned for KBD interrupt!\n");
+
+    if(register_proc("TaskKBD") == 0)
+      kprintf("Proc registered as TaskKBD, pid is %d\n", find_proc("TaskKBD"));
+    else
+      kprintf("Cannot register proc as TaskKBD!\n");
     // set leds
     set_leds();
 
