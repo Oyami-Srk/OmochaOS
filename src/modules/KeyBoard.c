@@ -7,8 +7,8 @@ module:
 */
 #include "KeyBoard.h"
 #include "KeyMap.h"
+#include "Monitor.h"
 #include "modules/modules.h"
-
 
 Circular_BufferB kbd_buffer;
 
@@ -154,39 +154,49 @@ uint kbd_read() {
   return 0;
 }
 
-  void Task_KBD() {
-    message msg;
-    kbd_buffer.tail = kbd_buffer.head = kbd_buffer.buf;
-    kbd_buffer.count = 0;
-    shift_l = shift_r = alt_l = alt_r = ctrl_l = ctrl_r = caps_lock = num_lock =
-        scr_lock = 0;
-    num_lock = 1;
-    if (register_to(KBD_IRQ, INT_HANDLE_METHOD_CIRCULAR_BUFFER, (uint)&kbd_buffer) == 0)
-      kprintf("Got assigned for KBD interrupt!\n");
-    else
-      kprintf("Cannot get assigned for KBD interrupt!\n");
+void Task_KBD() {
+  message msg;
+  kbd_buffer.tail = kbd_buffer.head = kbd_buffer.buf;
+  kbd_buffer.count = 0;
+  shift_l = shift_r = alt_l = alt_r = ctrl_l = ctrl_r = caps_lock = num_lock =
+      scr_lock = 0;
+  num_lock = 1;
+  if (register_to(KBD_IRQ, INT_HANDLE_METHOD_CIRCULAR_BUFFER,
+                  (uint)&kbd_buffer) != 0)
+    kprintf("Cannot get assigned for KBD interrupt!\n");
 
-    if(register_proc("TaskKBD") == 0)
-      kprintf("Proc registered as TaskKBD, pid is %d\n", find_proc("TaskKBD"));
-    else
-      kprintf("Cannot register proc as TaskKBD!\n");
-    // set leds
-    set_leds();
+  if (register_proc("TaskKBD") != 0)
+    kprintf("Cannot register proc as TaskKBD!\n");
+  uint proc_monitor = find_proc("TaskMonitor");
+  while (proc_monitor == 0) {
+    proc_monitor = find_proc("TaskMonitor");
+    kprintf(".");
+    delay_ms(100);
+  }
+  // set leds
+  set_leds();
 
-    uint key = 0;
-    while (1) {
-      if(!((key = kbd_read()) & 0x0100))
-        kprintf("%c", key);
-      else{
-        int raw = key & MASK_RAW;
-        switch(raw){
-        case ENTER:
-          kprintf("\n");
-          break;
-        case BACKSPACE:
-          kprintf("\b");
-          break;
-        }
+  uint key = 0;
+  while (1) {
+    if (!((key = kbd_read()) & 0x0100))
+      kprintf("%c", key);
+    else {
+      int raw = key & MASK_RAW;
+      switch (raw) {
+      case ENTER:
+        break;
+      case BACKSPACE:
+        break;
+      case F12:
+        msg.type = MSG_MONITOR_INIT;
+        msg.receiver = proc_monitor;
+        send_msg(&msg);
+        recv_msg(&msg, proc_monitor);
+        msg.type = MSG_MONITOR_CLRSCR;
+        msg.major_data = 0;
+        msg.receiver = proc_monitor;
+        send_msg(&msg);
       }
     }
   }
+}

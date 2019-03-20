@@ -1,4 +1,5 @@
 #include "kernel/klib.h"
+#include "kernel/asm.h"
 
 PUBLIC char *itoa(unsigned int value, char *str, int base) {
   char *rc;
@@ -166,4 +167,20 @@ PUBLIC int vsprintf(char *buf, const char *fmt, va_list args) {
 PUBLIC int sprintf(char *buf, const char *fmt, ...) {
   va_list arg = (va_list)((char *)(&fmt) + 4);
   return vsprintf(buf, fmt, arg);
+}
+
+unsigned int cli_count = 0;
+
+PUBLIC void push_cli() { // 关中断
+  if(cli_count == 0)
+    cli();
+  cli_count++;
+}
+
+PUBLIC void push_sti() {
+  if(cli_count < 1)
+    panic("CLI COUNT IS BELOW 1!");
+  cli_count--;
+  if(cli_count == 0)
+    sti();
 }

@@ -11,7 +11,13 @@
 #define INT_HANDLE_METHOD_FUNC 0x2
 #define INT_HANDLE_METHOD_DISPATCH 0x3
 
+#define SEND_DONE_MSG(m) m.major_data = 0;\
+  m.type = SC_DONE;\
+  m.receiver = m.sender;\
+  send_msg(&m)
+
 extern int kprintf(const char *fmt, ...);
+extern void delay_ms(uint);
 
 static inline uint register_to(uint irq, ushort method, uint data){
   message msg;

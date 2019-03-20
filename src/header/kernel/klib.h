@@ -20,4 +20,7 @@ PUBLIC int sprintf(char *buf, const char *fmt, ...);
 PUBLIC int kprintf(const char *fmt, ...);
 PUBLIC int ckprintf(int color, const char *fmt, ...);
 
+PUBLIC void push_cli();
+PUBLIC void push_sti();
+
 #endif
