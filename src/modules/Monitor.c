@@ -55,7 +55,6 @@ void initialize_monitor(){
     cons[i].pCh = (uchar *)cons[i].vm_start;
   }
   /* memset((uint*)cons[0].vm_start, 0, VM_SIZE); */
-  pDisp = cons[0].pCh;
   flush_scr(&cons[0]);
 }
 
@@ -81,6 +80,8 @@ void puts_monitor(console *con, char *s){
     ch = *++s;
     *pCh++ = disp_color;
   }
+  if(*(pCh+1) == 0)
+    *(pCh + 1) = disp_color;
   con->pCh = pCh;
 }
 
@@ -95,35 +96,22 @@ void Task_Monitor(){
     case MSG_MONITOR_INIT:
       initialize_monitor();
       flush_scr(&cons[0]);
-      msg.major_data = 0;
-      msg.type = SC_DONE;
-      msg.receiver = msg.sender;
-      send_msg(&msg);
-
       break;
     case MSG_MONITOR_FLUSH:
       if(msg.major_data < CON_COUNT)
         flush_scr(&cons[msg.major_data]);
-      msg.major_data = 0;
-      msg.type = SC_DONE;
-      msg.receiver = msg.sender;
-      send_msg(&msg);
       break;
     case MSG_MONITOR_SETCOLOR:
       disp_color = (ushort)msg.major_data;
-      SEND_DONE_MSG(msg);
       break;
     case MSG_MONITOR_PUTC:
       putc_monitor(&cons[msg.major_data], msg.data.m3[0]);
-      SEND_DONE_MSG(msg);
       break;
     case MSG_MONITOR_PUTS:
       puts_monitor(&cons[msg.major_data], (char*)msg.data.m1.d1);
-      SEND_DONE_MSG(msg);
       break;
     case MSG_MONITOR_CLRSCR:
       memset(cons[msg.major_data].vm_start, 0, 80 * 25 * 2);
-      SEND_DONE_MSG(msg);
       break;
     }
   }

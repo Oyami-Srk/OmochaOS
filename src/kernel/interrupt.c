@@ -98,8 +98,6 @@ void interrupt_handler(stack_frame *intf) {
   switch (intf->trapno) {
   case IRQ_TIMER: {
     cpu.beats++;
-    volatile char *ch = (volatile char *)(0xB8000);
-    *ch = *ch + 1;
     kreload_process();
     EOI_M();
     break;
