@@ -32,10 +32,11 @@ void set_cursor(console *con) {
 
 void set_vm_disp(console *con) {
   push_cli();
+  uint pos = (con->vm_disp - 0xB8000) / 2;
   outb(0x3D4, 0xD);
-  outb(0x3D5, (ushort)(con->vm_disp & 0xFF));
+  outb(0x3D5, (ushort)(pos & 0xFF));
   outb(0x3D4, 0xC);
-  outb(0x3D5, (ushort)((con->vm_disp >> 8) & 0xFF));
+  outb(0x3D5, (ushort)((pos >> 8) & 0xFF));
   push_sti();
 }
 
@@ -54,7 +55,7 @@ void initialize_monitor(){
     cons[i].vm_end = cons[i].vm_start + SCREEN_SIZE * 2 * 2;
     cons[i].pCh = (uchar *)cons[i].vm_start;
   }
-  /* memset((uint*)cons[0].vm_start, 0, VM_SIZE); */
+  memset((uint*)cons[0].vm_start, 0, VM_SIZE);
   flush_scr(&cons[0]);
 }
 
@@ -70,19 +71,38 @@ void puts_monitor(console *con, char *s){
   char ch = *s;
   uchar *pCh = con->pCh;
   while(*s != 0){
-    if(ch == '\n'){
+    if(pCh >= con->vm_end){
+      pCh = con->vm_start;
+      memset(pCh, 0, SCREEN_SIZE * 2);
+    }
+    switch(ch){
+    case '\n':
       pCh = (uchar*)con->vm_start +
         SCREEN_WIDTH * 2 * (((int)pCh - con->vm_start) / 160 + 1);
-      ch = *++s;
-      continue;
+      break;
+    case '\b':
+      *(pCh-2) = ' ';
+      *(pCh-1) = disp_color;
+      pCh-=2;
+      break;
+    default:
+      *pCh++ = ch;
+      *pCh++ = disp_color;
     }
-    *pCh++ = ch;
     ch = *++s;
-    *pCh++ = disp_color;
   }
   if(*(pCh+1) == 0)
     *(pCh + 1) = disp_color;
   con->pCh = pCh;
+}
+
+int monitor_printf(uint con_cr, const char *fmt, ...){
+  int i;
+  char buf[256];
+  va_list arg = (va_list)((char*)(&fmt) + 4);
+  i = vsprintf(buf, fmt, arg);
+  puts_monitor(&cons[con_cr], buf);
+  return i;
 }
 
 void Task_Monitor(){
@@ -113,6 +133,11 @@ void Task_Monitor(){
     case MSG_MONITOR_CLRSCR:
       memset(cons[msg.major_data].vm_start, 0, 80 * 25 * 2);
       break;
+    case MSG_MONITOR_SWITCH:{
+      console *pCur = &cons[msg.major_data];
+      pCur->vm_disp = pCur->vm_disp == pCur->vm_start ? pCur->vm_start + 80 * 25 * 2 : pCur->vm_start;
+      break;
+    }
     }
   }
 }

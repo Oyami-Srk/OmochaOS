@@ -138,6 +138,7 @@ struct __process{
   message* p_msg;
   struct __process* quene_head_sending_to_this_process;
   struct __process* quene_body;
+  uint nr_tty;
 }__attribute__((packed));
 
 typedef struct __process process;

@@ -27,6 +27,7 @@ typedef struct {
 #define MSG_MONITOR_PUTS 0x04
 #define MSG_MONITOR_SETCOLOR 0x05
 #define MSG_MONITOR_CLRSCR 0x06
+#define MSG_MONITOR_SWITCH 0x07
 
 
 #endif

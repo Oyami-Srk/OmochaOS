@@ -45,6 +45,7 @@ void load_process_context(){
     p->quene_body = 0;
     p->p_msg = 0;
     p->pid = i;
+    p->nr_tty = 0;
   }
 }
 
@@ -62,12 +63,11 @@ void TestA(){
   message msg;
   uint ticks = 0;
   uint old_ticks = 0;
+  delay_ms(2000);
   while(1){
-    /* ticks = get_ticks_msg(); */
-    if(old_ticks + 50 < ticks){
-      old_ticks = ticks;
-      /* kprintf("<Ticks:%d>", ticks); */
-    }
+    kprintf("%d ", get_ticks_msg());
+    printf("ss");
+    /* delay_ms(500); */
   }
 }
 

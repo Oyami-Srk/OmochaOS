@@ -170,26 +170,15 @@ void Task_KBD() {
   uint proc_monitor = find_proc("TaskMonitor");
   while (proc_monitor == 0) {
     proc_monitor = find_proc("TaskMonitor");
-    kprintf(".");
     delay_ms(100);
   }
-  kprintf("[%d]", proc_monitor);
-  kprintf("{%d}", find_proc("TaskKBD"));
   // set leds
   set_leds();
 
   uint key = 0;
   while (1) {
+    /*
     if (!((key = kbd_read()) & 0x0100)){
-      msg.type = MSG_MONITOR_PUTC;
-      msg.major_data = 0;
-      msg.receiver = proc_monitor;
-      msg.data.m3[0] = key;
-      send_msg(&msg);
-      msg.type = MSG_MONITOR_FLUSH;
-      msg.major_data = 0;
-      msg.receiver = proc_monitor;
-      send_msg(&msg);
     }
     else {
       int raw = key & MASK_RAW;
@@ -215,6 +204,14 @@ void Task_KBD() {
         msg.receiver = proc_monitor;
         send_msg(&msg);
       }
+      }*/
+    recv_msg(&msg, ANY);
+    switch(msg.type){
+    case MSG_KBD_READ:
+      msg.receiver = msg.sender;
+      msg.major_data = kbd_read();
+      send_msg(&msg);
+      break;
     }
   }
 }

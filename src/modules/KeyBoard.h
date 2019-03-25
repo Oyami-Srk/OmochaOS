@@ -106,4 +106,7 @@
 #define PAD_MID		PAD_5			/* Middle key	*/
 #define PAD_DEL		PAD_DOT			/* Del		*/
 
+#define MSG_KBD_GETKEY 1
+#define MSG_KBD_READ   1
+
 #endif

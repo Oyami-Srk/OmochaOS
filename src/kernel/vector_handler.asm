@@ -75,6 +75,7 @@ struc process
 .message resd 1
 .quene_head_sending_to_this_process resd 1
 .quene_body resd 1
+.nr_tty resd 1
 endstruc
 
 struc cpu_env

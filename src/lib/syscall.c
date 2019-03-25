@@ -1,5 +1,6 @@
 #include "syscall.h"
 #include "kernel/klib.h"
+#include "modules/modules.h"
 
 uint get_ticks() {
   // this is reserve for some reason
@@ -45,10 +46,28 @@ uint get_ticks_msg() {
   msg.major_data = 0;
   msg.receiver = 1;
   send_msg(&msg);
-  
   recv_msg(&msg, 1);
   if(msg.type == SC_DONE)
     return msg.major_data;
   else
     panic("Failed get msg from pid 1(systask)");
+  return 0;
 }
+
+
+int printf(char *fmt, ...){
+  int i;
+  char buf[256];
+  va_list arg = (va_list)((char *)(&fmt) + 4);
+  i = vsprintf(buf, fmt, arg);
+  message msg;
+  msg.type = 0x04;
+  msg.major_data = (uint)0;
+  msg.data.m1.d1 = buf;
+  msg.receiver = find_proc("TaskTTY");
+  kprintf("%d", msg.receiver);
+  send_msg(&msg);
+  kprintf("??");
+  return i;
+}
+

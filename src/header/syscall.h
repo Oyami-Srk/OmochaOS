@@ -11,9 +11,11 @@
 #define SC_REGISTER_PROC 0x04
 #define SC_UNREGISTER_PROC 0x05
 #define SC_QUERY_PROC 0x06
+#define SC_WRITE_TTY 0x07
 
 #define SC_DONE 0x0FF00FF0
 #define SC_FAILED 0x0FF00FA0
+
 
 // real syscall
 uint get_ticks();
@@ -24,6 +26,7 @@ uint recv_msg(message *msg, uint recv_from);
 
 // fake syscall
 uint get_ticks_msg();
+int printf(char *fmt, ...);
 
 
 #endif
