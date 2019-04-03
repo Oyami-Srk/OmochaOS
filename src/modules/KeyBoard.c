@@ -1,13 +1,8 @@
-/*
-module:
-  name: Keyboard
-  author: Shiroko
-  summary: Module for handling keyboard interrupt
-  module_task: Task_KBD
-*/
 #include "KeyBoard.h"
 #include "KeyMap.h"
 #include "Monitor.h"
+#include "kernel/type.h"
+#include "kernel/asm.h"
 #include "modules/modules.h"
 
 Circular_BufferB kbd_buffer;
@@ -146,7 +141,6 @@ uint kbd_read() {
       key |= alt_r ? FLAG_ALT_R : 0;
       key |= ctrl_l ? FLAG_CTRL_L : 0;
       key |= ctrl_r ? FLAG_CTRL_R : 0;
-
       return key;
     }
     return 0;
@@ -154,64 +148,15 @@ uint kbd_read() {
   return 0;
 }
 
-void Task_KBD() {
-  message msg;
+void initialize_kbd() {
   kbd_buffer.tail = kbd_buffer.head = kbd_buffer.buf;
   kbd_buffer.count = 0;
   shift_l = shift_r = alt_l = alt_r = ctrl_l = ctrl_r = caps_lock = num_lock =
       scr_lock = 0;
   num_lock = 1;
+  // set leds
+  set_leds();
   if (register_to(KBD_IRQ, INT_HANDLE_METHOD_CIRCULAR_BUFFER,
                   (uint)&kbd_buffer) != 0)
     kprintf("Cannot get assigned for KBD interrupt!\n");
-
-  if (register_proc("TaskKBD") != 0)
-    kprintf("Cannot register proc as TaskKBD!\n");
-  uint proc_monitor = find_proc("TaskMonitor");
-  while (proc_monitor == 0) {
-    proc_monitor = find_proc("TaskMonitor");
-    delay_ms(100);
-  }
-  // set leds
-  set_leds();
-
-  uint key = 0;
-  while (1) {
-    /*
-    if (!((key = kbd_read()) & 0x0100)){
-    }
-    else {
-      int raw = key & MASK_RAW;
-      switch (raw) {
-      case ENTER:
-        msg.type = MSG_MONITOR_PUTC;
-        msg.major_data = 0;
-        msg.receiver = proc_monitor;
-        msg.data.m3[0] = '\n';
-        send_msg(&msg);
-        msg.type = MSG_MONITOR_FLUSH;
-        msg.major_data = 0;
-        msg.receiver = proc_monitor;
-        send_msg(&msg);
-      case BACKSPACE:
-        break;
-      case F12:
-        msg.type = MSG_MONITOR_INIT;
-        msg.receiver = proc_monitor;
-        send_msg(&msg);
-        msg.type = MSG_MONITOR_CLRSCR;
-        msg.major_data = 0;
-        msg.receiver = proc_monitor;
-        send_msg(&msg);
-      }
-      }*/
-    recv_msg(&msg, ANY);
-    switch(msg.type){
-    case MSG_KBD_READ:
-      msg.receiver = msg.sender;
-      msg.major_data = kbd_read();
-      send_msg(&msg);
-      break;
-    }
-  }
 }

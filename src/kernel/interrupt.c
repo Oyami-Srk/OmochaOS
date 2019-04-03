@@ -137,6 +137,7 @@ int i = -1;
 void kreload_process() {
   if (!cpu.current_running_proc)
     return;
+  /* kprintf("[%d", (cpu.current_running_proc - (uint)cpu.processes) / sizeof(process)); */
 
   /* if(0){ */
   /*   kprintf("["); */
@@ -151,6 +152,7 @@ void kreload_process() {
       i = 0;
   } while ((cpu.processes[i].status & 0xFF) & UNRUNABLE);
   cpu.current_running_proc = (uint)&cpu.processes[i];
+  /* kprintf("->%d]", i); */
 
   /* if (cpu.processes[i].status & PROC_STATUS_RUNNING) */
   /*   cpu.current_running_proc = (uint)&cpu.processes[i]; */

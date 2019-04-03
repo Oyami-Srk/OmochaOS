@@ -46,6 +46,9 @@ void load_process_context(){
     p->p_msg = 0;
     p->pid = i;
     p->nr_tty = 0;
+    if(p->pid == 6)
+      kprintf("==0x%08x==", &p->stack.ebx);
+
   }
 }
 
@@ -65,9 +68,8 @@ void TestA(){
   uint old_ticks = 0;
   delay_ms(2000);
   while(1){
-    kprintf("%d ", get_ticks_msg());
-    printf("ss");
-    /* delay_ms(500); */
+    printf("N");
+    delay_ms(500);
   }
 }
 

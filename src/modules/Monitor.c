@@ -1,21 +1,9 @@
-/*
-module:
-  name: Monitor
-  author: Shiroko
-  summary: Module for manipulate monitor to display something
-  module_task: Task_Monitor
-*/
-
-#include "modules/modules.h"
 #include "kernel/klib.h"
+#include "kernel/asm.h"
+#include "string.h"
 #include "Monitor.h"
 
-#define VM_SIZE (32 * 1024)
-#define CON_SIZE (SCREEN_SIZE * 2)
-#define CON_COUNT (VM_SIZE / CON_SIZE)
 console cons[CON_COUNT];
-
-extern void delay_ms(uint);
 
 extern volatile char* pDisp;
 ushort disp_color;
@@ -57,9 +45,9 @@ void initialize_monitor(){
   }
   memset((uint*)cons[0].vm_start, 0, VM_SIZE);
   flush_scr(&cons[0]);
+  disp_color = COLOR(BLACK, WHITE);
 }
 
-void puts_monitor(console *con, char *s);
 void putc_monitor(console *con, char c){
   char buf[2];
   buf[0] = c;
@@ -105,39 +93,10 @@ int monitor_printf(uint con_cr, const char *fmt, ...){
   return i;
 }
 
-void Task_Monitor(){
-  disp_color = COLOR(BLACK, WHITE);
-  message msg;
-  if(register_proc("TaskMonitor") != 0)
-    kprintf("Cannot register proc as TaskMonitor");
-  while(1){
-    recv_msg(&msg, ANY);
-    switch(msg.type){
-    case MSG_MONITOR_INIT:
-      initialize_monitor();
-      flush_scr(&cons[0]);
-      break;
-    case MSG_MONITOR_FLUSH:
-      if(msg.major_data < CON_COUNT)
-        flush_scr(&cons[msg.major_data]);
-      break;
-    case MSG_MONITOR_SETCOLOR:
-      disp_color = (ushort)msg.major_data;
-      break;
-    case MSG_MONITOR_PUTC:
-      putc_monitor(&cons[msg.major_data], msg.data.m3[0]);
-      break;
-    case MSG_MONITOR_PUTS:
-      puts_monitor(&cons[msg.major_data], (char*)msg.data.m1.d1);
-      break;
-    case MSG_MONITOR_CLRSCR:
-      memset(cons[msg.major_data].vm_start, 0, 80 * 25 * 2);
-      break;
-    case MSG_MONITOR_SWITCH:{
-      console *pCur = &cons[msg.major_data];
-      pCur->vm_disp = pCur->vm_disp == pCur->vm_start ? pCur->vm_start + 80 * 25 * 2 : pCur->vm_start;
-      break;
-    }
-    }
-  }
+console* get_con(unsigned int nr_con){
+  return &cons[nr_con];
+}
+
+void switch_monitor(console *con){
+  con->vm_disp = con->vm_disp == con->vm_start ? con->vm_start + 80 * 25 * 2 : con->vm_start;
 }

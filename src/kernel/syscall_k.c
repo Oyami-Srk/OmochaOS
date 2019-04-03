@@ -8,15 +8,45 @@ extern cpu_env cpu;
 
 int __get_ticks(void) { return cpu.beats; }
 
+int deadlock(int src, int dest){
+  process *p = &cpu.processes[dest];
+  while(1){
+    if(p->status & PROC_STATUS_SENDING){
+      if(GET_PROC_STATUS_PID(p) == src){
+        p = &cpu.processes[dest];
+        kprintf("=_=%s", p->name);
+        do{
+          assert(p->p_msg);
+          p = &cpu.processes[GET_PROC_STATUS_PID(p)];
+          kprintf("->%s", p->name);
+        }while(p != &cpu.processes[src]);
+        kprintf("=_=");
+        return 1;
+      }
+      p = &cpu.processes[GET_PROC_STATUS_PID(p)];
+    }else
+      break;
+  }
+  return 0;
+}
+
 int __send_msg(process *sender, message *msg) {
   msg->sender = (((uint)sender - (uint)&cpu.processes) / sizeof(process));
   process *receiver = &cpu.processes[msg->receiver];
+  if(deadlock(msg->sender, msg->receiver)){
+    kprintf("DEADLOCK %s->%s", sender->name, receiver->name);
+    panic(">>DEADLOCK<<");
+  }
   assert(
       !((sender->status & PROC_STATUS_SENDING) ||
         (sender->status &
          PROC_STATUS_RECEVING))); // process cannot send or receive msg if it's
                                   // already in sending or receiving status
   assert(msg->receiver != msg->sender);
+  //
+
+
+  //
   if ((receiver->status & PROC_STATUS_RECEVING) &&
           (GET_PROC_STATUS_PID(receiver) == ANY) ||
       (GET_PROC_STATUS_PID(receiver) == sender->pid)) {
@@ -30,6 +60,8 @@ int __send_msg(process *sender, message *msg) {
   } else {
     // receiver process is not ready to receive a msg from sender
     // so we just copy msg to send and halt the sender
+    if(sender->pid == 2 && msg->receiver == 6)
+      kprintf("!");
     sender->p_msg = msg;
     sender->status &= ~PROC_STATUS_NORMAL;
     sender->status |= PROC_STATUS_SENDING;
@@ -41,9 +73,12 @@ int __send_msg(process *sender, message *msg) {
       p->quene_body = sender;
     } else {
       receiver->quene_head_sending_to_this_process = sender;
+      if(sender->pid == 2 && msg->receiver == 6)
+        kprintf("=");
     }
     sender->quene_body = 0; // remove sending list body
-
+    if(sender->pid == 2 && msg->receiver == 6)
+      kprintf("~");
     /* kprintf("[%d sending to %d]", sender->pid, receiver->pid); */
 
     // reschedule
@@ -60,6 +95,8 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
   if (recv_from == REFUSE)
     panic("Recv with refuse");
   if (receiver->status & PROC_STATUS_GOTINT && (recv_from == INTERRUPT || recv_from == ANY)){
+    if(receiver->pid == 6)
+      panic("me");
     msg->type = INTERRUPT;
     msg->major_data = INTERRUPT - 1;
     msg->sender = INTERRUPT;
@@ -67,11 +104,15 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
     return 0;
   }
   if (recv_from == ANY) { //
+    if(receiver->pid == 6)
+      kprintf("<%d>", receiver->pid);
     if (receiver->quene_head_sending_to_this_process) {
       sender = receiver->quene_head_sending_to_this_process;
       receiver->quene_head_sending_to_this_process = sender->quene_body;
     }
   } else {
+    if(receiver->pid == 6)
+      kprintf("[%d]", recv_from);
     sender = &cpu.processes[recv_from];
     if ((sender->status & PROC_STATUS_SENDING) &&
         (GET_PROC_STATUS_PID(sender) == receiver->pid)) {

@@ -61,13 +61,11 @@ int printf(char *fmt, ...){
   va_list arg = (va_list)((char *)(&fmt) + 4);
   i = vsprintf(buf, fmt, arg);
   message msg;
-  msg.type = 0x04;
-  msg.major_data = (uint)0;
-  msg.data.m1.d1 = buf;
-  msg.receiver = find_proc("TaskTTY");
-  kprintf("%d", msg.receiver);
+  msg.receiver = 1;
+  msg.type = SC_WRITE;
+  msg.major_data = 0;
+  msg.data.m1.d1 = (uint)buf;
   send_msg(&msg);
-  kprintf("??");
   return i;
 }
 

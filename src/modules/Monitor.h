@@ -29,5 +29,18 @@ typedef struct {
 #define MSG_MONITOR_CLRSCR 0x06
 #define MSG_MONITOR_SWITCH 0x07
 
+#define VM_SIZE (32 * 1024)
+#define CON_SIZE (SCREEN_SIZE * 2)
+#define CON_COUNT (VM_SIZE / CON_SIZE)
+
+int monitor_printf(unsigned int con_cr, const char *fmt, ...);
+void puts_monitor(console *con, char *s);
+void putc_monitor(console *con, char c);
+void initialize_monitor();
+void flush_scr(console *con);
+void set_vm_disp(console *con);
+void set_cursor(console *con);
+console* get_con(unsigned int nr_con);
+void switch_monitor(console *con);
 
 #endif

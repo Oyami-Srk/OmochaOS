@@ -11,6 +11,9 @@
 
 extern cpu_env cpu;
 extern uint proc_count;
+extern void puts_monitor(void*,char*);
+extern void* get_con(uint nr_con);
+extern void flush_scr(void*);
 
 void SysIdle() {
   while (1)
@@ -120,6 +123,14 @@ void SysTask() {
       send_msg(&msg);
       break;
     }
+    case SC_WRITE:
+      switch(msg.major_data){
+      case 0: // TTY
+        puts_monitor(get_con(cpu.processes[msg.sender].nr_tty), (char*)msg.data.m1.d1);
+        flush_scr(get_con(cpu.processes[msg.sender].nr_tty));
+        break;
+      }
+      break;
     default:
       panic("Unknown Msg! baka! % >_< %");
       kprintf("!");
