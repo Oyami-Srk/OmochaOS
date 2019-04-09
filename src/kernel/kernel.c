@@ -46,9 +46,6 @@ void load_process_context(){
     p->p_msg = 0;
     p->pid = i;
     p->nr_tty = 0;
-    if(p->pid == 6)
-      kprintf("==0x%08x==", &p->stack.ebx);
-
   }
 }
 
@@ -62,13 +59,9 @@ extern void SysIdle();
 extern void SysTask();
 
 void TestA(){
-  int i = 0;
-  message msg;
-  uint ticks = 0;
-  uint old_ticks = 0;
-  delay_ms(2000);
+  delay_ms(1000);
   while(1){
-    printf("N");
+    printf("%d ", get_ticks_msg());
     delay_ms(500);
   }
 }

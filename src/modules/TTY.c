@@ -16,6 +16,10 @@ extern int kprintf(const char *fmt, ...);
 extern Circular_BufferB kbd_buffer;
 extern void delay_ms(uint);
 
+
+// 现在tty先放着，之后tty内也是普通的模块，循环接收消息
+// 这些交互另用户进程shell进行，tty就是负责输出输入的
+
 void Task_TTY() {
   message msg;
   if (register_proc("TaskTTY") != 0)
