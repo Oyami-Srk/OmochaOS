@@ -28,7 +28,8 @@ img:
 ifneq ($(BUILD)/HD.img,$(wildcard $(BUILD)/HD.img))
 	@echo "Create virtual flat image"
 	$(BXIMAGE) -mode=create -hd=80M -q $(BUILD)/HD.img
-	$(DD) if=$(TOOLS)/initialized_formated.bin of=$(BUILD)/HD.img seek=0 count=1 conv=notrunc
+# $(DD) if=$(TOOLS)/initialized_formated.bin of=$(BUILD)/HD.img seek=0 count=1 conv=notrunc
+	cp $(TOOLS)/HD.img $(BUILD)/HD.img
 endif
 	$(DD) if=$(BUILD)/boot/boot.bin count=1 bs=440 seek=0 conv=notrunc of=$(BUILD)/HD.img
 	$(DD) if=$(BUILD)/boot/loader.out seek=1 conv=notrunc of=$(BUILD)/HD.img

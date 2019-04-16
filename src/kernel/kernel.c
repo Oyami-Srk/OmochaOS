@@ -46,6 +46,8 @@ void load_process_context(){
     p->p_msg = 0;
     p->pid = i;
     p->nr_tty = 0;
+    if(p->pid == 2)
+      p->nr_tty = 1;
   }
 }
 

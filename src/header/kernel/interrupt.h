@@ -34,9 +34,11 @@ static inline Gate *MAKE_GATE(Gate *pGate,
 #define IRQ0 32
 #define IRQ_TIMER (IRQ0 + 0)
 #define IRQ_KBD (IRQ0 + 1)
+#define IRQ_AT (IRQ0 + 14)
 
 #define HW_IRQ_TIMER 0
 #define HW_IRQ_KBD 1
+#define HW_IRQ_AT 14
 
 #define HW_IRQ_COUNT 16
 

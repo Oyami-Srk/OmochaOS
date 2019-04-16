@@ -125,10 +125,13 @@ void SysTask() {
     }
     case SC_WRITE:
       switch(msg.major_data){
-      case 0: // TTY
+      case 0:{ // tty
+        extern uint cur_con;
         puts_monitor(get_con(cpu.processes[msg.sender].nr_tty), (char*)msg.data.m1.d1);
-        flush_scr(get_con(cpu.processes[msg.sender].nr_tty));
+        if(cpu.processes[msg.sender].nr_tty == cur_con)
+          flush_scr(get_con(cpu.processes[msg.sender].nr_tty));
         break;
+      }
       }
       break;
     default:

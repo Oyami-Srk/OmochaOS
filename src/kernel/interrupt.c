@@ -111,6 +111,12 @@ void interrupt_handler(stack_frame *intf) {
     EOI_M();
     break;
   }
+  case IRQ_AT: {
+    if(send_int_to_proc(IRQ_AT - IRQ0, 0) == 1)
+      ;
+    EOI_M();
+    break;
+  }
   case SYSCALL_INT: {
     volatile uint ret_val = 0;
     __asm__ __volatile__("push %%edx\n\t"
