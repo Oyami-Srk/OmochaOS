@@ -10,8 +10,9 @@ SRCS := $(wildcard *.c)
 
 OBJS := $(patsubst %, $(MODULES_BUILD)/%.o, $(basename $(SRCS)))
 
-all: pre $(OBJS)
-	@echo "Modules are built"
+all:
+#all: pre $(OBJS)
+#	@echo "Modules are built"
 
 $(MODULES_BUILD)/%.o: %.c
 	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(HEADER)

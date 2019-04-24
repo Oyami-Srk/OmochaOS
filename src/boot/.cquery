@@ -1,0 +1,5 @@
+%c -std=gnu11
+-m32
+-fno-builtin
+
+-Isrc/boot/common_header

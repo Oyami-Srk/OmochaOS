@@ -10,3 +10,4 @@ bochsrc
 *.out
 active
 /src/kernel/vector_table.asm
+.vscode/

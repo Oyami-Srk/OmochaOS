@@ -41,4 +41,4 @@ clean:
 
 pre tools/generate_vector.py:
 	mkdir -p $(KERNEL_BUILD)
-	$(PY) tools/generate_vector.py > vector_table.asm
+	# $(PY) tools/generate_vector.py > vector_table.asm
