@@ -10,5 +10,6 @@ export HEADER CC_FLAGS
 all:
 	make -C boot
 	make -C lib
+	make -C drivers
 	make -C modules
 	make -C kernel

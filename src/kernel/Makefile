@@ -6,6 +6,7 @@
 KERNEL_BUILD = $(BUILD)/kern
 LIB_BUILD = $(BUILD)/lib
 MODULES_BUILD = $(BUILD)/modules
+DRIVERS_BUILD = $(BUILD)/drivers
 KERNEL_LD_FLAGS = -m elf_i386 -N
 
 SRCS := $(wildcard *.c) $(wildcard *.asm)
@@ -13,12 +14,13 @@ SRCS := $(wildcard *.c) $(wildcard *.asm)
 OBJS := $(patsubst %, $(KERNEL_BUILD)/%.o, $(basename $(SRCS)))
 LIB_OBJS := $(wildcard $(LIB_BUILD)/*.o)
 MODULES_OBJS := $(wildcard $(MODULES_BUILD)/*.o)
+DRIVERS_OBJS := $(wildcard $(DRIVERS_BUILD)/*.o)
 
 all: pre $(KERNEL_BUILD)/kernel.out
 	@echo "Kernel is built"
 
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
-	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(KERNEL_BUILD)/start.o $(filter-out $(KERNEL_BUILD)/start.o, $(OBJS)) $(LIB_OBJS) $(MODULES_OBJS)
+	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(KERNEL_BUILD)/start.o $(filter-out $(KERNEL_BUILD)/start.o, $(OBJS)) $(LIB_OBJS) $(DRIVERS_OBJS) $(MODULES_OBJS)
 	$(OBJDUMP) -S $(KERNEL_BUILD)/kernel.out > $(KERNEL_BUILD)/kernel.disasm
 
 $(KERNEL_BUILD)/%.o: %.c
@@ -41,4 +43,4 @@ clean:
 
 pre tools/generate_vector.py:
 	mkdir -p $(KERNEL_BUILD)
-	# $(PY) tools/generate_vector.py > vector_table.asm
+	$(PY) tools/generate_vector.py > vector_table.asm

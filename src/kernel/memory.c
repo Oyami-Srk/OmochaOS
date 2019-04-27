@@ -4,7 +4,7 @@
 
 list *freemem;
 
-void kinit_mem(void *vstart, void *vend, void *tss, void *ldt) {
+void kinit_mem(void *vstart, void *vend) {
   void *p = (void *)((uint)(vstart + PG_SIZE - 1) &
                      ~(PG_SIZE - 1)); // align to higher addr than vstart
   for (; p + PG_SIZE <= vend; p += PG_SIZE)

@@ -1,11 +1,12 @@
 #include "kernel/pm.h"
+#include "kernel/memory.h"
 #include "lib/string.h"
 
 // temperory settings
 #define LDT_COUNT 0
 
 // kernen init gdt
-void kinit_gdt(Descriptor *GDT, void *tss, void *ldt) {
+void kinit_gdt(Descriptor *GDT, struct tss *tss, void *ldt) {
   size_t size = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
   BOOL has_tss = FALSE;
   uint gdt_count = 0;
@@ -16,6 +17,9 @@ void kinit_gdt(Descriptor *GDT, void *tss, void *ldt) {
       gdt_count++;
       has_tss = TRUE;
       selector_tss = i << 3;
+      memset(tss, 0, sizeof(struct tss));
+      tss->ss0 = 2 << 3; // data selector
+      make_descriptor(&GDT[i], (uint)(KV2P(tss)), sizeof(tss) - 1, DA_386TSS);
       break;
     case DA_LDT: { // ldt gdt item
       u16 selector_ldt = i << 3;
@@ -38,7 +42,7 @@ void kinit_gdt(Descriptor *GDT, void *tss, void *ldt) {
   *gdt_limit = gdt_count * sizeof(Descriptor) - 1;
   *gdt_base = (u32)GDT;
 
-  asm volatile("lgdtl (%0" ::"r"(gdt_ptr));
+  asm volatile("lgdtl (%0)" ::"r"(gdt_ptr));
   asm("\n"
       "pushl %0\n"
       "pushl $1f\n"

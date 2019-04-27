@@ -1,6 +1,7 @@
 #ifndef __PM_H__
 #define __PM_H__
 
+#include "kernel/structs.h"
 #include "kernel/type.h"
 
 typedef struct {
@@ -94,9 +95,9 @@ static uint KERN_GDT[][3] = {
     {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW}, // Data descriptor
     {0x0, 0x0, DA_386TSS},                   // TSS descriptor
     {0x0, 0x0, DA_LDT}                       // LDT descriptor
-    // Cannot define more descriptors below ldt
+                       // Cannot define more descriptors below ldt
 }; // static but not const
 
-void kinit_gdt(Descriptor *GDT, void *tss, void *ldt);
+void kinit_gdt(Descriptor *GDT, struct tss *tss, void *ldt);
 
 #endif // __PM_H__
