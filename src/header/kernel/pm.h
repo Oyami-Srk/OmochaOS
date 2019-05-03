@@ -1,28 +1,9 @@
 #ifndef __PM_H__
 #define __PM_H__
 
+#include "kernel/proc.h"
 #include "kernel/structs.h"
 #include "kernel/type.h"
-
-typedef struct {
-  u16 limit_l;
-  u16 base_l;
-  u8 base_m;
-  u8 attr1;
-  u8 limit_h_attr2;
-  u8 base_h;
-} __attribute__((packed)) Descriptor;
-
-typedef struct {
-  u16 offset_l;
-  u16 selector;
-  u8 zero;
-  uint type : 4;
-  uint s : 1; // system, zero
-  uint dpl : 2;
-  uint p : 1; // present
-  u16 offset_h;
-} __attribute__((packed)) Gate;
 
 static inline Descriptor *make_descriptor(Descriptor *pDesc, u32 Base,
                                           u32 Limit, u16 Attr) {
@@ -89,6 +70,8 @@ static inline Gate *make_gate(Gate *pGate, u16 Selector, u32 Offset, uint DPL,
 
 #define DPL_USER DPL3
 
+// Config for protect-mode
+
 static uint KERN_GDT[][3] = {
     {0, 0, 0},                               // dummy null descriptor
     {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C},   // Code descriptor
@@ -98,6 +81,7 @@ static uint KERN_GDT[][3] = {
                        // Cannot define more descriptors below ldt
 }; // static but not const
 
-void kinit_gdt(Descriptor *GDT, struct tss *tss, void *ldt);
+void kinit_gdt(Descriptor *GDT, size_t gdt_count, struct tss *tss,
+               process *procs, size_t proc_count);
 
 #endif // __PM_H__

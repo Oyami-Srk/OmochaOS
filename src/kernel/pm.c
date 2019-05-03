@@ -6,32 +6,52 @@
 #define LDT_COUNT 0
 
 // kernen init gdt
-void kinit_gdt(Descriptor *GDT, struct tss *tss, void *ldt) {
+void kinit_gdt(Descriptor *GDT, size_t gdt_count, struct tss *tss,
+               process *procs, size_t proc_count) {
   size_t size = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
   BOOL has_tss = FALSE;
-  uint gdt_count = 0;
+  uint gdt_n = 0;
   u16 selector_tss = 0;
+
+  for (uint i = 0; i < size; i++)
+    switch (KERN_GDT[i][2]) {
+    case DA_LDT:
+      gdt_n += proc_count;
+      break;
+    default:
+      gdt_n++;
+      break;
+    }
+  if (gdt_n > gdt_count)
+    while (1)
+      ; // panic
+
+  gdt_n = 0;
+
   for (uint i = 0; i < size; i++)
     switch (KERN_GDT[i][2]) { // check the type
     case DA_386TSS:           // tss gdt item
-      gdt_count++;
+      gdt_n++;
       has_tss = TRUE;
       selector_tss = i << 3;
       memset(tss, 0, sizeof(struct tss));
       tss->ss0 = 2 << 3; // data selector
-      make_descriptor(&GDT[i], (uint)(KV2P(tss)), sizeof(tss) - 1, DA_386TSS);
+      make_descriptor(&GDT[i], (uint)(KV2P(tss)), sizeof(struct tss) - 1,
+                      DA_386TSS);
       break;
     case DA_LDT: { // ldt gdt item
       u16 selector_ldt = i << 3;
-      for (uint i = 0; i < LDT_COUNT; i++) {
-        ;
-        gdt_count++;
+      for (uint i = 0; i < proc_count; i++) {
+        make_descriptor(&GDT[selector_ldt >> 3], (u32)(KV2P(procs[i].ldts)),
+                        sizeof(Descriptor) * LDT_SIZE_PER_PROC - 1, DA_LDT);
+        procs[i].selector_ldt = selector_ldt;
+        gdt_n++;
         selector_ldt += (1 << 3);
       }
       break;
     }
     default:
-      gdt_count++;
+      gdt_n++;
       make_descriptor(&GDT[i], KERN_GDT[i][0], KERN_GDT[i][1], KERN_GDT[i][2]);
       break;
     }

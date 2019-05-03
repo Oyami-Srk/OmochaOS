@@ -4,7 +4,7 @@
 
 const volatile char *vm_start = (volatile char *)0xB8000;
 
-void VGA_write_color_string_to_vm(uint offset, ushort color, const char *str) {
+uint VGA_write_color_string_to_vm(uint offset, ushort color, const char *str) {
   volatile char *pCh = (volatile char *)((uint)vm_start + offset);
   char ch = *str;
   while (*str != 0) {
@@ -30,6 +30,7 @@ void VGA_write_color_string_to_vm(uint offset, ushort color, const char *str) {
   }
   if (*(pCh + 1) == 0)
     *(pCh + 1) = color; // make cursor visible
+  return (uint)pCh - (uint)vm_start;
 }
 
 void VGA_set_vm_display_addr(uint offset) {

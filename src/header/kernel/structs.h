@@ -23,10 +23,24 @@ struct tss {
   // char iomap[2];
 } __attribute__((packed));
 
-struct __process {
-  stack_frame stack;
-  u16 selector_ldt;
-  uint status;
-};
+typedef struct {
+  u16 limit_l;
+  u16 base_l;
+  u8 base_m;
+  u8 attr1;
+  u8 limit_h_attr2;
+  u8 base_h;
+} __attribute__((packed)) Descriptor;
+
+typedef struct {
+  u16 offset_l;
+  u16 selector;
+  u8 zero;
+  uint type : 4;
+  uint s : 1; // system, zero
+  uint dpl : 2;
+  uint p : 1; // present
+  u16 offset_h;
+} __attribute__((packed)) Gate;
 
 #endif // __STRUCT_H__

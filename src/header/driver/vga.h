@@ -16,7 +16,7 @@
 #define BRIGHT 0x08
 #define COLOR(bg, fg) ((bg << 4) | fg)
 
-void VGA_write_color_string_to_vm(uint offset, ushort color, const char *str);
+uint VGA_write_color_string_to_vm(uint offset, ushort color, const char *str);
 void VGA_set_vm_display_addr(uint offset);
 void VGA_set_cursor_addr(uint offset);
 void VGA_init(void);
