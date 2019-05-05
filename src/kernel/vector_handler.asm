@@ -4,8 +4,8 @@
 extern interrupt_handler ; interrupt.c
 extern interrupt_count   ; kernel.c
 extern kernel_stack      ; kernel.c
-extern processes         ; kernel.c
 extern tss               ; kernel.c
+extern current_running_proc  ; proc.c
 
 %include "kernel/pm.inc"
 
@@ -40,7 +40,7 @@ vector_handler_ret:
   cmp dword [interrupt_count], 0
   jne .non_zero
   ; check wheather syscall and pass retval
-  mov ecx, processes
+  mov ecx, [current_running_proc]
 
   cmp dword [ecx + __process.stack + stack_frame.trap_no], 0xE9 ; syscall int
   jne .non_syscall

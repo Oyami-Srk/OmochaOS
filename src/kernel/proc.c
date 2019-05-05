@@ -2,6 +2,10 @@
 #include "kernel/memory.h"
 #include "kernel/pm.h"
 
+process *proc_table;
+process *current_running_proc;
+size_t proc_table_size = 0;
+
 void init_proc(process *proc, uint pid, fp_v_v entry) {
   make_descriptor(&proc->ldts[0], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C);
   make_descriptor(&proc->ldts[1], 0x0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW);
@@ -20,4 +24,17 @@ void init_proc(process *proc, uint pid, fp_v_v entry) {
 
   proc->status = 0;
   proc->pid = pid;
+}
+
+void init_proctable(process *__proc_table, size_t max_proc) {
+  proc_table = __proc_table;
+  proc_table_size = max_proc;
+}
+
+uint i = 0;
+
+void scheduler() {
+  if (++i >= proc_table_size)
+    i = 0;
+  current_running_proc = &proc_table[i];
 }

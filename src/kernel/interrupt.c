@@ -35,6 +35,7 @@ void interrupt_handler(stack_frame *intf) {
   if (intf->trap_no == 32) {
     volatile char *ch = (volatile char *)(0xb8000);
     *ch = *ch + 1;
+    scheduler();
     EOI_M();
   }
   return;

@@ -11,7 +11,7 @@
 
 extern uint vector_table[];
 
-process processes[1];
+process processes[2];
 
 Descriptor gdt[128];
 Gate idt[256];
@@ -29,13 +29,21 @@ void TestA(void) {
     ;
 }
 
+void TestB(void) {
+  kwrite_str("Process B has started! ");
+  while (1)
+    ;
+}
+
 int main(void) {
   kernel_stack = kalloc();
   kinit_mem(KERN_END, KP2V(4 * 1024 * 1024));
-  kinit_gdt(gdt, 128, &tss, processes, 1);
+  kinit_gdt(gdt, 128, &tss, processes, 2);
   kinit_interrupt(idt, sizeof(idt));
 
-  init_proc(processes, 1, TestA);
+  init_proc(&processes[0], 1, TestA);
+  init_proc(&processes[1], 2, TestB);
+  init_proctable(processes, 2);
 
   VGA_init();
   kwrite_str("Hello world!\nNice to meet you!\n");
