@@ -21,4 +21,6 @@ struct __list {
 
 typedef struct __list list;
 
+typedef char *va_list;
+
 #endif // __TYPE_H__

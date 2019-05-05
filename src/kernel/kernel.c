@@ -9,6 +9,8 @@
 
 #include "driver/vga.h"
 
+#include "syscall/syscall.h"
+
 extern uint vector_table[];
 
 process processes[2];
@@ -18,6 +20,7 @@ Gate idt[256];
 struct tss tss;
 uint interrupt_count = 1;
 void *kernel_stack;
+uint beats;
 
 uint disp_pos = 0;
 #define kwrite_str(str)                                                        \
@@ -31,11 +34,24 @@ void TestA(void) {
 
 void TestB(void) {
   kwrite_str("Process B has started! ");
-  while (1)
-    ;
+  uint beats = get_ticks();
+  char buf[32];
+  sprintf(buf, "<%d>", beats);
+  kwrite_str(buf);
+  uint beats_prv = beats;
+  while (1) {
+    beats = get_ticks();
+    if (beats - beats_prv <= 200)
+      continue;
+    beats_prv = beats;
+    char buf[32];
+    sprintf(buf, "<%d>", beats);
+    kwrite_str(buf);
+  }
 }
 
 int main(void) {
+  beats = 0;
   kernel_stack = kalloc();
   kinit_mem(KERN_END, KP2V(4 * 1024 * 1024));
   kinit_gdt(gdt, 128, &tss, processes, 2);
