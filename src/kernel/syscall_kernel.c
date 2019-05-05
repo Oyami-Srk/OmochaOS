@@ -6,4 +6,6 @@ extern uint beats;
 
 uint __get_ticks(void) { return beats; }
 
-void *syscall_table[] = {__get_ticks};
+uint __add(void *caller, uint a, uint b, uint c) { return a + b + c; }
+
+void *syscall_table[] = {__get_ticks, __add};

@@ -39,6 +39,9 @@ void TestB(void) {
   sprintf(buf, "<%d>", beats);
   kwrite_str(buf);
   uint beats_prv = beats;
+  uint result = add(1, 2, 3);
+  sprintf(buf, "[%d]", result);
+  kwrite_str(buf);
   while (1) {
     beats = get_ticks();
     if (beats - beats_prv <= 200)
