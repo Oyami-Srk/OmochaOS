@@ -1,6 +1,8 @@
 #include "lib/stdlib.h"
+#include "const.h"
 #include "kernel/type.h"
 #include "lib/string.h"
+#include "syscall/syscall.h"
 
 char *itoa(unsigned int value, char *str, int base) {
   char *rc;
@@ -107,4 +109,10 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 int sprintf(char *buf, const char *fmt, ...) {
   va_list arg = (va_list)((char *)(&fmt) + 4);
   return vsprintf(buf, fmt, arg);
+}
+
+void delay_ms(uint ms) {
+  uint beats_begin = get_ticks();
+  while (((get_ticks() - beats_begin) * 1000 / SYSTEM_CLOCK) < ms)
+    ;
 }
