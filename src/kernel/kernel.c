@@ -56,6 +56,9 @@ int main(void) {
   VGA_init();
 
   kwrite_str("Hello world!\nNice to meet you!\n");
+  char buf[128];
+  sprintf(buf, "Sizeof process is %d\n", sizeof(process));
+  kwrite_str(buf);
 
   start_proc();
   magic_break();

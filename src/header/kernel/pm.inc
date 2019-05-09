@@ -8,7 +8,7 @@ struc __process
 .ldts resb Descriptor_size
 .status resb 4
 .pid resb 4
-.name resb 1
+.name resb 16
 .p_msg resd 1
 .quene_head_sending_to_this_process resd 1
 .quene_body resd 1
