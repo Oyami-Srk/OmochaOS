@@ -36,9 +36,6 @@ vector_handler:
   ; jmp .vector_handler_ret
 
 vector_handler_ret:
-  jmp .1
-  dd __process_size
-  .1:
   dec dword [interrupt_count]
   cmp dword [interrupt_count], 0
   jne .non_zero
