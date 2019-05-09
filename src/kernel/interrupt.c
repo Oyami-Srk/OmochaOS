@@ -46,7 +46,7 @@ void interrupt_handler(stack_frame *intf) {
                                  "                    "
                                  "                    "
                                  "                    "
-                                 "                    ");
+                                 "                   ");
     char buf[128];
     sprintf(buf, "Exception %s in proc %d", exception_message[intf->trap_no],
             0);
@@ -59,7 +59,7 @@ void interrupt_handler(stack_frame *intf) {
   switch (intf->trap_no) {
   case IRQ_TIMER:
     beats++;
-    scheduler();
+    scheduler(0);
     EOI_M();
     break;
   case SYSCALL_INT: {

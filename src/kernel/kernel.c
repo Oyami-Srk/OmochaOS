@@ -34,19 +34,9 @@ void TestA(void) {
 
 void TestB(void) {
   kwrite_str("Process B has started! ");
-  uint beats = get_ticks();
-  char buf[32];
-  sprintf(buf, "<%d>", beats);
-  kwrite_str(buf);
-  uint beats_prv = beats;
-  uint result = add(1, 2, 3);
-  sprintf(buf, "[%d]", result);
-  kwrite_str(buf);
   while (1) {
-    beats = get_ticks();
-    beats_prv = beats;
     char buf[32];
-    sprintf(buf, "<%d>", beats);
+    sprintf(buf, "<%d>", get_ticks());
     kwrite_str(buf);
     delay_ms(200);
   }
@@ -64,12 +54,11 @@ int main(void) {
   init_proctable(processes, 2);
 
   VGA_init();
+
   kwrite_str("Hello world!\nNice to meet you!\n");
 
   start_proc();
   magic_break();
-  while (1)
-    ; // never reach here
 }
 
 /*

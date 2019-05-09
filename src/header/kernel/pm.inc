@@ -1,5 +1,6 @@
 ; Auto Generated Code
 
+
 ;================================
 struc __process
 .stack resb stack_frame_size
@@ -8,10 +9,11 @@ struc __process
 .status resb 4
 .pid resb 4
 .name resb 1
+.p_msg resd 1
+.quene_head_sending_to_this_process resd 1
+.quene_body resd 1
 endstruc 
 ;==============================
-
-
 
 ;================================
 struc stack_frame
@@ -96,6 +98,17 @@ struc Gate
 .dpl resb 4
 .p resb 4
 .offset_h resb 2
+endstruc 
+;==============================
+
+
+;================================
+struc message
+.sender resb 4
+.receiver resb 4
+.type resb 4
+.major_data resb 4
+.data resb 16
 endstruc 
 ;==============================
 

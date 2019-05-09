@@ -43,4 +43,24 @@ typedef struct {
   u16 offset_h;
 } __attribute__((packed)) Gate;
 
+typedef struct {
+  uint sender;
+  uint receiver;
+  uint type;
+  uint major_data;
+  union {
+    struct {
+      uint d1;
+      uint d2;
+      uint d3;
+      uint d4;
+    } m1;
+    struct {
+      uint d1;
+      char d2[12];
+    } m2;
+    char m3[16];
+  } data;
+} __attribute__((packed)) message; // 32 bytes
+
 #endif // __STRUCT_H__

@@ -13,6 +13,7 @@ typedef uint size_t;
 
 #define TRUE 1
 #define FALSE 0
+#define NULL 0
 
 struct __list {
   void *data;

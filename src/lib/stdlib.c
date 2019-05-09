@@ -1,8 +1,11 @@
 #include "lib/stdlib.h"
 #include "const.h"
 #include "kernel/type.h"
+#include "lib/asm.h"
 #include "lib/string.h"
 #include "syscall/syscall.h"
+
+#include "driver/vga.h"
 
 char *itoa(unsigned int value, char *str, int base) {
   char *rc;
@@ -114,5 +117,32 @@ int sprintf(char *buf, const char *fmt, ...) {
 void delay_ms(uint ms) {
   uint beats_begin = get_ticks();
   while (((get_ticks() - beats_begin) * 1000 / SYSTEM_CLOCK) < ms)
+    ;
+}
+
+void panic_proto(const char *str, const char *s_fn, const char *b_fn,
+                 const int ln) {
+  asm volatile("cli"); // close interrupt
+  VGA_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
+                               "                    "
+                               "                    "
+                               "                    "
+                               "                   ");
+  char buf[4];
+  char *p_str = (char *)str;
+  p_str++;
+  p_str[strlen(str) - 2] = '\0';
+  uint i = 0;
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), "[PANIC] ");
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), p_str);
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " in line ");
+  itoa(ln, buf, 10);
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), buf);
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " of ");
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), s_fn);
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " based on ");
+  i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), b_fn);
+  magic_break();
+  while (1)
     ;
 }

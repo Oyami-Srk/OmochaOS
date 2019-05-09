@@ -29,7 +29,6 @@ extern uint vector_table[]; // auto-generated
 void kinit_interrupt(Gate *idt, size_t count);
 void enable_irq(uint irq);
 void disable_irq(uint irq);
-void kreload_process();
 
 struct interrupt_method {
   uint pid;

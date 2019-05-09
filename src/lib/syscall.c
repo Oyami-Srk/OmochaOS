@@ -1,5 +1,6 @@
 #include "syscall/syscall.h"
 #include "const.h"
+#include "kernel/structs.h"
 
 #define STR(x) #x
 
@@ -14,16 +15,27 @@ uint get_ticks() {
   return beats;
 }
 
-uint add(uint v2, uint v3, uint v4) {
+uint send_msg(message *msg) {
   volatile uint rv;
-  asm volatile("movl %%ecx, %%ecx\n\t" ::"c"(v2));
-  asm volatile("movl %%ebx, %%ebx\n\t" ::"b"(v3));
-  asm volatile("movl %%edx, %%edx\n\t" ::"d"(v4));
+  asm volatile("movl %%ecx, %%ecx\n\t" ::"c"(msg));
   asm volatile("movl $1, %%eax\n\t"
-               "int $0xE9\n\t"
-               "movl %0, %%eax\n\t"
+               "int %1\n\t"
+               "movl %0, %%eax"
                : "=r"(rv)
-               :
+               : "g"(SYSCALL_INT)
+               : "memory");
+  return rv;
+}
+
+uint recv_msg(message *msg, uint recv_from) {
+  volatile uint rv;
+  asm volatile("movl %%ecx, %%ecx\n\t" ::"c"(msg));
+  asm volatile("movl %%ebx, %%ebx\n\t" ::"b"(recv_from));
+  asm volatile("movl $2, %%eax\n\t"
+               "int %1\n\t"
+               "movl %0, %%eax"
+               : "=r"(rv)
+               : "g"(SYSCALL_INT)
                : "memory");
   return rv;
 }

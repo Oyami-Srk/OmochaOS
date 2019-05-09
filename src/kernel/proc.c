@@ -1,6 +1,10 @@
 #include "kernel/proc.h"
 #include "kernel/memory.h"
 #include "kernel/pm.h"
+#include "lib/asm.h"
+
+#include "driver/vga.h"
+#include "lib/stdlib.h"
 
 process *proc_table;
 process *current_running_proc;
@@ -22,7 +26,7 @@ void init_proc(process *proc, uint pid, fp_v_v entry) {
   proc->stack.esp = (uint)kalloc() + 4096;
   proc->stack.eflags = 0x1202;
 
-  proc->status = 0;
+  proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
   proc->pid = pid;
 }
 
@@ -33,8 +37,13 @@ void init_proctable(process *__proc_table, size_t max_proc) {
 
 uint i = 0;
 
-void scheduler() {
+void scheduler(uint recur) {
+  if (recur >= SCHEDULER_MAX_RETRY)
+    magic_break();
   if (++i >= proc_table_size)
     i = 0;
+  if (proc_table[i].status & ~PROC_STATUS_RUNNING) {
+    scheduler(recur + 1);
+  }
   current_running_proc = &proc_table[i];
 }
