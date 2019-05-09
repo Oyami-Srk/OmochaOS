@@ -21,4 +21,6 @@ void VGA_set_vm_display_addr(uint offset);
 void VGA_set_cursor_addr(uint offset);
 void VGA_init(void);
 
+void kprintf(const char *fmt, ...);
+
 #endif // __VGA_H__

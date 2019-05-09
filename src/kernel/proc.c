@@ -37,13 +37,15 @@ void init_proctable(process *__proc_table, size_t max_proc) {
 
 uint i = 0;
 
+#define UNRUNABLE (PROC_STATUS_RECEVING | PROC_STATUS_SENDING)
+
 void scheduler(uint recur) {
-  if (recur >= SCHEDULER_MAX_RETRY)
-    magic_break();
-  if (++i >= proc_table_size)
-    i = 0;
-  if (proc_table[i].status & ~PROC_STATUS_RUNNING) {
-    scheduler(recur + 1);
-  }
+  if (!current_running_proc)
+    return;
+  do {
+    i++;
+    if (i >= proc_table_size)
+      i = 0;
+  } while ((proc_table[i].status & 0xFF) & UNRUNABLE);
   current_running_proc = &proc_table[i];
 }

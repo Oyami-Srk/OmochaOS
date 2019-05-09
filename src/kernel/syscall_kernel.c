@@ -5,6 +5,9 @@
 #include "lib/string.h"
 #include "syscall/syscall.h"
 
+#include "driver/vga.h"
+#include "lib/asm.h"
+
 extern uint beats;
 
 uint __get_ticks(void) { return beats; }
@@ -25,6 +28,7 @@ uint __send_msg(process *sender, message *msg) {
     receiver->status &= ~PROC_STATUS_RECEVING;
     receiver->status |= PROC_STATUS_NORMAL;
     receiver->status |= PROC_STATUS_RUNNING;
+    CLR_PROC_STATUS_PID(sender);
     SET_PROC_STATUS_PID(receiver, REFUSE);
   } else {
     // receiver is not ready to receive
@@ -32,15 +36,15 @@ uint __send_msg(process *sender, message *msg) {
     sender->p_msg = msg;
     sender->status &= ~PROC_STATUS_NORMAL;
     sender->status |= PROC_STATUS_SENDING;
+    CLR_PROC_STATUS_PID(sender);
     SET_PROC_STATUS_PID(sender, msg->receiver);
     process *p = receiver->quene_head_sending_to_this_process;
     if (p) {
       while (p->quene_body)
         p = p->quene_body;
       p->quene_body = sender;
-    } else {
+    } else
       receiver->quene_head_sending_to_this_process = sender;
-    }
     sender->quene_body = NULL;
     scheduler(0);
   }
@@ -70,7 +74,6 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
       receiver->quene_head_sending_to_this_process = sender->quene_body;
     }
   } else {
-    ;
     sender = &proc_table[recv_from];
     if ((sender->status & PROC_STATUS_SENDING) &&
         (GET_PROC_STATUS_PID(sender) == receiver->pid)) {
@@ -100,6 +103,26 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
       sender = 0;
     }
   }
+  if (sender) {
+    assert(msg);
+    assert(sender->status & PROC_STATUS_SENDING);
+    memcpy(msg, sender->p_msg, sizeof(message));
+    sender->p_msg = 0;
+    CLR_PROC_STATUS_PID(sender);
+    SET_PROC_STATUS_PID(sender, REFUSE);
+    sender->status &= ~PROC_STATUS_SENDING;
+    sender->status |= PROC_STATUS_NORMAL;
+    sender->status |= PROC_STATUS_RUNNING;
+    scheduler(0);
+  } else {
+    CLR_PROC_STATUS_PID(receiver);
+    SET_PROC_STATUS_PID(receiver, recv_from);
+    receiver->p_msg = msg;
+    receiver->status &= ~PROC_STATUS_RUNNING;
+    receiver->status |= PROC_STATUS_RECEVING;
+    scheduler(0);
+  }
+  return 0;
 }
 
 void *syscall_table[] = {__get_ticks, __send_msg, __recv_msg};

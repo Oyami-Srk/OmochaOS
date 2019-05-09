@@ -4,6 +4,8 @@
 #include "kernel/type.h"
 
 char *itoa(unsigned int value, char *str, int base);
+
+int vsprintf(char *buf, const char *fmt, va_list args);
 int sprintf(char *buf, const char *fmt, ...);
 void delay_ms(uint);
 

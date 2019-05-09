@@ -17,9 +17,11 @@
 #define PROC_STATUS_SENDING 0x40
 #define PROC_STATUS_RECEVING 0x80
 
-#define GET_PROC_STATUS_PID(p) ((((((process *)((p)))->status) >> 8) & 0x00FF))
+#define GET_PROC_STATUS_PID(p)                                                 \
+  ((((((process *)((p)))->status) >> 8) & 0x00FFFF))
 #define SET_PROC_STATUS_PID(p, x)                                              \
-  (((((process *)((p)))->status) |= ((((x)) << 8) & 0xFF)))
+  ((((process *)((p)))->status) |= (((x)&0xFFFF) << 8))
+#define CLR_PROC_STATUS_PID(p) (((process *)((p)))->status &= 0xFF0000FF)
 #define ANY 0
 #define REFUSE 0xFFFF
 #define INTERRUPT 0xFFFE
