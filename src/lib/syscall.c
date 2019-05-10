@@ -112,3 +112,22 @@ uint unreg_int_func(uint irq) {
   recv_msg(&msg, SYSTASK_PID);
   return msg.major_data;
 }
+
+uint reg_int_msg(uint irq) {
+  message msg;
+  msg.type = REG_INT_MSG;
+  msg.receiver = SYSTASK_PID;
+  msg.major_data = irq;
+  send_msg(&msg);
+  recv_msg(&msg, SYSTASK_PID);
+  return msg.major_data;
+}
+
+uint unreg_int_msg() {
+  message msg;
+  msg.type = UNREG_INT_MSG;
+  msg.receiver = SYSTASK_PID;
+  send_msg(&msg);
+  recv_msg(&msg, SYSTASK_PID);
+  return msg.major_data;
+}

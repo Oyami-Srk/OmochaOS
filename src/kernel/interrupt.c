@@ -10,6 +10,7 @@
 
 extern void *syscall_table[];
 struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
+uint interrupt_suscribed[HW_IRQ_COUNT];
 
 const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#DB: Debug",
@@ -40,6 +41,22 @@ static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
 extern uint beats;
 
+void send_interrupt_msg(uint irq, uint pid) {
+  assert(interrupt_methods[irq].pid < proc_table_size);
+
+  process *p = &proc_table[pid];
+  if (p->status & PROC_STATUS_RECEVING) {
+    if (GET_PROC_STATUS_PID(p) == 0 || GET_PROC_STATUS_PID(p) == INTERRUPT) {
+      p->p_msg->sender = INTERRUPT;
+      p->p_msg->type = INTERRUPT;
+      p->p_msg->major_data = irq;
+      p->status &= ~PROC_STATUS_RECEVING;
+      return;
+    }
+  }
+  p->status |= PROC_STATUS_GOTINT;
+}
+
 void interrupt_handler(stack_frame *intf) {
   if (intf->trap_no <= 19) {
     cli();
@@ -58,8 +75,14 @@ void interrupt_handler(stack_frame *intf) {
   }
 
   if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
-    if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE)
+    if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE) {
+      disable_irq(intf->trap_no - IRQ0);
+      // you must enable irq in func to turn on
       interrupt_methods[intf->trap_no - IRQ0].func();
+    }
+    if (interrupt_suscribed[intf->trap_no - IRQ0])
+      send_interrupt_msg(intf->trap_no - IRQ0,
+                         interrupt_suscribed[intf->trap_no - IRQ0]);
   }
 
   switch (intf->trap_no) {
@@ -107,6 +130,7 @@ void kinit_interrupt(Gate *idt, size_t count) {
     interrupt_methods[i].func = NULL;
     interrupt_methods[i].pid = 0;
     interrupt_methods[i].avail = FALSE;
+    interrupt_suscribed[i] = 0;
   }
   for (uint i = 0; i < 256; i++)
     if (i == SYSCALL_INT)

@@ -86,6 +86,24 @@ void SysTask() {
       msg.major_data = 0;
       SEND_BACK(msg);
       break;
+    case REG_INT_MSG:
+      if (msg.major_data == 0)
+        panic("Cannot suscribe clock interrupt!");
+      if (msg.major_data >= HW_IRQ_COUNT)
+        panic("Cannot suscribe an interrupt bigger than 16");
+      if (interrupt_suscribed[msg.major_data] != 0)
+        panic("Someone has suscribed this irq");
+      interrupt_suscribed[msg.major_data] = msg.sender;
+      break;
+    case UNREG_INT_MSG:
+      if (msg.major_data == 0)
+        panic("Cannot unsuscribe clock interrupt!");
+      if (msg.major_data >= HW_IRQ_COUNT)
+        panic("Cannot unsuscribe an interrupt bigger than 16");
+      if (interrupt_suscribed[msg.major_data] == 0)
+        panic("Cannot unsuscribe an unsuscribed interrupt");
+      interrupt_suscribed[msg.major_data] = 0;
+      break;
     default:
       panic("Wrong Type of SysTaskCall");
     }

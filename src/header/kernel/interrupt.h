@@ -37,5 +37,6 @@ struct interrupt_method {
 } __attribute__((packed));
 
 extern struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
+extern uint interrupt_suscribed[HW_IRQ_COUNT];
 
 #endif // __INTERRUPT_H__
