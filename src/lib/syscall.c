@@ -39,3 +39,23 @@ uint recv_msg(message *msg, uint recv_from) {
                : "memory");
   return rv;
 }
+
+// SysTask provide
+
+uint get_ticks_msg() {
+  message msg;
+  msg.type = GET_TICKS;
+  msg.receiver = 1;
+  send_msg(&msg);
+  recv_msg(&msg, 1);
+  return msg.major_data;
+}
+
+uint get_pid() {
+  message msg;
+  msg.type = GET_PID;
+  msg.receiver = 1;
+  send_msg(&msg);
+  recv_msg(&msg, 1);
+  return msg.major_data;
+}

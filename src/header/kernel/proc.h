@@ -48,6 +48,7 @@ typedef void *(*fp_vp_vp)(void *);
 
 extern process *current_running_proc; // proc.c
 extern process *proc_table;           // proc.c
+extern size_t proc_table_size;        // proc.c
 
 extern void vector_handler_ret();
 void init_proc(process *proc, uint pid, fp_v_v entry);

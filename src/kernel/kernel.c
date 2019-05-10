@@ -11,9 +11,11 @@
 
 #include "syscall/syscall.h"
 
+#include "modules/modules.h"
+
 extern uint vector_table[];
 
-process processes[3];
+process processes[4];
 
 Descriptor gdt[128];
 Gate idt[256];
@@ -25,7 +27,7 @@ uint beats;
 void TestA(void) {
   kprintf("Process A has started! ");
   message msg;
-  msg.receiver = 2;
+  msg.receiver = 3;
   msg.major_data = 2333;
   while (1) {
     send_msg(&msg);
@@ -38,36 +40,35 @@ void TestB(void) {
   message msg;
   while (1) {
     char buf[32];
-    sprintf(buf, "<%d>", get_ticks());
+    sprintf(buf, "<%d>", get_ticks_msg());
     kprintf(buf);
     delay_ms(200);
-    recv_msg(&msg, 1);
+    recv_msg(&msg, 2);
     sprintf(buf, "msg is %d ", msg.major_data);
     kprintf(buf);
   }
 }
-
-void SysIdle() {
-  while (1)
-    ;
-}
-
+extern void SysIdle();
+extern void SysTask();
 int main(void) {
   beats = 0;
   kernel_stack = kalloc();
   kinit_mem(KERN_END, KP2V(4 * 1024 * 1024));
-  kinit_gdt(gdt, 128, &tss, processes, 3);
+  kinit_gdt(gdt, 128, &tss, processes,
+            sizeof(processes) / sizeof(processes[0]));
   kinit_interrupt(idt, sizeof(idt));
 
   init_proc(&processes[0], 0, SysIdle);
-  init_proc(&processes[1], 1, TestA);
-  init_proc(&processes[2], 2, TestB);
-  init_proctable(processes, 3);
+  init_proc(&processes[1], 1, SysTask);
+  init_proc(&processes[2], 2, TestA);
+  init_proc(&processes[3], 3, TestB);
+  init_proctable(processes, sizeof(processes) / sizeof(processes[0]));
 
   VGA_init();
 
+  kprintf("^-^\nLoad complete! Totally got %d processes.\n",
+          sizeof(processes) / sizeof(processes[0]));
   kprintf("Hello world!\nNice to meet you!\n");
-  char buf[128];
 
   start_proc();
   magic_break();
