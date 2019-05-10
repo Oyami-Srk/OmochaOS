@@ -31,7 +31,6 @@ void TestA(void) {
   msg.major_data = 2333;
   while (1) {
     send_msg(&msg);
-    kprintf("<msg sent>");
   }
 }
 
@@ -39,13 +38,8 @@ void TestB(void) {
   kprintf("Process B has started! ");
   message msg;
   while (1) {
-    char buf[32];
-    sprintf(buf, "<%d>", get_ticks_msg());
-    kprintf(buf);
     delay_ms(200);
     recv_msg(&msg, 2);
-    sprintf(buf, "msg is %d ", msg.major_data);
-    kprintf(buf);
   }
 }
 extern void SysIdle();

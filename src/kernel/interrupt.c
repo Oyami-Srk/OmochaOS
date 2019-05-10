@@ -9,6 +9,7 @@
 #include "driver/vga.h"
 
 extern void *syscall_table[];
+struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
 
 const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#DB: Debug",
@@ -56,6 +57,11 @@ void interrupt_handler(stack_frame *intf) {
       ;
   }
 
+  if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
+    if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE)
+      interrupt_methods[intf->trap_no - IRQ0].func();
+  }
+
   switch (intf->trap_no) {
   case IRQ_TIMER:
     beats++;
@@ -97,6 +103,11 @@ void init_8259A() {
 }
 
 void kinit_interrupt(Gate *idt, size_t count) {
+  for (uint i = 0; i < HW_IRQ_COUNT; i++) {
+    interrupt_methods[i].func = NULL;
+    interrupt_methods[i].pid = 0;
+    interrupt_methods[i].avail = FALSE;
+  }
   for (uint i = 0; i < 256; i++)
     if (i == SYSCALL_INT)
       make_gate(&idt[i], 1 << 3, (uint)vector_table[i], DPL3, GATE_INT32);
@@ -110,4 +121,18 @@ void kinit_interrupt(Gate *idt, size_t count) {
   asm volatile("lidt (%0)" ::"r"(idt_ptr));
   init_8259A();
   asm("sti");
+}
+
+void enable_irq(uint irq) {
+  if (irq < 8)
+    outb(IO_PIC_M + 1, inb(IO_PIC_M) & ~(1 << irq));
+  else
+    outb(IO_PIC_S + 1, inb(IO_PIC_S) & ~(1 << irq));
+}
+
+void disable_irq(uint irq) {
+  if (irq < 8)
+    outb(IO_PIC_M + 1, inb(IO_PIC_M) | (1 << irq));
+  else
+    outb(IO_PIC_S + 1, inb(IO_PIC_S) | (1 << irq));
 }

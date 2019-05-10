@@ -5,4 +5,6 @@
 #define SYSCALL_INT 0xE9
 #define SYSTEM_CLOCK 100 // In hz
 
+#define CIRCULAR_BUFFER_SIZE 128
+
 #endif // __CONST_H__

@@ -1,6 +1,7 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
+#include "kernel/interrupt.h"
 #include "kernel/structs.h"
 #include "kernel/type.h"
 
@@ -17,7 +18,14 @@ uint recv_msg(message *msg, uint recv_from);
 #define REG_PROC 3
 #define UNREG_PROC 4
 #define QUERY_PROC 5
+#define REG_INT_FUNC 6
+#define UNREG_INT_FUNC 7
 uint get_ticks_msg();
 uint get_pid();
+uint reg_proc(const char *name);
+uint unreg_proc();
+uint query_proc(const char *name);
+uint reg_int_func(uint irq, fp_v_v func);
+uint unreg_int_func(uint irq);
 
 #endif // __SYSCALL_H__

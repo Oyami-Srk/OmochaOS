@@ -1,6 +1,7 @@
 #ifndef __STRUCT_H__
 #define __STRUCT_H__
 
+#include "const.h"
 #include "kernel/type.h"
 
 typedef struct {
@@ -62,5 +63,35 @@ typedef struct {
     char m3[16];
   } data;
 } __attribute__((packed)) message; // 32 bytes
+
+typedef struct {
+  uchar *head;
+  uchar *tail;
+  uint count;
+  uchar buf[CIRCULAR_BUFFER_SIZE];
+} Circular_Buffer;
+
+static inline uchar read_circular_buffer(Circular_Buffer *b) {
+  uchar data;
+  while (b->count <= 0) {
+    asm("nop");
+  }
+  data = *(b->tail);
+  b->tail++;
+  if (b->tail == b->buf + CIRCULAR_BUFFER_SIZE)
+    b->tail = b->buf;
+  b->count--;
+  return data;
+}
+
+static inline void write_circular_buffer(Circular_Buffer *b, uchar data) {
+  if (b->count >= CIRCULAR_BUFFER_SIZE)
+    read_circular_buffer(b); // 抛弃
+  *(b->head) = data;
+  b->head++;
+  if (b->head == b->buf + CIRCULAR_BUFFER_SIZE)
+    b->head = b->buf;
+  b->count++;
+}
 
 #endif // __STRUCT_H__

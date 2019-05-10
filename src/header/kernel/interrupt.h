@@ -32,11 +32,10 @@ void disable_irq(uint irq);
 
 struct interrupt_method {
   uint pid;
-  uint data;
-  ushort method;
+  fp_v_v func;
   ushort avail;
 } __attribute__((packed));
 
-extern struct interrupt_method interrupt_metcdhods[HW_IRQ_COUNT];
+extern struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
 
 #endif // __INTERRUPT_H__

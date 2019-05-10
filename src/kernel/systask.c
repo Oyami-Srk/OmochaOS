@@ -1,3 +1,4 @@
+#include "kernel/interrupt.h"
 #include "kernel/proc.h"
 #include "syscall/syscall.h"
 
@@ -57,6 +58,34 @@ void SysTask() {
       SEND_BACK(msg);
       break;
     }
+    case REG_INT_FUNC:
+      if (msg.major_data == 0)
+        panic("Cannot assign to clock interrupt!");
+      if (msg.major_data >= HW_IRQ_COUNT)
+        panic("Cannot assign to interrupt bigger than 16!");
+      if (interrupt_methods[msg.major_data].avail == TRUE)
+        panic("Someone has been assigned to this interrupt!");
+      interrupt_methods[msg.major_data].avail = TRUE;
+      interrupt_methods[msg.major_data].pid = msg.sender;
+      interrupt_methods[msg.major_data].func = (fp_v_v)msg.data.m1.d1;
+      msg.major_data = 0;
+      SEND_BACK(msg);
+      break;
+    case UNREG_INT_FUNC:
+      if (msg.major_data == 0)
+        panic("Cannot unassign clock interrupt!");
+      if (msg.major_data >= HW_IRQ_COUNT)
+        panic("Cannot unassign an interrupt bigger than 16!");
+      if (interrupt_methods[msg.major_data].avail == FALSE)
+        panic("No one has been assigned to this interrupt!");
+      if (interrupt_methods[msg.major_data].pid != msg.sender)
+        panic("Cannot unassign an interrupt not assigned to you!");
+      interrupt_methods[msg.major_data].avail = FALSE;
+      interrupt_methods[msg.major_data].pid = 0;
+      interrupt_methods[msg.major_data].func = NULL;
+      msg.major_data = 0;
+      SEND_BACK(msg);
+      break;
     default:
       panic("Wrong Type of SysTaskCall");
     }
