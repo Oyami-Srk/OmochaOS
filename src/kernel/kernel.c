@@ -15,7 +15,8 @@
 
 extern uint vector_table[];
 
-process processes[4];
+process processes[4 + __MODULES_COUNT__];
+uint modules[__MODULES_COUNT__] = __MODULES_DEFINES__;
 
 Descriptor gdt[128];
 Gate idt[256];
@@ -56,6 +57,8 @@ int main(void) {
   init_proc(&processes[1], 1, SysTask);
   init_proc(&processes[2], 2, TestA);
   init_proc(&processes[3], 3, TestB);
+  for (uint i = 0; i < __MODULES_COUNT__; i++)
+    init_proc(&processes[4 + i], 4 + i, (fp_v_v)modules[i]);
   init_proctable(processes, sizeof(processes) / sizeof(processes[0]));
 
   VGA_init();
