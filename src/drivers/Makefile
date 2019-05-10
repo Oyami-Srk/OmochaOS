@@ -1,5 +1,7 @@
 # GNU Makefile
 # src/drivers/
+# Drivers only contains what for boot-step kernel only
+# Module should use seperated binary for driver finally
 
 .PHONY: all
 
