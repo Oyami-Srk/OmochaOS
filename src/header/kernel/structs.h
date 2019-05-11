@@ -73,9 +73,12 @@ typedef struct {
 
 static inline uchar read_circular_buffer(Circular_Buffer *b) {
   uchar data;
+  /*
   while (b->count <= 0) {
     asm("nop");
-  }
+  }*/
+  if (b->count <= 0)
+    return 0;
   data = *(b->tail);
   b->tail++;
   if (b->tail == b->buf + CIRCULAR_BUFFER_SIZE)

@@ -115,8 +115,8 @@ int sprintf(char *buf, const char *fmt, ...) {
 }
 
 void delay_ms(uint ms) {
-  uint beats_begin = get_ticks();
-  while (((get_ticks() - beats_begin) * 1000 / SYSTEM_CLOCK) < ms)
+  uint beats_begin = get_ticks_msg();
+  while (((get_ticks_msg() - beats_begin) * 1000 / SYSTEM_CLOCK) < ms)
     ;
 }
 

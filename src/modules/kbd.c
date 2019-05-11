@@ -150,7 +150,7 @@ uint kbd_read() {
 }
 
 void interrupt_kbd();
-void initialize_kbd() {
+void init_kbd() {
   kbd_buffer.tail = kbd_buffer.head = kbd_buffer.buf;
   kbd_buffer.count = 0;
   shift_l = shift_r = alt_l = alt_r = ctrl_l = ctrl_r = caps_lock = num_lock =

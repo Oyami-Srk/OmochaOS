@@ -110,7 +110,7 @@
 #define MSG_KBD_GETKEY 1
 #define MSG_KBD_READ 1
 
-void initialize_kbd();
+void init_kbd();
 unsigned int kbd_read();
 
 #endif // __MODULE_KBD_H__

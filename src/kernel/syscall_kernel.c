@@ -60,12 +60,19 @@ int __recv_msg(process *receiver, message *msg, uint recv_from) {
     panic("Recv with refuse");
   if (receiver->status & PROC_STATUS_GOTINT &&
       (recv_from == INTERRUPT || recv_from == ANY)) {
-    if (receiver->pid == 6)
-      panic("me");
     msg->type = INTERRUPT;
     msg->major_data = INTERRUPT - 1;
     msg->sender = INTERRUPT;
     receiver->status &= ~PROC_STATUS_GOTINT;
+    return 0;
+  }
+  if (recv_from == INTERRUPT) {
+    CLR_PROC_STATUS_PID(receiver);
+    SET_PROC_STATUS_PID(receiver, recv_from);
+    receiver->p_msg = msg;
+    receiver->status &= ~PROC_STATUS_RUNNING;
+    receiver->status |= PROC_STATUS_RECEVING;
+    scheduler(0);
     return 0;
   }
   if (recv_from == ANY) {

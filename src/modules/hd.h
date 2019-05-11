@@ -63,7 +63,7 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
                                                  uint LBA, u8 feature, u8 drive,
                                                  u8 count, u8 command) {
   cmd->counts = count;
-  cmd->device = ((LBA >> 24) & 0xF) | 0xE0 | (drive << 4);
+  cmd->device = ((LBA >> 24) & 0xF) | 0xA0 | (drive << 4);
   cmd->lba_low = LBA & 0xF;
   cmd->lba_mid = (LBA >> 8) & 0xF;
   cmd->lba_high = (LBA >> 16) & 0xF;
@@ -75,6 +75,23 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
 #define ATA_IDENTIFY 0xEC
 #define ATA_READ 0x20
 #define ATA_WRITE 0x30
+
+#define MAX_DRIVES 2
+#define PART_PER_DRIVE 4
+#define SUB_PER_PART 16
+#define SUB_PER_DRIVE (SUB_PER_PART * PART_PER_DRIVE)
+#define PRIM_PER_DRIVE (PART_PER_DRIVE + 1)
+
+struct HD_PartInfo {
+  uint base;
+  uint size;
+};
+struct HD_Info {
+  uint open_cnt;
+  struct HD_PartInfo primary[PRIM_PER_DRIVE];
+  struct HD_PartInfo logical[SUB_PER_DRIVE];
+};
+
 // msg code
 
 #endif // __MODULE_HD__

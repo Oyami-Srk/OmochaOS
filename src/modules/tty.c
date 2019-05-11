@@ -25,7 +25,7 @@ void Task_TTY() {
   if (reg_proc("TaskTTY") != 0)
     kprintf("Cannot register as TaskTTY!\n");
   uint key = 0;
-  initialize_kbd();
+  init_kbd();
   for (uint i = 0; i < max_con; i++)
     init_console(&con[i], i);
   write_console(&con[0], "Monitor Initialized!\nConsole #1> ");
