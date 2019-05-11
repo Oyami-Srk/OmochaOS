@@ -40,10 +40,17 @@ static inline void insl(int port, void *addr, int cnt) {
                : "memory", "cc");
 }
 
+static inline void outsl(int port, const void *addr, int cnt) {
+  asm volatile("cld; rep outsl"
+               : "=S"(addr), "=c"(cnt)
+               : "d"(port), "0"(addr), "1"(cnt)
+               : "cc");
+}
+
 #ifndef __NON_DEBUG
-
 static inline void magic_break(void) { asm volatile("xchgw %bx, %bx"); }
-
+#else
+static inline void magic_break(void) { asm volatile("nop"); }
 #endif
 
 #endif // __ASM_H__

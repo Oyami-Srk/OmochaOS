@@ -100,12 +100,40 @@ void hd_open(int drv) {
   hd_info[drv].open_cnt++;
 }
 
+size_t hd_write(u8 *buf, uint drv, uint lba, size_t count) {
+  struct HD_Command cmd;
+  HD_make_command(&cmd, lba, 0, drv, 1, ATA_WRITE);
+  HD_send_command(&cmd);
+  message msg;
+  for (uint i = 0; i < 512; i++)
+    hd_buf[i] = i;
+  if (!wait_hd(HD_STATUS_DRQ, HD_STATUS_DRQ, HD_TIMEOUT))
+    panic("eww");
+  outsl(HD_REG_DATA, hd_buf, 512 / 4);
+  recv_msg(&msg, INTERRUPT);
+}
+
+size_t hd_read(u8 *buf, uint drv, uint lba, size_t count) {
+  struct HD_Command cmd;
+  HD_make_command(&cmd, lba, 0, drv, 1, ATA_READ);
+  HD_send_command(&cmd);
+  message msg;
+  recv_msg(&msg, INTERRUPT);
+  insl(HD_REG_DATA, hd_buf, 512 / 4);
+  for (uint i = 0; i < 512; i++)
+    printf("%x ", hd_buf[i]);
+}
+
 void Task_HD() {
   message msg;
   if (reg_proc("TaskHD") != 0)
     printf("[HD] Cannot register as TaskHD");
   printf("\n[HD] Initialized\n");
   init_hd();
+  delay_ms(200);
+  hd_open(0);
+  hd_write(hd_buf, 0, 0, 512);
+  hd_read(hd_buf, 0, 0, 512);
   while (1) {
     recv_msg(&msg, ANY);
     int src = msg.sender;
