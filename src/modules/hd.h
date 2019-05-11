@@ -68,6 +68,7 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
   cmd->lba_mid = (LBA >> 8) & 0xF;
   cmd->lba_high = (LBA >> 16) & 0xF;
   cmd->features = feature;
+  cmd->command = command;
   return cmd;
 }
 #define HD_TIMEOUT 10000 /* in millisec */

@@ -85,8 +85,8 @@ void hd_identify(int drv) {
 void init_hd() {
   uchar *pDrives_n = (uchar *)0x475;
   printf("[HD] Drives num: %d\n", *pDrives_n);
-  // if (reg_int_msg(HW_IRQ_AT))
-  printf("[HD] Cannot attach to interrupt AT\n");
+  if (reg_int_msg(HW_IRQ_AT))
+    printf("[HD] Cannot attach to interrupt AT\n");
   enable_irq(2); // Cascade
   enable_irq(HW_IRQ_AT);
   for (int i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++)
@@ -98,7 +98,7 @@ void Task_HD() {
   message msg;
   if (reg_proc("TaskHD") != 0)
     printf("[HD] Cannot register as TaskHD");
-  printf("[HD] Initialized\n");
+  printf("\n[HD] Initialized\n");
   init_hd();
 
   hd_identify(0);
