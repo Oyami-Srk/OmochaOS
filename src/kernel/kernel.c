@@ -31,18 +31,21 @@ void TestA(void) {
   msg.receiver = 3;
   msg.major_data = 2333;
   while (1) {
-    send_msg(&msg);
+    ;
   }
 }
 
 void TestB(void) {
   kprintf("Process B has started! ");
   message msg;
+  delay_ms(200);
+  uint task_hd = query_proc("TaskHD");
+  msg.major_data = 0;
+  msg.type = 1;
+  msg.receiver = task_hd;
+  send_msg(&msg);
   while (1) {
-    delay_ms(200);
-    recv_msg(&msg, 2);
-    delay_ms(1000);
-    printf("Eihzhz");
+    ;
   }
 }
 extern void SysIdle();

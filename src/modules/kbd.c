@@ -169,5 +169,4 @@ extern void EOI_M();
 void interrupt_kbd() {
   write_circular_buffer(&kbd_buffer, inb(0x60));
   enable_irq(HW_IRQ_KBD);
-  outb(IO_PIC_M, 0x20);
 }

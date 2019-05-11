@@ -79,10 +79,22 @@ void interrupt_handler(stack_frame *intf) {
       disable_irq(intf->trap_no - IRQ0);
       // you must enable irq in func to turn on
       interrupt_methods[intf->trap_no - IRQ0].func();
+      if (intf->trap_no - IRQ0 < 8)
+        EOI_M();
+      else {
+        EOI_M();
+        EOI_S();
+      }
     }
     if (interrupt_suscribed[intf->trap_no - IRQ0])
       send_interrupt_msg(intf->trap_no - IRQ0,
                          interrupt_suscribed[intf->trap_no - IRQ0]);
+    if (intf->trap_no - IRQ0 < 8)
+      EOI_M();
+    else {
+      EOI_M();
+      EOI_S();
+    }
   }
 
   switch (intf->trap_no) {

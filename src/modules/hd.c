@@ -89,9 +89,15 @@ void init_hd() {
     printf("[HD] Cannot attach to interrupt AT\n");
   enable_irq(2); // Cascade
   enable_irq(HW_IRQ_AT);
-  for (int i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++)
+  for (int i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++) {
     memset(&hd_info[i], 0, sizeof(hd_info[0]));
-  hd_info[0].open_cnt = 0;
+    hd_info[i].open_cnt = 0;
+  }
+}
+
+void hd_open(int drv) {
+  hd_identify(drv);
+  hd_info[drv].open_cnt++;
 }
 
 void Task_HD() {
@@ -100,16 +106,16 @@ void Task_HD() {
     printf("[HD] Cannot register as TaskHD");
   printf("\n[HD] Initialized\n");
   init_hd();
-
-  hd_identify(0);
-
   while (1) {
     recv_msg(&msg, ANY);
     int src = msg.sender;
     switch (msg.type) {
     case INTERRUPT:
-      printf(".");
       update_status();
+      break;
+    case DEV_OPEN:
+      hd_open(msg.major_data);
+      break;
     }
   }
 }

@@ -95,4 +95,6 @@ struct HD_Info {
 
 // msg code
 
+#define DEV_OPEN 1
+
 #endif // __MODULE_HD__
