@@ -34,6 +34,13 @@ void Task_TTY() {
   write_console(&con[3], "Console #4> ");
 
   while (1) {
+    if (peek_msg()) {
+      recv_msg(&msg, ANY);
+      write_console(&con[cur_con], (const char *)msg.major_data);
+      msg.major_data = 0;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
+    }
     if (!((key = kbd_read()) & 0x0100)) {
       char buf[2];
       sprintf(buf, "%c", key);

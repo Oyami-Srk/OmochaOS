@@ -22,6 +22,7 @@ uint recv_msg(message *msg, uint recv_from);
 #define UNREG_INT_FUNC 7
 #define REG_INT_MSG 8
 #define UNREG_INT_MSG 9
+#define PEEK_MSG 10
 uint get_ticks_msg();
 uint get_pid();
 uint reg_proc(const char *name);
@@ -31,5 +32,7 @@ uint reg_int_func(uint irq, fp_v_v func);
 uint unreg_int_func(uint irq);
 uint reg_int_msg(uint irq);
 uint unreg_int_msg();
+uint peek_msg();
+int printf(const char *fmt, ...);
 
 #endif // __SYSCALL_H__

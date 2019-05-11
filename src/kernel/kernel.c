@@ -41,6 +41,8 @@ void TestB(void) {
   while (1) {
     delay_ms(200);
     recv_msg(&msg, 2);
+    delay_ms(1000);
+    printf("Eihzhz");
   }
 }
 extern void SysIdle();

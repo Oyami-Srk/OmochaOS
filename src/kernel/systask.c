@@ -94,6 +94,8 @@ void SysTask() {
       if (interrupt_suscribed[msg.major_data] != 0)
         panic("Someone has suscribed this irq");
       interrupt_suscribed[msg.major_data] = msg.sender;
+      msg.major_data = 0;
+      SEND_BACK(msg);
       break;
     case UNREG_INT_MSG:
       if (msg.major_data == 0)
@@ -103,6 +105,15 @@ void SysTask() {
       if (interrupt_suscribed[msg.major_data] == 0)
         panic("Cannot unsuscribe an unsuscribed interrupt");
       interrupt_suscribed[msg.major_data] = 0;
+      msg.major_data = 0;
+      SEND_BACK(msg);
+      break;
+    case PEEK_MSG:
+      if (proc_table[msg.sender].quene_head_sending_to_this_process != NULL)
+        msg.major_data = TRUE;
+      else
+        msg.major_data = FALSE;
+      SEND_BACK(msg);
       break;
     default:
       panic("Wrong Type of SysTaskCall");

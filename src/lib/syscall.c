@@ -1,6 +1,7 @@
 #include "syscall/syscall.h"
 #include "const.h"
 #include "kernel/structs.h"
+#include "lib/stdlib.h"
 #include "lib/string.h"
 
 #define STR(x) #x
@@ -85,7 +86,7 @@ uint query_proc(const char *name) {
   msg.type = QUERY_PROC;
   msg.receiver = SYSTASK_PID;
   if (strlen(name) > 16)
-    return 1;
+    return 0;
   strcpy(msg.data.m3, (char *)name);
   send_msg(&msg);
   recv_msg(&msg, SYSTASK_PID);
@@ -129,5 +130,32 @@ uint unreg_int_msg() {
   msg.receiver = SYSTASK_PID;
   send_msg(&msg);
   recv_msg(&msg, SYSTASK_PID);
+  return msg.major_data;
+}
+
+uint peek_msg() {
+  message msg;
+  msg.type = PEEK_MSG;
+  msg.receiver = SYSTASK_PID;
+  send_msg(&msg);
+  recv_msg(&msg, SYSTASK_PID);
+  return msg.major_data;
+}
+
+int printf(const char *fmt, ...) {
+  message msg;
+  int i;
+  char buf[256];
+  va_list arg = (va_list)((char *)(&fmt) + 4);
+  i = vsprintf(buf, fmt, arg);
+  buf[i] = 0;
+  msg.major_data = (uint)buf;
+  msg.type = 1;
+  uint task_tty = query_proc("TaskTTY");
+  if (task_tty == 0)
+    return 0;
+  msg.receiver = task_tty;
+  send_msg(&msg);
+  recv_msg(&msg, task_tty);
   return msg.major_data;
 }
