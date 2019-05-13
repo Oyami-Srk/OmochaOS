@@ -47,6 +47,20 @@ static inline void outsl(int port, const void *addr, int cnt) {
                : "cc");
 }
 
+static inline void outsb(int port, const void *addr, int cnt) {
+  asm volatile("cld; rep outsb"
+               : "=S"(addr), "=c"(cnt)
+               : "d"(port), "0"(addr), "1"(cnt)
+               : "cc");
+}
+
+static inline void outsw(int port, const void *addr, int cnt) {
+  asm volatile("cld; rep outsw"
+               : "=S"(addr), "=c"(cnt)
+               : "d"(port), "0"(addr), "1"(cnt)
+               : "cc");
+}
+
 #ifndef __NON_DEBUG
 static inline void magic_break(void) { asm volatile("xchgw %bx, %bx"); }
 #else

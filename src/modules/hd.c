@@ -12,7 +12,7 @@ module:
 #include "syscall/syscall.h"
 
 u8 hd_status;
-u8 hd_buf[1024];
+u8 hd_buf[HD_BUFFER_SIZE];
 struct HD_Info hd_info[1];
 
 int wait_hd(int mask, int val, int timeout) {
@@ -100,33 +100,43 @@ void hd_open(int drv) {
   hd_info[drv].open_cnt++;
 }
 
-size_t hd_write(u8 *buf, uint drv, uint lba, size_t count) {
+// RW: 0-> Read 1->Write
+size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
+  if (RW && count % 512)
+    hd_rw(0, hd_buf, drv, lba + (count + SECTOR_SIZE - 1) / SECTOR_SIZE - 1,
+          SECTOR_SIZE);
   struct HD_Command cmd;
-  HD_make_command(&cmd, lba, 0, drv, count / SECTOR_SIZE, ATA_WRITE);
+  HD_make_command(&cmd, lba, 0, drv, (count + SECTOR_SIZE - 1) / SECTOR_SIZE,
+                  RW ? ATA_WRITE : ATA_READ);
   HD_send_command(&cmd);
   message msg;
-  for (uint i = 0; i < 512; i++)
-    hd_buf[i] = i;
-  if (!wait_hd(HD_STATUS_DRQ, HD_STATUS_DRQ, HD_TIMEOUT))
-    panic("Disk not read");
-  outsl(HD_REG_DATA, hd_buf, count / 4);
-  recv_msg(&msg, INTERRUPT);
+  size_t bytes_left = count;
+  void *addr = (void *)buf; // 当定址空间分开的时候 or 
+                            // 实现了Memory Manager的时候
+                            // 这里应该获取硬件地址
+
+  while (bytes_left) {
+    size_t bytes = MIN(SECTOR_SIZE, bytes_left);
+    if (RW == 0) { // Read
+      recv_msg(&msg, INTERRUPT);
+      insl(HD_REG_DATA, hd_buf, SECTOR_SIZE / 4);
+      memcpy(addr, hd_buf, bytes);
+    } else { // Write
+      if (!wait_hd(HD_STATUS_DRQ, HD_STATUS_DRQ, HD_TIMEOUT))
+        panic("Disk Error");
+      if (bytes == SECTOR_SIZE)
+        outsl(HD_REG_DATA, addr, bytes / 4);
+      else {
+        memcpy(hd_buf, addr, bytes);
+        outsl(HD_REG_DATA, hd_buf, SECTOR_SIZE / 4);
+      }
+      recv_msg(&msg, INTERRUPT);
+    }
+    bytes_left -= bytes;
+    addr += bytes;
+  }
   return count;
 }
-
-size_t hd_read(u8 *buf, uint drv, uint lba, size_t count) {
-  // count in byte
-  struct HD_Command cmd;
-  HD_make_command(&cmd, lba, 0, drv, count / SECTOR_SIZE, ATA_READ);
-  HD_send_command(&cmd);
-  message msg;
-  recv_msg(&msg, INTERRUPT);
-  insl(HD_REG_DATA, buf, count / 4);
-  for (uint i = 0; i < 512; i++)
-    printf("%02x ", buf[i]);
-  return count;
-}
-
 void Task_HD() {
   message msg;
   if (reg_proc("TaskHD") != 0)
@@ -135,13 +145,20 @@ void Task_HD() {
   init_hd();
   delay_ms(200);
   hd_open(0);
-  // hd_write(hd_buf, 0, 0, 512);
-  hd_read(hd_buf, 0, 0, 512);
+  u8 buffer[512];
+  buffer[0] = 1;
+  buffer[1] = 2;
+  buffer[2] = 3;
+  buffer[3] = 4;
+  hd_rw(1, buffer, 0, 0, 4);
+  hd_rw(0, buffer, 0, 0, 2);
+  printf("%x%x", buffer[0], buffer[1]);
   while (1) {
     recv_msg(&msg, ANY);
     int src = msg.sender;
     switch (msg.type) {
     case INTERRUPT:
+      printf(".");
       update_status();
       break;
     case DEV_OPEN:

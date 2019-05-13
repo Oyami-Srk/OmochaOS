@@ -84,6 +84,7 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
 #define PRIM_PER_DRIVE (PART_PER_DRIVE + 1)
 
 #define SECTOR_SIZE 512 // in byte
+#define HD_BUFFER_SIZE 4096
 
 struct HD_PartInfo {
   uint base;

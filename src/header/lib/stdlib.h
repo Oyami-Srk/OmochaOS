@@ -17,4 +17,7 @@ void delay_ms(uint);
 void panic_proto(const char *str, const char *s_fn, const char *b_fn,
                  const int ln);
 
+#define MIN(a, b) ((a) > (b) ? (b) : (a))
+#define MAX(a, b) ((a) < (b) ? (b) : (a))
+
 #endif // __STDLIB_H__
