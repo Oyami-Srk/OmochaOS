@@ -102,26 +102,29 @@ void hd_open(int drv) {
 
 size_t hd_write(u8 *buf, uint drv, uint lba, size_t count) {
   struct HD_Command cmd;
-  HD_make_command(&cmd, lba, 0, drv, 1, ATA_WRITE);
+  HD_make_command(&cmd, lba, 0, drv, count / SECTOR_SIZE, ATA_WRITE);
   HD_send_command(&cmd);
   message msg;
   for (uint i = 0; i < 512; i++)
     hd_buf[i] = i;
   if (!wait_hd(HD_STATUS_DRQ, HD_STATUS_DRQ, HD_TIMEOUT))
-    panic("eww");
-  outsl(HD_REG_DATA, hd_buf, 512 / 4);
+    panic("Disk not read");
+  outsl(HD_REG_DATA, hd_buf, count / 4);
   recv_msg(&msg, INTERRUPT);
+  return count;
 }
 
 size_t hd_read(u8 *buf, uint drv, uint lba, size_t count) {
+  // count in byte
   struct HD_Command cmd;
-  HD_make_command(&cmd, lba, 0, drv, 1, ATA_READ);
+  HD_make_command(&cmd, lba, 0, drv, count / SECTOR_SIZE, ATA_READ);
   HD_send_command(&cmd);
   message msg;
   recv_msg(&msg, INTERRUPT);
-  insl(HD_REG_DATA, hd_buf, 512 / 4);
+  insl(HD_REG_DATA, buf, count / 4);
   for (uint i = 0; i < 512; i++)
-    printf("%x ", hd_buf[i]);
+    printf("%02x ", buf[i]);
+  return count;
 }
 
 void Task_HD() {
@@ -132,7 +135,7 @@ void Task_HD() {
   init_hd();
   delay_ms(200);
   hd_open(0);
-  hd_write(hd_buf, 0, 0, 512);
+  // hd_write(hd_buf, 0, 0, 512);
   hd_read(hd_buf, 0, 0, 512);
   while (1) {
     recv_msg(&msg, ANY);
