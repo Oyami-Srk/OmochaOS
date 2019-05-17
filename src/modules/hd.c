@@ -15,6 +15,8 @@ u8 hd_status;
 u8 hd_buf[HD_BUFFER_SIZE];
 struct HD_Info hd_info[1];
 
+size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count);
+
 int wait_hd(int mask, int val, int timeout) {
   int t = get_ticks_msg();
 
@@ -67,7 +69,7 @@ void print_identify_info(ushort *hdinfo) {
   printf("LBA48 supported: %s\n", (cmd_set_supported & 0x0400) ? "Yes" : "No");
 
   int sectors = ((int)hdinfo[61] << 16) + hdinfo[60];
-  printf("HD size: %dMB\n", sectors * 512 / 1000000);
+  printf("HD size: %dMB\n", sectors * 512 / 1024 / 1024);
 }
 
 void hd_identify(int drv) {
@@ -80,6 +82,72 @@ void hd_identify(int drv) {
   update_status();
   insl(HD_REG_DATA, hd_buf, 512 / 4);
   print_identify_info((ushort *)hd_buf);
+
+  hd_info[drv].primary[0].base = 0;
+  hd_info[drv].primary[0].size =
+      ((int)((u16 *)(hd_buf))[61] << 16) + ((u16 *)(hd_buf))[60];
+}
+
+void part_identify(int drv) {}
+
+void part_table_read(int drv, uint sect, struct HD_PartTableEntity *ent) {
+  u8 buf[512];
+  hd_rw(0, buf, drv, sect, 512);
+  memcpy(ent, buf + 0x1BE, sizeof(struct HD_PartTableEntity) * PART_PER_DRIVE);
+}
+
+void init_partitions(int drv, int type, uint extend_id) {
+  struct HD_Info *info = &hd_info[drv];
+  struct HD_PartTableEntity part_table[SUB_PER_DRIVE];
+  memset(part_table, 0, sizeof(struct HD_PartTableEntity));
+
+  if (type != HD_PART_TYPE_EXTEND) { // primary
+    part_table_read(drv, 0, part_table);
+    size_t prim_parts = 0;
+    for (uint i = 0; i < PART_PER_DRIVE; i++) {
+      if (part_table[i].fsid == HD_PART_TYPE_NONE)
+        continue;
+      prim_parts++;
+      info->primary[i + 1].base = part_table[i].lba_begin;
+      info->primary[i + 1].size = part_table[i].size;
+
+      if (part_table[i].fsid == HD_PART_TYPE_EXTEND)
+        init_partitions(drv, HD_PART_TYPE_EXTEND, i + 1);
+    }
+    if (prim_parts == 0)
+      panic("No Part Table Found!");
+  } else {
+    uint ext_base = info->primary[extend_id].base;
+    uint start_ext_part = (extend_id - 1) * SUB_PER_PART;
+    uint sect = ext_base;
+
+    for (uint i = 0; i < SUB_PER_PART; i++) {
+      part_table_read(drv, sect, part_table);
+      info->logical[start_ext_part + i].base = sect + part_table[0].lba_begin;
+      info->logical[start_ext_part + i].size = part_table[0].size;
+
+      sect = ext_base + part_table[1].lba_begin;
+
+      if (part_table[1].fsid == HD_PART_TYPE_NONE)
+        break;
+    }
+  }
+}
+
+void print_part_info(struct HD_Info *info) {
+  for (uint i = 0; i < PART_PER_DRIVE + 1; i++) {
+    printf("%sPART_%d: Begin %d(0x%x) Size %d(0x%x)\n", i == 0 ? " " : "    ",
+           i, info->primary[i].base, info->primary[i].base,
+           info->primary[i].size, info->primary[i].size);
+  }
+  for (uint i = 0; i < SUB_PER_DRIVE; i++) {
+    if (info->logical[i].size == 0)
+      continue;
+    printf("        "
+           "%d: Begin %d(0x%x) Size %d(0x%x)\n",
+           i, info->logical[i].base, info->logical[i].base,
+           info->logical[i].size, info->logical[i].size);
+  }
 }
 
 void init_hd() {
@@ -97,7 +165,10 @@ void init_hd() {
 
 void hd_open(int drv) {
   hd_identify(drv);
-  hd_info[drv].open_cnt++;
+  if (hd_info[drv].open_cnt++ == 0) {
+    init_partitions(drv, 0, 0);
+    print_part_info(&hd_info[drv]);
+  }
 }
 
 // RW: 0-> Read 1->Write
@@ -144,15 +215,6 @@ void Task_HD() {
   printf("\n[HD] Initialized\n");
   init_hd();
   delay_ms(200);
-  hd_open(0);
-  u8 buffer[512];
-  buffer[0] = 1;
-  buffer[1] = 2;
-  buffer[2] = 3;
-  buffer[3] = 4;
-  hd_rw(1, buffer, 0, 0, 4);
-  hd_rw(0, buffer, 0, 0, 2);
-  printf("%x%x", buffer[0], buffer[1]);
   while (1) {
     recv_msg(&msg, ANY);
     int src = msg.sender;

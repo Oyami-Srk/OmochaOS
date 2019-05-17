@@ -64,9 +64,9 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
                                                  u8 count, u8 command) {
   cmd->counts = count;
   cmd->device = ((LBA >> 24) & 0xF) | 0xE0 | (drive << 4);
-  cmd->lba_low = LBA & 0xF;
-  cmd->lba_mid = (LBA >> 8) & 0xF;
-  cmd->lba_high = (LBA >> 16) & 0xF;
+  cmd->lba_low = LBA & 0xFF;
+  cmd->lba_mid = (LBA >> 8) & 0xFF;
+  cmd->lba_high = (LBA >> 16) & 0xFF;
   cmd->features = feature;
   cmd->command = command;
   return cmd;
@@ -95,6 +95,22 @@ struct HD_Info {
   struct HD_PartInfo primary[PRIM_PER_DRIVE];
   struct HD_PartInfo logical[SUB_PER_DRIVE];
 };
+
+struct HD_PartTableEntity {
+  u8 bootable; // 80h = bootable, 00h = unbootable
+  u8 head_begin;
+  u8 sect_begin; // 0-5 is sector, 6-7 is upper two bits for cyli_begin
+  u8 cyli_begin;
+  u8 fsid;
+  u8 head_end;
+  u8 sect_end;
+  u8 cyli_end;
+  u32 lba_begin; // sector in lba
+  u32 size;
+};
+
+#define HD_PART_TYPE_EXTEND 0x05
+#define HD_PART_TYPE_NONE 0x00
 
 // msg code
 

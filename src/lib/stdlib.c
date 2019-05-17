@@ -130,8 +130,6 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
                                "                   ");
   char buf[4];
   char *p_str = (char *)str;
-  p_str++;
-  p_str[strlen(str) - 2] = '\0';
   uint i = 0;
   i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), "[PANIC] ");
   i = VGA_write_color_string_to_vm(i, COLOR(BLUE, WHITE), p_str);
