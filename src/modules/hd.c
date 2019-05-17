@@ -81,14 +81,16 @@ void hd_identify(int drv) {
   recv_msg(&msg, INTERRUPT);
   update_status();
   insl(HD_REG_DATA, hd_buf, 512 / 4);
+#ifdef __DEBUG__
+  printf("[HD] ============ Debug Message ============\n");
   print_identify_info((ushort *)hd_buf);
+  printf("[HD] =======================================\n");
+#endif
 
   hd_info[drv].primary[0].base = 0;
   hd_info[drv].primary[0].size =
       ((int)((u16 *)(hd_buf))[61] << 16) + ((u16 *)(hd_buf))[60];
 }
-
-void part_identify(int drv) {}
 
 void part_table_read(int drv, uint sect, struct HD_PartTableEntity *ent) {
   u8 buf[512];
@@ -167,7 +169,11 @@ void hd_open(int drv) {
   hd_identify(drv);
   if (hd_info[drv].open_cnt++ == 0) {
     init_partitions(drv, 0, 0);
+#ifdef __DEBUG__
+    printf("[HD] ============ Debug Message ============\n");
     print_part_info(&hd_info[drv]);
+    printf("[HD] =======================================\n");
+#endif
   }
 }
 

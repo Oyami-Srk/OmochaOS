@@ -4,6 +4,10 @@
 HEADER = $(shell pwd)/header
 CC_FLAGS = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
 
+ifeq ($(BUILD_TYPE), debug)
+CC_FLAGS := $(CC_FLAGS) -D__DEBUG__
+endif
+
 export HEADER CC_FLAGS
 
 .PHONY: all
