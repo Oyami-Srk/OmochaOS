@@ -177,6 +177,11 @@ void hd_open(int drv) {
   }
 }
 
+void hd_close(int drv) {
+  hd_info[drv].open_cnt--;
+  printf("[HD] Drive %d closed!\n", drv);
+}
+
 // RW: 0-> Read 1->Write
 size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
   if (RW && count % 512)
@@ -226,11 +231,37 @@ void Task_HD() {
     int src = msg.sender;
     switch (msg.type) {
     case INTERRUPT:
-      printf(".");
       update_status();
       break;
     case DEV_OPEN:
       hd_open(msg.major_data);
+      msg.major_data = 0;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
+      break;
+    case DEV_WRITE: {
+      uint ret = hd_rw(TRUE, (void *)msg.data.m1.d1, msg.major_data,
+                       msg.data.m1.d2, msg.data.m1.d3);
+      msg.major_data = 0;
+      msg.data.m1.d1 = ret;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
+      break;
+    }
+    case DEV_READ: {
+      uint ret = hd_rw(FALSE, (void *)msg.data.m1.d1, msg.major_data,
+                       msg.data.m1.d2, msg.data.m1.d3);
+      msg.major_data = 0;
+      msg.data.m1.d1 = ret;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
+      break;
+    }
+    case DEV_CLOSE:
+      hd_close(msg.major_data);
+      msg.major_data = 0;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
       break;
     }
   }

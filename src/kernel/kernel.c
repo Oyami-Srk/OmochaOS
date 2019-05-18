@@ -11,6 +11,7 @@
 
 #include "syscall/syscall.h"
 
+#include "modules/hd.h"
 #include "modules/modules.h"
 
 extern uint vector_table[];
@@ -39,11 +40,16 @@ void TestB(void) {
   kprintf("Process B has started! ");
   message msg;
   delay_ms(200);
-  uint task_hd = query_proc("TaskHD");
-  msg.major_data = 0;
-  msg.type = 1;
-  msg.receiver = task_hd;
-  send_msg(&msg);
+  char buf[10] = {1, 3, 5, 7, 9, 2, 4, 6, 8, 10};
+  char read_buf[10];
+  HD_dev_open(0);
+  HD_dev_write(0, 1000, (ubyte *)buf, 10);
+  HD_dev_read(0, 1000, (ubyte *)read_buf, 10);
+  HD_dev_close(0);
+  printf("Read test: ");
+  for (uint i = 0; i < 10; i++)
+    printf("%d ", read_buf[i]);
+  printf("\n");
   while (1) {
     ;
   }

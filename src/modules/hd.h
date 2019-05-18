@@ -115,5 +115,8 @@ struct HD_PartTableEntity {
 // msg code
 
 #define DEV_OPEN 1
+#define DEV_CLOSE 2
+#define DEV_WRITE 3
+#define DEV_READ 4
 
 #endif // __MODULE_HD__
