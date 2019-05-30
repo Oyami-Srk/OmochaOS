@@ -13,173 +13,176 @@ module:
 #include "modules/modules.h"
 #include "syscall/syscall.h"
 
-// Disk layout
-// Superblock | inodes | inode bitmap | bitmap | data | journal
-#define ROOT_INODE 1 // inode 0 is spare
-#define BLOCK_SIZE 512
+struct FAT32_BS {
+  u8 jmpBoot[3];
+  uchar OEMName[8];
+  u16 BytesPerSec;
+  u8 SecPerClus;
+  u16 RsvdSecCnt;
+  u8 NumFATs;
+  u16 RootEntCnt; // 0 in fat 32
+  u16 TotSec16;
+  u8 Media;
+  u16 FATSz16; // 0 in fat 32
+  u16 SecPerTrk;
+  u16 NumHeads;
+  u32 HiddSec;
+  u32 TotSec32;
+  //=======
+  u32 FATSz32;
+  u16 ExtFlags;
+  u16 FSVer;
+  u32 RootClus;
+  u16 FSInfo;
+  u16 BkBootSec;
+  u8 Reserved[12];
+  u8 DrvNum;
+  u8 Reserved1;
+  u8 BootSig; // 0x29
+  u32 VolID;
+  char VolLab[11];
+  u8 FileSysType[8];
+} __attribute__((packed));
 
-struct super_block {
-  uchar magic[8]; // OSFSOSFS
-  uint size;
-  uint ninodes;       // inodes
-  uint nblocks;       // data blocks
-  uint njournal;      // journal
-  uint offset_inodes; // in sector
-  uint offset_bitmap;
-  uint offset_inodebm;
-  uint offset_data;
-  uint offset_journal;
-  // size 44
+struct FAT32_DirEnt {
+  uchar Name[8];
+  uchar Ext[3];
+  u8 Attr;
+  u8 NTRes;
+  u8 CrtTimeTenth;
+  u16 CrtTime;
+  u16 CrtDate;
+  u16 LastAccDate;
+  u16 FstClusHI;
+  u16 WrtTime;
+  u16 WrtDate;
+  u16 FstClusLO;
+  u32 FileSize;
+} __attribute__((packed));
+
+struct FAT32_LongDirEnt {
+  u8 Ord;
+  char Name1[0]; // 2B a char, totally 5 chars;
+  u8 Attr;
+  u8 Type;
+  u8 ChkSum;
+  char Name2[12]; // 2B a char, totally 6 chars;
+  u16 FstClusLO;  // be zero
+  char Name3[4];  // 2B a char, totally 2 chars;
+} __attribute__((packed));
+
+struct FAT32_FSInfo {
+  u32 StrucSig;
+  u32 FreeCount;
+  u32 NxtFree;
+  u8 Rsvd[12];
+  uint TrailSig;
+} __attribute__((packed));
+
+struct FAT32_FileSystem {
+  uchar OEMName[9];
+  size_t BytesPerSec;
+  uint SecPerClus;
+  ubyte NumFATs;
+  uint HiddenSector;
+  uint TotalSector;
+  uint FATSize; // in sector
+  u16 ExtFlags;
+  uint RootClus;
+  u16 FSInfo;
+  u16 BackupBootSector;
+  u8 Signature;
+  uint VolumeID;
+  char VolumeLabel[12];
+  char FileSystemType[9];
+  ushort drv;
+  uint FreeClusCount;
+  uint NextFreeClusCount;
 };
 
-struct super_block_mem {
-  uchar magic[8]; // OSFSOSFS
-  uint size;
-  uint ninodes;       // inodes
-  uint nblocks;       // data blocks
-  uint njournal;      // journal
-  uint offset_inodes; // in sector
-  uint offset_bitmap;
-  uint offset_inodebm;
-  uint offset_data;
-  uint offset_journal;
-  // size 44
-  uchar *pInode_Bitmap;
-  uchar *pBitmap;
-};
+void ReadBootSector(ushort drv, struct FAT32_FileSystem *fs) {
+  u8 hd_buf[512];
+  HD_drv_read(drv, 0, hd_buf, 512);
+  struct FAT32_BS BootSector;
+  memset(&BootSector, 0, sizeof(struct FAT32_BS));
+  memcpy(&BootSector, hd_buf, sizeof(struct FAT32_BS));
+  char VolLab[12];
+  char OEMName[9];
+  char FileSysType[9];
+  memset(VolLab, 0, sizeof(VolLab));
+  memset(OEMName, 0, sizeof(OEMName));
+  memset(FileSysType, 0, sizeof(FileSysType));
+  memcpy(VolLab, BootSector.VolLab, 11);
+  memcpy(OEMName, BootSector.OEMName, 8);
+  memcpy(FileSysType, BootSector.FileSysType, 8);
+#if __DEBUG__ && __FS_DEBUG__
+  printf("[FS] jmpBoot: 0x%x 0x%x 0x%x, OEMName: %s, BytesPerSec: %d, "
+         "SecPerClus: %d, "
+         "RsvdSecCnt: %d, NumFATs: %d, RootEntCnt: %d, TotSec16: %d, Media: "
+         "%d, FATSz16: %d, SecPerTrk: %d, NumHeads: %d, HiddSec: %d\n",
+         BootSector.jmpBoot[0], BootSector.jmpBoot[1], BootSector.jmpBoot[2],
+         OEMName, BootSector.BytesPerSec, BootSector.SecPerClus,
+         BootSector.RsvdSecCnt, BootSector.NumFATs, BootSector.RootEntCnt,
+         BootSector.TotSec16, BootSector.Media, BootSector.FATSz16,
+         BootSector.SecPerTrk, BootSector.NumHeads, BootSector.HiddSec);
+  printf(
+      "[FS] TotSec32: %d, FATSz32: %d, ExtFlags: 0x%x, FSVer: 0x%x, RootClus: "
+      "%d, FSInfo: %d, BkBootSec: %d, DrvNum: %d, BootSig: 0x%x, VolID: %d, "
+      "VolLab: %s\n",
+      BootSector.TotSec32, BootSector.FATSz32, BootSector.ExtFlags,
+      BootSector.FSVer, BootSector.RootClus, BootSector.FSInfo,
+      BootSector.BkBootSec, BootSector.DrvNum, BootSector.BootSig,
+      BootSector.VolID, VolLab);
+#endif
+  assert(BootSector.BootSig == 0x29);
+  assert(BootSector.TotSec16 == 0);
+  assert(BootSector.FATSz16 == 0);
+  assert(BootSector.RootEntCnt == 0);
+  memset(fs, 0, sizeof(struct FAT32_FileSystem));
+  memcpy(fs->OEMName, OEMName, sizeof(OEMName));
+  memcpy(fs->VolumeLabel, VolLab, sizeof(VolLab));
+  memcpy(fs->FileSystemType, FileSysType, sizeof(FileSysType));
+  fs->BytesPerSec = BootSector.BytesPerSec;
+  fs->SecPerClus = BootSector.SecPerClus;
+  fs->NumFATs = BootSector.NumFATs;
+  fs->HiddenSector = BootSector.HiddSec;
+  fs->TotalSector = BootSector.TotSec32;
+  fs->FATSize = BootSector.FATSz32;
+  fs->ExtFlags = BootSector.ExtFlags;
+  fs->RootClus = BootSector.RootClus;
+  fs->FSInfo = BootSector.FSInfo;
+  fs->BackupBootSector = BootSector.BkBootSec;
+  fs->Signature = BootSector.BootSig;
+  fs->VolumeID = BootSector.VolID;
+  fs->drv = drv;
+}
 
-#define BDIRECT 10
-#define BINDIRECT 2
-#define BTRIDIRECT 1
-#define NINDIRECT ((BLOCK_SIZE / sizeof(uint)) * BINDIRECT)
-#define NTRIDIRECT                                                             \
-  ((BLOCK_SIZE / sizeof(uint)) * (BLOCK_SIZE / sizeof(uint)) * BTRIDIRECT)
-#define MAX_BLOCKS (BDIRECT + NINDIRECT + NTRIDIRECT)
-#define MAX_FILE_SIZE (BLOCK_SIZE * MAX_BLOCKS)
-
-typedef struct {
-  short type;
-  short major;
-  short minor;
-  short link; // free when link is zero, creating file means link set to 1
-  // 8 bytes above
-  // 4+N bytes below
-  uint size; // file size in bytes
-  uint blocks[BDIRECT + BINDIRECT + BTRIDIRECT];
-} inode;
-
-#define DIRSIZE 14
-
-typedef struct {
-  unsigned short inum; // 2 bytes
-  char name[DIRSIZE];  // 14 bytes
-} dirent;
-
-#define IPB (BLOCK_SIZE / sizeof(inode))
-#define IBLOCK(i, sb) ((i) / IPB + sb.offset_inodes)
-#define BPB (BLOCK_SIZE * 8)
-// Block number of bitmap containing for b
-#define BBLOCK(b, sb) (b / BPB + sb.offset_bitmap)
-
-#define INODE_COUNT 1024
-// (1024 * 64)
-#define INODE_BLOCKS (INODE_COUNT / IPB + (INODE_COUNT % IPB == 0 ? 0 : 1))
-
-#define INODE_BITMAP_SIZE (INODE_BLOCKS * IPB / 8)
-
-#define TEST_FILE_SIZE (20 * 1024 * 1024)
-#define TEST_FILE_SIZE_CHAR "20M"
-#define _80MINBYTES (80 * 1024 * 1024)
-
-void mkfs(uint part) {
-  uint dev = 0;
+void ReadFSInfo(struct FAT32_FileSystem *fs) {
   ubyte hd_buf[512];
-  HD_dev_open(dev);
-  struct HD_PartInfo part_info;
-  uint drv = MAKE_DRV(dev, part);
-  HD_info(drv, &part_info);
-  printf("[FS] Making fs on dirk %d part %d, base(lba) is %d, size is %d MB\n",
-         dev, part, part_info.base, part_info.size / 1024 / 1024);
-
-  uint size_superblock = BLOCK_SIZE;
-  uint size_inodes = INODE_COUNT * sizeof(inode);
-  uint size_inodebm = INODE_BITMAP_SIZE;
-  uint num_blocks = (part_info.size / BLOCK_SIZE);
-  uint size_bitmap = num_blocks / 8 + (num_blocks % 8 == 0 ? 0 : 1);
-  uint size_journal = 0; // currently not have journal
-
-  uint offset_inodes = BLOCK_SIZE;
-  uint offset_inodebm =
-      BLOCK_SIZE * (offset_inodes / BLOCK_SIZE + INODE_BLOCKS);
-  uint offset_bitmap =
-      BLOCK_SIZE * (offset_inodebm / BLOCK_SIZE + size_inodebm / BLOCK_SIZE +
-                    (size_inodebm % BLOCK_SIZE == 0 ? 0 : 1));
-  uint offset_data =
-      BLOCK_SIZE * (offset_bitmap / BLOCK_SIZE + size_bitmap / BLOCK_SIZE +
-                    (size_bitmap % BLOCK_SIZE == 0 ? 0 : 1));
-
-  printf("[FS] Size: inodes %d, inodebm %d, bitmap %d, data %d\n", size_inodes,
-         size_inodebm, size_bitmap, 0);
-  printf("[FS] Offset: inodes %d, inodebm: %d, bitmap: %d, data %d\n",
-         offset_inodes, offset_inodebm, offset_bitmap, offset_data);
-
-  assert(offset_inodebm % BLOCK_SIZE == 0);
-  assert(offset_inodebm >= offset_inodes + size_inodes);
-  assert(offset_bitmap % BLOCK_SIZE == 0);
-  assert(offset_bitmap >= offset_inodebm + size_inodebm);
-  assert(offset_data % BLOCK_SIZE == 0);
-  assert(offset_data >= offset_bitmap + size_bitmap);
-
-  struct super_block sb;
-  memcpy((void *)sb.magic, "OMOCHAFS", 8);
-  sb.size = part_info.size;
-  sb.ninodes = INODE_COUNT;
-  sb.nblocks = num_blocks;
-  sb.njournal = 0;
-  sb.offset_inodes = offset_inodes;
-  sb.offset_inodebm = offset_inodebm;
-  sb.offset_bitmap = offset_bitmap;
-  sb.offset_data = offset_data;
-  sb.offset_journal = sb.size;
-
-  memset(hd_buf, 0, 512);
-  memcpy(hd_buf, &sb, sizeof(struct super_block));
-  HD_drv_write(drv, 0, hd_buf, 512);
-  printf("[FS] Superblock wrote!\n");
-
-  inode empty_inode_a_block[IPB];
-  memset(empty_inode_a_block, 0, sizeof(inode) * IPB);
-  for (uint addr = offset_inodes; addr < offset_inodebm; addr += BLOCK_SIZE)
-    HD_drv_write(drv, addr / BLOCK_SIZE, (ubyte *)empty_inode_a_block,
-                 BLOCK_SIZE);
-  printf("[FS] Write all %d blocks for empty inodes.\n",
-         (offset_inodebm - offset_inodes) / BLOCK_SIZE);
-
-  uchar empty_bitmap_a_block[BLOCK_SIZE];
-  memset(empty_bitmap_a_block, 0, sizeof(uchar) * BLOCK_SIZE);
-  for (uint addr = offset_inodebm; addr < offset_bitmap; addr += BLOCK_SIZE)
-    HD_drv_write(dev, addr / BLOCK_SIZE, (ubyte *)empty_bitmap_a_block,
-                 BLOCK_SIZE);
-  printf("[FS] Write all %d blocks for empty inode blocks.\n",
-         (offset_bitmap - offset_inodebm) / BLOCK_SIZE);
-
-  for (uint addr = offset_bitmap; addr < offset_data; addr += BLOCK_SIZE)
-    HD_drv_write(drv, addr / BLOCK_SIZE, (ubyte *)empty_bitmap_a_block,
-                 BLOCK_SIZE);
-  printf("[FS] Write all %d blocks for empty block bitmap.\n",
-         (offset_data - offset_bitmap) / BLOCK_SIZE);
-
-  const char *test_data = "test data";
-  HD_drv_write(drv, offset_data / BLOCK_SIZE, (ubyte *)test_data, 10);
-  printf("[FS] Test data is Okey at 0x%x\n", offset_data);
-
-  HD_dev_close(dev);
+  HD_drv_read(fs->drv, fs->FSInfo, hd_buf, 512);
+  struct FAT32_FSInfo FSInfo;
+  uint FSInfo_LeadSig;
+  memcpy(&FSInfo_LeadSig, hd_buf, 4);
+  assert(FSInfo_LeadSig == 0x41615252);
+  memcpy(&FSInfo, hd_buf + 484, sizeof(struct FAT32_FSInfo));
+  assert(FSInfo.StrucSig == 0x61417272);
+  assert(FSInfo.TrailSig == 0xAA550000);
+  fs->FreeClusCount = FSInfo.FreeCount;
+  fs->NextFreeClusCount = FSInfo.NxtFree;
 }
 
 void Task_FS() {
   delay_ms(200);
   printf("[FS] Initializing.\n");
-  mkfs(1);
+  delay_ms(500);
+  printf("Reading Boot Sector\n");
+  HD_dev_open(0);
+  struct FAT32_FileSystem fs;
+  ReadBootSector(MAKE_DRV(0, 1), &fs);
+  printf("Opened FS \"%s\", About %d MB.\n", fs.VolumeLabel,
+         fs.TotalSector * fs.BytesPerSec / 1024 / 1024);
+  ReadFSInfo(&fs);
+  HD_dev_close(0);
   while (1) {
   }
 }
