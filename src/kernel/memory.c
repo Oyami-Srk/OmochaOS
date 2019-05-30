@@ -23,7 +23,7 @@ void kfree(void *v) {
   freemem = cur;
 }
 
-char *kalloc(void) {
+char *kalloc(void) { // allocate a page
   list *cur;
   cur = freemem;
   if (cur)

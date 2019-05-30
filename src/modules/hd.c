@@ -188,6 +188,7 @@ size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
     hd_rw(0, hd_buf, drv, lba + (count + SECTOR_SIZE - 1) / SECTOR_SIZE - 1,
           SECTOR_SIZE);
   struct HD_Command cmd;
+
   HD_make_command(&cmd, lba, 0, drv, (count + SECTOR_SIZE - 1) / SECTOR_SIZE,
                   RW ? ATA_WRITE : ATA_READ);
   HD_send_command(&cmd);
@@ -219,6 +220,30 @@ size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
   }
   return count;
 }
+
+size_t hd_rw_drv(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
+  uint device = 0;
+  uint final_lba = 0;
+
+  assert(SPLIT_DRV_DEV(drv) == 0); // we only have one device
+  device = SPLIT_DRV_DEV(drv);
+  if (hd_info[device].open_cnt <= 0)
+    panic("Device is not opened!");
+  uint drv_no = SPLIT_DEV_PART(drv);
+  struct HD_PartInfo *part_info;
+  if (drv_no <= PRIM_PER_DRIVE)
+    part_info = &hd_info[device].primary[drv_no];
+  else if (drv_no >= PRIM_PER_DRIVE && drv_no <= SUB_PER_DRIVE)
+    part_info = &hd_info[device].logical[drv_no - PRIM_PER_DRIVE];
+  else
+    panic("Dirve no exceed");
+
+  if (part_info->size < lba + (count + SECTOR_SIZE - 1) / SECTOR_SIZE - 1)
+    panic("RW count exceed!");
+  final_lba = part_info->base + lba;
+  return hd_rw(RW, buf, device, final_lba, count);
+}
+
 void Task_HD() {
   message msg;
   if (reg_proc("TaskHD") != 0)
@@ -240,8 +265,8 @@ void Task_HD() {
       send_msg(&msg);
       break;
     case DEV_WRITE: {
-      uint ret = hd_rw(TRUE, (void *)msg.data.m1.d1, msg.major_data,
-                       msg.data.m1.d2, msg.data.m1.d3);
+      uint ret = hd_rw_drv(TRUE, (void *)msg.data.m1.d1, msg.major_data,
+                           msg.data.m1.d2, msg.data.m1.d3);
       msg.major_data = 0;
       msg.data.m1.d1 = ret;
       msg.receiver = msg.sender;
@@ -249,8 +274,8 @@ void Task_HD() {
       break;
     }
     case DEV_READ: {
-      uint ret = hd_rw(FALSE, (void *)msg.data.m1.d1, msg.major_data,
-                       msg.data.m1.d2, msg.data.m1.d3);
+      uint ret = hd_rw_drv(FALSE, (void *)msg.data.m1.d1, msg.major_data,
+                           msg.data.m1.d2, msg.data.m1.d3);
       msg.major_data = 0;
       msg.data.m1.d1 = ret;
       msg.receiver = msg.sender;
@@ -263,6 +288,32 @@ void Task_HD() {
       msg.receiver = msg.sender;
       send_msg(&msg);
       break;
+    case DEV_INFO:
+      if (SPLIT_DEV_PART(msg.major_data) <= PRIM_PER_DRIVE) {
+        ((struct HD_PartInfo *)(msg.data.m1.d1))->size =
+            hd_info[SPLIT_DRV_DEV(msg.major_data)]
+                .primary[SPLIT_DEV_PART(msg.major_data)]
+                .size *
+            SECTOR_SIZE;
+        ((struct HD_PartInfo *)(msg.data.m1.d1))->base =
+            hd_info[SPLIT_DRV_DEV(msg.major_data)]
+                .primary[SPLIT_DEV_PART(msg.major_data)]
+                .base;
+      } else if (SPLIT_DEV_PART(msg.major_data) <= PRIM_PER_DRIVE) {
+        ((struct HD_PartInfo *)(msg.data.m1.d1))->size =
+            hd_info[SPLIT_DRV_DEV(msg.major_data)]
+                .logical[SPLIT_DEV_PART(msg.major_data)]
+                .size *
+            SECTOR_SIZE;
+        ((struct HD_PartInfo *)(msg.data.m1.d1))->base =
+            hd_info[SPLIT_DRV_DEV(msg.major_data)]
+                .logical[SPLIT_DEV_PART(msg.major_data) - PRIM_PER_DRIVE]
+                .base;
+      } else
+        panic("HD Part exceed");
+      msg.major_data = 0;
+      msg.receiver = msg.sender;
+      send_msg(&msg);
     }
   }
 }

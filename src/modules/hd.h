@@ -112,11 +112,16 @@ struct HD_PartTableEntity {
 #define HD_PART_TYPE_EXTEND 0x05
 #define HD_PART_TYPE_NONE 0x00
 
+#define MAKE_DRV(dev, part) (ushort)(((dev) << 8) | ((part)&0xFF))
+#define SPLIT_DRV_DEV(drv) (ubyte)(((drv) >> 8) & 0xFF)
+#define SPLIT_DEV_PART(drv) (ubyte)((drv)&0xFF)
+
 // msg code
 
 #define DEV_OPEN 1
 #define DEV_CLOSE 2
 #define DEV_WRITE 3
 #define DEV_READ 4
+#define DEV_INFO 5
 
 #endif // __MODULE_HD__
