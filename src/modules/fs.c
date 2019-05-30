@@ -13,6 +13,8 @@ module:
 #include "modules/modules.h"
 #include "syscall/syscall.h"
 
+ubyte hd_buf[512];
+
 struct FAT32_BS {
   u8 jmpBoot[3];
   uchar OEMName[8];
@@ -44,32 +46,34 @@ struct FAT32_BS {
   u8 FileSysType[8];
 } __attribute__((packed));
 
-struct FAT32_DirEnt {
-  uchar Name[8];
-  uchar Ext[3];
-  u8 Attr;
-  u8 NTRes;
-  u8 CrtTimeTenth;
-  u16 CrtTime;
-  u16 CrtDate;
-  u16 LastAccDate;
-  u16 FstClusHI;
-  u16 WrtTime;
-  u16 WrtDate;
-  u16 FstClusLO;
-  u32 FileSize;
-} __attribute__((packed));
+union FAT32_DirEnt {
+  struct {
+    uchar Name[8];
+    uchar Ext[3];
+    u8 Attr;
+    u8 NTRes;
+    u8 CrtTimeTenth;
+    u16 CrtTime;
+    u16 CrtDate;
+    u16 LastAccDate;
+    u16 FstClusHI;
+    u16 WrtTime;
+    u16 WrtDate;
+    u16 FstClusLO;
+    u32 FileSize;
+  } __attribute__((packed));
 
-struct FAT32_LongDirEnt {
-  u8 Ord;
-  char Name1[0]; // 2B a char, totally 5 chars;
-  u8 Attr;
-  u8 Type;
-  u8 ChkSum;
-  char Name2[12]; // 2B a char, totally 6 chars;
-  u16 FstClusLO;  // be zero
-  char Name3[4];  // 2B a char, totally 2 chars;
-} __attribute__((packed));
+  struct {
+    u8 L_Ord;
+    char L_Name1[10]; // 2B a char, totally 5 chars;
+    u8 L_Attr;
+    u8 L_Type;
+    u8 L_ChkSum;
+    char L_Name2[12]; // 2B a char, totally 6 chars;
+    u16 L_FstClusLO;  // be zero
+    char L_Name3[4];  // 2B a char, totally 2 chars;
+  } __attribute__((packed));
+};
 
 struct FAT32_FSInfo {
   u32 StrucSig;
@@ -95,13 +99,39 @@ struct FAT32_FileSystem {
   uint VolumeID;
   char VolumeLabel[12];
   char FileSystemType[9];
+  uint FirstDataClus;
   ushort drv;
   uint FreeClusCount;
   uint NextFreeClusCount;
 };
 
+#define ATTR_READ_ONLY 0x1
+#define ATTR_HIDDEN 0x2
+#define ATTR_SYSTEM 0x4
+#define ATTR_VOLUME_ID 0x8
+#define ATTR_DIR 0x10
+#define ATTR_ARCHIVE 0x20
+#define FS_ATTR_LONGNAME                                                       \
+  (ATTR_READ_ONLY | ATTR_VOLUME_ID | ATTR_SYSTEM | ATTR_HIDDEN)
+
+#define CLUS2SECTOR(fs, N)                                                     \
+  (((fs)->FirstDataClus) + ((N - (fs)->RootClus) * (fs)->SecPerClus))
+
+// TrimWhiteSpace assume that len(dst) >= len(src)
+void TrimWhiteSpace(const char *src, char *dst) {
+  char *end;
+  char *str = (char *)src;
+  while ((uchar)(*(str)) == ' ')
+    str++;
+  if (*str == 0)
+    return;
+  end = str + strlen(str) - 1;
+  while (end > str && ((uchar)(*(end)) == ' '))
+    end--;
+  memcpy(dst, str, end - str + 1);
+}
+
 void ReadBootSector(ushort drv, struct FAT32_FileSystem *fs) {
-  u8 hd_buf[512];
   HD_drv_read(drv, 0, hd_buf, 512);
   struct FAT32_BS BootSector;
   memset(&BootSector, 0, sizeof(struct FAT32_BS));
@@ -155,10 +185,16 @@ void ReadBootSector(ushort drv, struct FAT32_FileSystem *fs) {
   fs->Signature = BootSector.BootSig;
   fs->VolumeID = BootSector.VolID;
   fs->drv = drv;
+  fs->FirstDataClus =
+      BootSector.RsvdSecCnt + BootSector.FATSz32 * BootSector.NumFATs;
+}
+
+static inline u32 get_next_clus_in_FAT(struct FAT32_FileSystem *fs, u32 clus) {
+  u32 next_clus = 0;
+  return next_clus;
 }
 
 void ReadFSInfo(struct FAT32_FileSystem *fs) {
-  ubyte hd_buf[512];
   HD_drv_read(fs->drv, fs->FSInfo, hd_buf, 512);
   struct FAT32_FSInfo FSInfo;
   uint FSInfo_LeadSig;
@@ -171,6 +207,113 @@ void ReadFSInfo(struct FAT32_FileSystem *fs) {
   fs->NextFreeClusCount = FSInfo.NxtFree;
 }
 
+static u8 checksum_fname(char *fname) {
+  u8 i;
+  u8 checksum = 0;
+  for (i = 0; i < 11; i++) {
+    u8 highbit = (checksum & 0x1) << 7;
+    checksum = ((checksum >> 1) & 0x7F) | highbit;
+    checksum = checksum + fname[i];
+  }
+  return checksum;
+}
+
+static inline char char_upper(char c) {
+  return c - (c >= 'a' && c <= 'z' ? 32 : 0);
+}
+
+// read_8_3_filename assume that thr length of buffer is >= 12
+static void read_8_3_filename(uchar *fname, uchar *buffer) {
+  char ext[3];
+  char name[8];
+  memcpy(ext, fname + 8, 3);
+  memcpy(name, fname, 8);
+  memset(buffer, 0, 12);
+  TrimWhiteSpace(name, (char *)buffer);
+  if (ext[0] == ' ')
+    return;
+  memset(buffer + strlen((const char *)buffer), '.', 1);
+  memcpy(buffer + strlen((const char *)buffer), ext, 3);
+}
+
+static void write_8_3_filename(uchar *fname, uchar *buffer) {
+  memset(buffer, ' ', 11);
+  u32 namelen = strlen((const char *)fname);
+  // find the extension
+  int i;
+  int dot_index = -1;
+  for (i = namelen - 1; i >= 0; i--) {
+    if (fname[i] == '.') {
+      // Found it!
+      dot_index = i;
+      break;
+    }
+  }
+
+  // Write the extension
+  if (dot_index >= 0) {
+    for (i = 0; i < 3; i++) {
+      u32 c_index = dot_index + 1 + i;
+      uchar c = c_index >= namelen ? ' ' : char_upper(fname[c_index]);
+      buffer[8 + i] = c;
+    }
+  } else {
+    for (i = 0; i < 3; i++) {
+      buffer[8 + i] = ' ';
+    }
+  }
+
+  // Write the filename.
+  u32 firstpart_len = namelen;
+  if (dot_index >= 0) {
+    firstpart_len = dot_index;
+  }
+  if (firstpart_len > 8) {
+    // Write the weird tilde thing.
+    for (i = 0; i < 6; i++) {
+      buffer[i] = char_upper(fname[i]);
+    }
+    buffer[6] = '~';
+    buffer[7] = '1'; // probably need to enumerate like files and increment.
+  } else {
+    // Just write the file name.
+    u32 j;
+    for (j = 0; j < firstpart_len; j++) {
+      buffer[j] = char_upper(fname[j]);
+    }
+  }
+}
+
+void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
+  uchar hd_buf[512];
+  HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), hd_buf, 512);
+  union FAT32_DirEnt DirEnt;
+  for (uint offset = 0; offset < 512; offset += sizeof(union FAT32_DirEnt)) {
+    memcpy(&DirEnt, hd_buf + offset, sizeof(union FAT32_DirEnt));
+    if (DirEnt.Name[0] == 0)
+      break;
+    if (DirEnt.Name[0] == 0xE5 || DirEnt.Name[0] == 0x05)
+      continue;
+    if (DirEnt.Attr == FS_ATTR_LONGNAME)
+      continue;
+    if (DirEnt.Name[0] == 0x2E)
+      continue;
+    char buffer[16];
+    memset(buffer, 0, 16);
+    memset(buffer, ' ', tabsize * 4);
+    printf("%s| ", buffer);
+    uchar buf[12];
+    read_8_3_filename(DirEnt.Name, buf);
+    memset(buffer, 0, 16);
+    memcpy(buffer, DirEnt.Name, 11);
+    printf("%s\n", buf);
+    if (DirEnt.Attr & ATTR_DIR) {
+      list_dir(fs, DirEnt.FstClusHI << 16 | DirEnt.FstClusLO, tabsize + 1);
+    }
+  }
+  // check whether this is the end of dir.
+}
+
 void Task_FS() {
   delay_ms(200);
   printf("[FS] Initializing.\n");
@@ -179,9 +322,19 @@ void Task_FS() {
   HD_dev_open(0);
   struct FAT32_FileSystem fs;
   ReadBootSector(MAKE_DRV(0, 1), &fs);
-  printf("Opened FS \"%s\", About %d MB.\n", fs.VolumeLabel,
+  char buf[8];
+  memset(buf, 0, sizeof(buf));
+  TrimWhiteSpace(fs.VolumeLabel, buf);
+  printf("Opened FS \"%s\", About %d MB.\n", buf,
          fs.TotalSector * fs.BytesPerSec / 1024 / 1024);
   ReadFSInfo(&fs);
+  /*
+  HD_drv_read(fs.drv, CLUS2SECTOR(&fs, 2), hd_buf, 512);
+  for (uint i = 0; i < 512; i++) {
+    printf("%x ", hd_buf[i]);
+  }
+  */
+  list_dir(&fs, 2, 0); // 2 is root dir first clus, no more explain
   HD_dev_close(0);
   while (1) {
   }
