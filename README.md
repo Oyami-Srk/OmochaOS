@@ -1,5 +1,21 @@
 ## Omocha OS - A Personal OS Project For Study
 
+# How to Build
+
+1. Create a disk image with a dos partition table type and a fat32 part inside it.
+```
+dd if=/dev/zero of=HD.img bs=1024 count=81920
+sudo cfdisk HD.img # and choose dos for it, then create a fat32 part.
+sudo losetup -fP HD.img
+sudo losetup -a | grep "HD.img"
+sudo mkfs.fat -F 32 /dev/loopXp1 # X is acquired above
+```
+2. Place disk image inside `src/boot/tools/` and filename should be `HD.img`
+3. `make && make`
+4. make boot
+
+# What am I thinking
+
 编写一个操作系统从初中开来就是我的梦想，花花绿绿的界面、动画流畅的UI，向来对我的吸引力没有黑框框白点点的命令行强大。
 
 而令人最向往的是，埋藏在这些命令行背后的操盘手——操作系统。
