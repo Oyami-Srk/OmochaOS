@@ -2,3 +2,4 @@
 -m32
 -fno-builtin
 
+-Isrc/kernel/header/

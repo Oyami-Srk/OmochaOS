@@ -4,13 +4,13 @@
 ASM			 	= nasm
 CC				= i386-elf-gcc
 LD				= i386-elf-ld
-OBJDUMP	  = i386-elf-objdump
-OBJCOPY   = i386-elf-objcopy
+OBJDUMP  		= i386-elf-objdump
+OBJCOPY   		= i386-elf-objcopy
 DD				= dd
 BOCHS			= bochs
 CAT				= cat
 SED				= sed
-BXIMAGE		= bximage
+BXIMAGE			= bximage
 PY				= python3
 
 BUILD			= $(shell pwd)/build
