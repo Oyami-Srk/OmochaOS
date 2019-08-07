@@ -27,4 +27,6 @@ SECTIONS {
     .bss : {
         *(.bss)
     }
+
+    PROVIDE(KERN_END = .);
 }
