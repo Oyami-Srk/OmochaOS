@@ -1,0 +1,6 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+Language: Cpp
+AlignConsecutiveMacros: true
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true

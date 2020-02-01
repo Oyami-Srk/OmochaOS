@@ -1,0 +1,60 @@
+# GNU Makefile
+# src/kernel
+
+KERNEL_BUILD 	= $(BUILD)/kernel
+KERNEL_LD_FLAGS = -m elf_i386 -N
+KERNEL_HEADER 	= $(shell pwd)/header
+
+.PHONY: all
+all: create_dirs kernel
+
+.PHONY: create_dirs
+create_dirs:
+	@mkdir -p $(KERNEL_BUILD)
+	@mkdir -p $(KERNEL_BUILD)/core
+	@mkdir -p $(KERNEL_BUILD)/driver
+
+
+# Core
+CORE_SRCS = $(wildcard core/*.c) $(wildcard core/*.asm)
+CORE_OBJS = $(patsubst %, $(KERNEL_BUILD)/core/%.o, $(basename $(notdir $(CORE_SRCS))))
+
+$(KERNEL_BUILD)/core/%.o: core/%.c
+	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
+
+$(KERNEL_BUILD)/core/%.o: core/%.asm
+	$(ASM) -f elf $< -I $(KERNEL_HEADER)/ -o $@
+
+$(KERNEL_BUILD)/core/%.d: core/%.c
+	@set -e; rm -f $@; $(CC) -MM $< -I$(KERNEL_HEADER)  > $@.$$$$; \
+	$(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(CORE_OBJS:.o=.d)
+
+# Driver
+DRIV_SRCS = $(wildcard driver/*.c) $(wildcard driver/*.asm)
+DRIV_OBJS = $(patsubst %, $(KERNEL_BUILD)/driver/%.o, $(basename $(notdir $(DRIV_SRCS))))
+
+$(KERNEL_BUILD)/driver/%.o: driver/%.c
+	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
+
+$(KERNEL_BUILD)/driver/%.o: driver/%.asm
+	$(ASM) -f elf $< -I $(KERNEL_HEADER)/ -o $@
+
+$(KERNEL_BUILD)/driver/%.d: driver/%.c
+	@set -e; rm -f $@; $(CC) -MM $< -I$(KERNEL_HEADER)  > $@.$$$$; \
+	$(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	rm -f $@.$$$$
+
+-include $(DRIV_OBJS:.o=.d)
+
+# Kernel
+
+OBJS = $(CORE_OBJS) $(DRIV_OBJS)
+
+$(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
+	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS)
+
+kernel: $(KERNEL_BUILD)/kernel.out
+	@echo Kernel is built.

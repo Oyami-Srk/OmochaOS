@@ -1,0 +1,13 @@
+*.bin
+*.o
+*.img
+*.disasm
+*.d
+/build/
+bochsrc
+*.elf
+.DS_Store
+*.out
+active
+/src/kernel/vector_table.asm
+.vscode/
