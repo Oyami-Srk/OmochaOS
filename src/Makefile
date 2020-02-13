@@ -17,5 +17,6 @@ ifeq ($(and $(CC),$(CXX),$(LD),$(OBJDUMP),$(OBJCOPY),$(ASM),$(DD),$(CAT),$(SED),
 endif
 	@echo Build with CCFLAGS "$(CC_FLAGS)"
 	make -C boot
+	make -C kernel pre-build
 	make -C kernel
 

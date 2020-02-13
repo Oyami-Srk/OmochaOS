@@ -6,7 +6,7 @@
 list *freemem;
 
 // free a page
-void kfree(void *p) {
+void kfree(char *p) {
     list *current;
     // only free page higher then Kernel's end and lower than 0xE00000 in phy.
     // and p must be start of a page.

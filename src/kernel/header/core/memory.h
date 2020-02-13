@@ -11,6 +11,10 @@
 #define PDE_SIZE 0x1000
 
 extern volatile char _KERN_VEND[];
-const volatile u32   KERN_VEND = (u32)(_KERN_VEND);
+#define KERN_VEND (((void *)(_KERN_VEND)))
+
+void  core_init_memory(void *vstart, void *vend);
+void  kfree(char *p);
+char *kalloc(void);
 
 #endif // __MEMORY_H__

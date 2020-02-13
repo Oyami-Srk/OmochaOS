@@ -11,6 +11,8 @@ typedef uchar  u8;
 
 typedef uchar ubyte;
 typedef uint  BOOL;
+#define TRUE  1
+#define FALSE 0
 
 typedef uint size_t;
 

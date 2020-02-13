@@ -1,9 +1,10 @@
 ;; entry for multiboot bootloader.
 
-;; definations
+%include "multiboot.i"
 
+;; definations
 MB_MAGIC    equ 0x1BADB002
-MB_FLAGS    equ 0x0
+MB_FLAGS    equ MULTIBOOT_FLAG
 MB_CHECKSUM equ -(MB_MAGIC + MB_FLAGS)
 KERNEL_BASE equ 0x80000000
 STACKSIZE   equ 0x2000  ; 8 Kib

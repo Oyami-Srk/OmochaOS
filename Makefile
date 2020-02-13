@@ -17,6 +17,7 @@ CP 		= cp
 DD 		= dd
 CAT 	= cat
 SED 	= sed
+AWK 	= awk
 UMOUNT  = umount
 
 BXIMAGE = bximage
@@ -32,7 +33,7 @@ TOOLS 		= $(shell pwd)/tools
 BUILD 		= $(shell pwd)/build
 BUILD_TYPE 	= debug
 
-export CC CXX LD OBJDUMP OBJCOPY ASM CP DD CAT SED PY SRC TOOLS BUILD BUILD_TYPE UNAME
+export CC CXX LD OBJDUMP OBJCOPY ASM CP DD CAT SED AWK PY SRC TOOLS BUILD BUILD_TYPE UNAME
 
 .PHONY: all
 all:

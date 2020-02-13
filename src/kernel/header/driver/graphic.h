@@ -18,5 +18,6 @@
 #define COLOR(bg, fg) ((bg << 4) | fg)
 
 uint GRAPHIC_write_color_string_to_vm(u32 offset, u16 color, const char *str);
+void kprintf(const char *fmt, ...);
 
 #endif // __GRAPHIC_H__

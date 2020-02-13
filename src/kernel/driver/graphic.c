@@ -1,6 +1,18 @@
 #include "driver/graphic.h"
+#include "lib/stdlib.h"
 
 const volatile char *vm_start = (volatile char *)0xB8000;
+uint                 disp_pos = 0;
+
+void kprintf(const char *fmt, ...) {
+    int     i;
+    char    buf[256];
+    va_list arg = (va_list)((char *)(&fmt) + 4);
+    i           = vsprintf(buf, fmt, arg);
+    buf[i]      = 0;
+    disp_pos    = GRAPHIC_write_color_string_to_vm(
+        disp_pos, COLOR(BLACK, WHITE | BRIGHT), buf);
+}
 
 uint GRAPHIC_write_color_string_to_vm(u32 offset, u16 color, const char *str) {
     volatile char *pCh = (volatile char *)((uint)vm_start + offset);
