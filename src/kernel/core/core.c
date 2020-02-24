@@ -29,13 +29,11 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     kprintf("GDT Initialized.\n");
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
-    kprintf("gdt is located in 0x%08x", gdt);
+    kprintf("gdt is located in 0x%08x\n", gdt);
     while (1) {
         kprintf("%d.", beats);
         for (uint i = 0; i < 100000000; i++)
-            for (uint j = 0; j < 100000000; j++)
-                ;
-        ;
+            ;
     }
 }
 
