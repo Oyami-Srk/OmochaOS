@@ -1,7 +1,7 @@
 #include "driver/graphic.h"
 #include "lib/stdlib.h"
 
-const volatile char *vm_start = (volatile char *)0xB8000;
+const volatile char *vm_start = (volatile char *)0x800B8000;
 uint                 disp_pos = 0;
 
 void kprintf(const char *fmt, ...) {

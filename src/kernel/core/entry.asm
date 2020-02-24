@@ -43,12 +43,23 @@ _start:
     or ecx, 0x80000000
     mov cr0, ecx
 
+    mov ecx, .1
+    jmp ecx ; directly jump to higher addr
+.1:
+    ; mov dword [entry_page_dir], 0   ; clear the 0-4M's map
+    ; mov ecx, cr3
+    ; mov cr3, ecx ; reload
+
     mov esp, stack_top
 
     push eax    ; multiboot magic number
+    add ebx, KERNEL_BASE ; ebx is stored by phy address
     push ebx    ; multiboot header
 
     call core_main
+    cli
+    xchg bx,bx
+.end:
     hlt
-    .end:
+    jmp .end
 
