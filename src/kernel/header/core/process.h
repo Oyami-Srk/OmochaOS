@@ -3,6 +3,8 @@
 
 #include "generic/typedefs.h"
 
+#define LDT_SIZE 2
+
 typedef struct {
     u16  gs, pd1, fs, pd2, es, pd3, ds, pd4;
     u32  edi, esi, ebp, oesp, ebx, edx, ecx, eax;
@@ -22,5 +24,24 @@ struct tss {
     u16 iobase; /* I/O位图基址大于或等于TSS段界限，就表示没有I/O许可位图 */
                 // char iomap[2];
 } __attribute__((packed));
+
+struct __process {
+    stack_frame stack;
+    u32         page_dir;
+    uint        status;
+    uint        pid;
+    char        name[16];
+} __attribute__((packed));
+
+typedef struct __process process;
+
+static inline void move_to_proc(process *proc) {
+    extern process *proc_running;
+    extern void     vector_handler_ret(void);
+    proc_running = proc;
+    asm volatile("jmp *%0" ::"r"(vector_handler_ret) : "memory");
+}
+
+void core_init_proc(process *proc, uint pid, void *entry, u32 page_dir);
 
 #endif // __PROCESS_H__

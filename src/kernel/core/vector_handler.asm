@@ -1,9 +1,13 @@
 ;; Vector Handler used in IVT
 
+%include "core/process.i"
+
 [BITS 32]
 [SECTION .text]
 
 extern interrupt_handler
+extern proc_running
+extern tss
 
 global vector_handler
 vector_handler:
@@ -28,11 +32,23 @@ vector_handler:
     push dword ecx ; original stack top
     call interrupt_handler
     add esp, 4
-    
+   
+global vector_handler_ret
 vector_handler_ret:
     dec dword [interrupt_count]
     cmp dword [interrupt_count], 0
     jne .non_zero
+    mov ecx, [proc_running]
+    ; handle syscall here
+.non_syscall:
+    mov ebx, [ecx + process.page_dir]
+    mov edx, cr3
+    cmp edx, ebx
+    je .non_zero
+    mov cr3, ebx
+    mov esp, ecx
+    add ecx, process.page_dir
+    mov dword [tss + __tss.esp0], ecx
 .non_zero:
     pop gs
     pop fs
@@ -42,9 +58,7 @@ vector_handler_ret:
     add esp, 8 ; trapno, err pushed in IVT
     iretd
 
-
-
 [BITS 32]
-[SECTION .data]
+[SECTION .bss]
 interrupt_count dd 1
 interrupt_stack resb 4096

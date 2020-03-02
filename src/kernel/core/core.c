@@ -15,8 +15,16 @@ struct tss tss;
 
 uint beats = 0;
 
+void TaskTest(void) {
+    while (1)
+        kprintf("T");
+}
+
+process      proc;
+unsigned int entry_page_dir[PDE_SIZE];
+
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
-    if (magic == MULTIBOOT_HEADER_MAGIC)
+    if (magic == MULTIBOOT_BOOTLOADER_MAGIC)
         kprintf("Venlafaxos is booting by multiboot bootloader.\n");
     else
         kprintf("Venlafaxos is booting. magic is 0x%08x\n", magic);
@@ -30,10 +38,10 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
     kprintf("gdt is located in 0x%08x\n", gdt);
+    core_init_proc(&proc, 0, (void *)TaskTest, (u32)entry_page_dir);
+    move_to_proc(&proc);
     while (1) {
-        kprintf("%d.", beats);
-        for (uint i = 0; i < 100000000; i++)
-            ;
+        ;
     }
 }
 

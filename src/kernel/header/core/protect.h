@@ -96,10 +96,27 @@ static uint KERN_GDT[][3] = {
     {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C},   // Code descriptor
     {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW}, // Data descriptor
     {0x0, 0x0, DA_386TSS},                   // TSS descriptor
-    {0x0, 0x0, DA_LDT}                       // LDT descriptor
+    {0, 0xFFFFFFFF,
+     DA_32 | DA_4K | DA_C | DA_DPL1}, // Code descriptor with DPL 1
+    {0, 0xFFFFFFFF,
+     DA_32 | DA_4K | DA_DRW | DA_DPL1}, // Data descriptor with DPL 1
+    {0, 0xFFFFFFFF,
+     DA_32 | DA_4K | DA_C | DA_DPL3}, // Code descriptor with DPL 3
+    {0, 0xFFFFFFFF,
+     DA_32 | DA_4K | DA_DRW | DA_DPL3}, // Data descriptor with DPL 3
+    {0x0, 0x0, DA_LDT}                  // LDT descriptor
                        // Cannot define more descriptors below ldt
 }; // static but not const
 
+#define SEL_CODE_DPL0 (1 << 3)
+#define SEL_DATA_DPL0 (2 << 3)
+#define SEL_CODE_DPL1 ((4 << 3) | SA_RPL1)
+#define SEL_DATA_DPL1 ((5 << 3) | SA_RPL1)
+#define SEL_CODE_DPL3 ((6 << 3) | SA_RPL3)
+#define SEL_DATA_DPL4 ((7 << 3) | SA_RPL3)
+
 void core_init_gdt(Descriptor *GDT, size_t gdt_count, struct tss *tss);
+u16  allocate_ldt(u32 LDT_base, size_t LDT_size);
+void deallocate_ldt(u16 ldt_selector);
 
 #endif // __PROTECT_H__

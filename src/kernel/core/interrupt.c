@@ -1,8 +1,32 @@
 #include "core/interrupt.h"
 #include "core/memory.h"
+#include "driver/graphic.h"
 #include "generic/asm.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
+
+const char *exception_message[] = {"#DE: Divide-by-zero Error",
+                                   "#DB: Debug",
+                                   "#--: Non-maskable Interrupt",
+                                   "#BP: Break Point",
+                                   "#OF: Overflow",
+                                   "#BR: Bound Range Exceeded",
+                                   "#UD: Invalid Opcode",
+                                   "#NM: Device Not Avaliable",
+                                   "#DF: Double Fault",
+                                   "#RESV: Reserved",
+                                   "#TS: Invalid TSS",
+                                   "#NP: Segment Not Present",
+                                   "#SS: Stack-Segment Fault",
+                                   "#GP: General Protection Fault",
+                                   "#PF: Page Fault",
+                                   "#RESV: Reserved2",
+                                   "#MF: x87 Floating-Point Exception",
+                                   "#AC: Alignment Check",
+                                   "#MC: Machine Check",
+                                   "#XF: SIMD Floating-Point Exception"
+
+};
 
 extern uint vector_table[];
 
@@ -60,6 +84,21 @@ void core_init_interrupt(Gate *idt, size_t count) {
 extern uint beats;
 
 void interrupt_handler(stack_frame *intf) {
+    if (intf->trap_no <= 19) {
+        cli();
+        GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
+                                         "                    "
+                                         "                    "
+                                         "                    "
+                                         "                   ");
+        char buf[128];
+        sprintf(buf, "Exception %s in proc %d",
+                exception_message[intf->trap_no], 0);
+        GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, RED), buf);
+        magic_break();
+        while (1)
+            ;
+    }
     if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
     }
     switch (intf->trap_no) {
