@@ -74,19 +74,20 @@ endif
 ifneq ($(KERNEL_OUT),$(wildcard $(KERNEL_OUT)))
 	$(error Kernel not built yet)
 endif
-	test -n `find $(KERNEL_OUT) -a -size -65536c`
+# kernel currently must smaller than 4MB
+	test `wc -c <$(KERNEL_OUT)` -lt 4194304 
 	$(CP) "$(KERNEL_OUT)" "$(shell $(CAT) $(BOOTIMG).lock)/"
 ifeq ($(GRUB2CFG),$(wildcard $(GRUB2CFG)))
 	$(CP) "$(GRUB2CFG)" "$(shell $(CAT) $(BOOTIMG).lock)/boot/grub/"
 endif
 
 .PHONY: bochs
-bochs: detatch
+bochs: detach
 	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\".*\"/\"$(subst /,\/,$(BOOTIMG))\"/g' > $(BUILD)/bochsrc
 	$(BOCHS) -q -f $(BUILD)/bochsrc
 
 .PHONY: qemu
-qemu: detatch
+qemu: detach
 	$(QEMU) $(QEMU_OPTIONS)
 
 .PHONY: attach
