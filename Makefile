@@ -2,7 +2,11 @@
 # .
 
 UNAME 				= $(shell uname)
+ifeq ($(UNAME), Darwin)
 TOOLCHAIN_PREFIX 	= x86_64-elf-
+else
+TOOLCHAIN_PREFIX 	= 
+endif
 KERNEL_OUT 			= $(BUILD)/kernel/kernel.out
 DEBUG_WAY 			= qemu
 
@@ -23,7 +27,7 @@ AWK 	= awk
 ifeq ($(UNAME), Darwin)
 UMOUNT  = diskutil eject
 else
-UMOUNT 	= eject
+UMOUNT 	= umount
 endif
 
 BXIMAGE = bximage
@@ -90,22 +94,36 @@ ifeq ($(UNAME), Darwin)
 attach: BOOT_IMG_MOUNT_DIR ?= "$(shell hdiutil mount $(BOOTIMG) | grep '/Volumes/.*$$' -o)"
 else ifeq ($(UNAME), Linux)
 attach:
-	$(error Boot disk creation process is not yet implemented on Linux. TODO: use losetup to map disk image on certain directorie)
 endif
 attach: attach_2
 
 .PHONY: attach_2
 attach_2:
+ifeq ($(UNAME), Linux)
+ifneq ($(BOOTIMG).lock,$(wildcard $(BOOTIMG).lock))
+	$(eval loop_device := $(shell udisksctl loop-setup -f $(BOOTIMG) | grep -o -e '/dev/loop[0-9]*'))
+	@echo Boot image is setup to loop device $(loop_device)
+	@echo $(loop_device) > $(BOOTIMG).lock.loop
+	$(eval BOOT_IMG_MOUNT_DIR ?= $(shell udisksctl mount -b $(loop_device)p1 | grep -o -e '/media/.*[0-9A-Za-z]'))
+else
+	@echo "Image is already mounted."
+	$(eval BOOT_IMG_MOUNT_DIR ?= $(shell cat $(BOOTIMG).lock))
+endif
+endif
 	@echo Boot image is mounted to $(BOOT_IMG_MOUNT_DIR)
 	@echo $(BOOT_IMG_MOUNT_DIR) > $(BOOTIMG).lock
 
-.PHONY: detatch
-detatch:
+.PHONY: detach
+detach:
 ifneq ($(BOOTIMG).lock,$(wildcard $(BOOTIMG).lock))
 	@echo Disk not mounted or lockfile is missing
 else
 	$(UMOUNT) "$(shell $(CAT) $(BOOTIMG).lock)"
 	$(RM) "$(BOOTIMG).lock"
+ifeq ($(UNAME), Linux)
+	udisksctl loop-delete -b $(shell $(CAT) $(BOOTIMG).lock.loop)
+	$(RM) "$(BOOTIMG).lock.loop"
+endif
 endif
 
 .PHONY: debug
