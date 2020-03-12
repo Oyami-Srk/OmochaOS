@@ -20,6 +20,12 @@ void core_init_proc(process *proc, uint pid, void *entry, u32 page_dir) {
     proc->stack.es = SEL_DATA_DPL1;
     proc->stack.fs = SEL_DATA_DPL1;
     proc->stack.ss = SEL_DATA_DPL1;
+    /* proc->stack.cs = 0x08; */
+    /* proc->stack.ds = 0x10; */
+    /* proc->stack.gs = 0x10; */
+    /* proc->stack.es = 0x10; */
+    /* proc->stack.fs = 0x10; */
+    /* proc->stack.ss = 0x10; */
 
     proc->stack.eip    = (u32)(entry);
     proc->stack.esp    = (uint)kalloc() + 4096; // task stack

@@ -136,3 +136,8 @@ debug:
 .PHONY: clean
 clean:
 	$(RM) -rf $(BUILD)/kernel
+	$(RM) -rf $(BUILD)/kernel.disasm
+
+.PHONY: disasm
+disasm:
+	$(OBJDUMP) -S $(KERNEL_OUT) > $(BUILD)/kernel.disasm

@@ -5,6 +5,8 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 
+void *interrupt_stack;
+
 const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#DB: Debug",
                                    "#--: Non-maskable Interrupt",
@@ -78,6 +80,7 @@ void core_init_interrupt(Gate *idt, size_t count) {
     *idt_base       = (u32)KV2P(idt);
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
+    interrupt_stack = kalloc();
     asm("sti");
 }
 

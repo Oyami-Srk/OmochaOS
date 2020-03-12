@@ -8,6 +8,9 @@
 extern interrupt_handler
 extern proc_running
 extern tss
+extern interrupt_stack
+
+interrupt_count dd 1
 
 global vector_handler
 vector_handler:
@@ -39,6 +42,7 @@ vector_handler_ret:
     cmp dword [interrupt_count], 0
     jne .non_zero
     mov ecx, [proc_running]
+    mov esp, ecx    ; switch to proc stack frame
     ; handle syscall here
 .non_syscall:
     mov ebx, [ecx + process.page_dir]
@@ -58,7 +62,3 @@ vector_handler_ret:
     add esp, 8 ; trapno, err pushed in IVT
     iretd
 
-[BITS 32]
-[SECTION .bss]
-interrupt_count dd 1
-interrupt_stack resb 4096
