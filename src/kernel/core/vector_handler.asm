@@ -42,14 +42,14 @@ vector_handler_ret:
     cmp dword [interrupt_count], 0
     jne .non_zero
     mov ecx, [proc_running]
-    mov esp, ecx    ; switch to proc stack frame
     ; handle syscall here
 .non_syscall:
     mov ebx, [ecx + process.page_dir]
     mov edx, cr3
     cmp edx, ebx
-    je .non_zero
+    je .set_esp0
     mov cr3, ebx
+.set_esp0:
     mov esp, ecx
     add ecx, process.page_dir
     mov dword [tss + __tss.esp0], ecx

@@ -17,7 +17,7 @@ uint beats = 0;
 
 void TaskTest(void) {
     while (1)
-        kprintf("T");
+        kprintf("%d.", beats);
 }
 
 process      proc;

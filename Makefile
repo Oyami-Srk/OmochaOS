@@ -128,8 +128,9 @@ endif
 endif
 
 .PHONY: debug
-debug: 
+debug:
 	$(MAKE)
+	$(MAKE) disasm
 	$(MAKE) boot
 	$(MAKE) $(DEBUG_WAY)
 	
