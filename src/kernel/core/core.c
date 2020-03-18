@@ -8,6 +8,8 @@
 #include "driver/misc.h"
 #include "generic/typedefs.h"
 
+#include "generic/syscall.h"
+
 #define GDT_SIZE 128
 
 Gate       idt[IVT_COUNT];
@@ -16,14 +18,24 @@ struct tss tss;
 
 uint beats = 0;
 
+void delay() {
+    for (uint i = 0; i < 1000; i++)
+        for (uint j = 0; j < 500; j++)
+            asm volatile("nop");
+}
+
 void TaskTest(void) {
-    while (1)
-        kprintf("%d.", beats);
+    while (1) {
+        kprintf("%d.", get_ticks());
+        delay();
+    }
 }
 
 void TaskTestB(void) {
-    while (1)
-        kprintf("B");
+    while (1) {
+        kprintf("B.");
+        delay();
+    }
 }
 
 unsigned int entry_page_dir[PDE_SIZE];

@@ -43,6 +43,9 @@ vector_handler_ret:
     jne .non_zero
     mov ecx, [proc_running]
     ; handle syscall here
+    cmp dword [ecx + process.stack + stack_frame.trap_no], 0xE9 ; syscall int
+    jne .non_syscall
+    mov dword [ecx + process.stack + stack_frame.eax], eax
 .non_syscall:
     mov ebx, [ecx + process.page_dir]
     mov edx, cr3
