@@ -9,5 +9,6 @@ int   sprintf(char *buf, const char *fmt, ...);
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))
 #define MAX(a, b) ((a) < (b) ? (b) : (a))
+#define NULL      0
 
 #endif // __STDLIB_H__

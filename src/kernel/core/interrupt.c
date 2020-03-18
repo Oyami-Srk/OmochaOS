@@ -85,6 +85,7 @@ void core_init_interrupt(Gate *idt, size_t count) {
 }
 
 extern uint beats;
+extern void scheduler();
 
 void interrupt_handler(stack_frame *intf) {
     if (intf->trap_no <= 19) {
@@ -107,6 +108,7 @@ void interrupt_handler(stack_frame *intf) {
     switch (intf->trap_no) {
     case IRQ_TIMER:
         beats++;
+        scheduler();
         EOI_M();
         break;
     default:

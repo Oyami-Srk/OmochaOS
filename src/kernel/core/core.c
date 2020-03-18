@@ -5,6 +5,7 @@
 #include "core/process.h"
 #include "core/protect.h"
 #include "driver/graphic.h"
+#include "driver/misc.h"
 #include "generic/typedefs.h"
 
 #define GDT_SIZE 128
@@ -20,7 +21,11 @@ void TaskTest(void) {
         kprintf("%d.", beats);
 }
 
-process      proc;
+void TaskTestB(void) {
+    while (1)
+        kprintf("B");
+}
+
 unsigned int entry_page_dir[PDE_SIZE];
 
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
@@ -35,11 +40,15 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
                      KP2V(4 * 1024 * 1024)); // to 4MB, the first remap
     core_init_gdt(gdt, GDT_SIZE, &tss);
     kprintf("GDT Initialized.\n");
+    init_timer();
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
     kprintf("gdt is located in 0x%08x\n", gdt);
-    core_init_proc(&proc, 0, (void *)TaskTest, (u32)entry_page_dir);
-    move_to_proc(&proc);
+    core_setup_proc();
+    kprintf("proc table max: %d\n", PG_SIZE / sizeof(process));
+    init_proc(0, (void *)TaskTest, (u32)entry_page_dir);
+    init_proc(1, (void *)TaskTestB, (u32)entry_page_dir);
+    move_to_proc(0);
     while (1) {
         ;
     }

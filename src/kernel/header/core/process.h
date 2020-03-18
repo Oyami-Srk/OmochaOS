@@ -35,13 +35,17 @@ struct __process {
 
 typedef struct __process process;
 
-static inline void move_to_proc(process *proc) {
+static inline void move_to_proc(uint pid) {
     extern process *proc_running;
     extern void     vector_handler_ret(void);
-    proc_running = proc;
+    extern process *proc_table;
+    proc_running = &proc_table[pid];
     asm volatile("jmp *%0" ::"r"(vector_handler_ret) : "memory");
 }
 
-void core_init_proc(process *proc, uint pid, void *entry, u32 page_dir);
+void core_setup_proc();
+// if provided pid is usable then use, else find a free pid and return it.
+// ret: process' pid
+uint init_proc(uint pid, void *entry, u32 page_dir);
 
 #endif // __PROCESS_H__
