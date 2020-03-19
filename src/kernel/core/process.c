@@ -32,9 +32,14 @@ void core_setup_proc() {
 uint init_proc(uint pid, void *entry, u32 page_dir) {
     if (check_bit(proc_bitmap, pid))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
+    process *proc = &proc_table[pid];
+    if (proc > proc_table_end) {
+        magic_break();
+        while (1)
+            ;
+    }
     set_bit(proc_bitmap, pid);
     proc_count++;
-    process *proc = &proc_table[pid];
 
     proc->stack.cs = SEL_CODE_DPL1;
     proc->stack.ds = SEL_DATA_DPL1;

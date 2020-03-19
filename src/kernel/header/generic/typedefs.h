@@ -25,4 +25,27 @@ typedef struct __proto_list__ list;
 
 typedef char *va_list;
 
+typedef struct __message {
+    uint sender;
+    uint receiver;
+    struct {
+        uint ready : 1;
+        uint type : 7;
+    } type;
+    uint major;
+    union {
+        struct {
+            uint d1;
+            uint d2;
+            uint d3;
+            uint d4;
+        } uint_arr;
+        struct {
+            uint d1;
+            char d2[12];
+        } uint_b12;
+        char b16[16];
+    } data;
+} __attribute__((packed)) message;
+
 #endif // __TYPEDEFS_H__

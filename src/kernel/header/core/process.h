@@ -3,7 +3,16 @@
 
 #include "generic/typedefs.h"
 
-#define LDT_SIZE 2
+#define PROC_STATUS_SUSPEND  0x00
+#define PROC_STATUS_RUNNING  0x01
+#define PROC_STATUS_READY    0x02
+#define PROC_STATUS_GOTINT   0x04
+#define PROC_STATUS_RESV     0x08
+#define PROC_STATUS_NORMAL   0x00
+#define PROC_STATUS_STOP     0x10
+#define PROC_STATUS_ERROR    0x20
+#define PROC_STATUS_SENDING  0x40
+#define PROC_STATUS_RECEVING 0x80
 
 typedef struct {
     u16  gs, pd1, fs, pd2, es, pd3, ds, pd4;
@@ -31,6 +40,12 @@ struct __process {
     uint        status;
     uint        pid;
     char        name[16];
+
+    message *p_msg;
+    // quene is :
+    // quene_head_sending_to_this_process->proc.quene_body->.quene_body->....
+    struct __process *quene_head_sending_to_this_process;
+    struct __process *quene_body;
 } __attribute__((packed));
 
 typedef struct __process process;

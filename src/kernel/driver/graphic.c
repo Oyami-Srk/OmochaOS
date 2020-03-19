@@ -1,4 +1,5 @@
 #include "driver/graphic.h"
+#include "generic/asm.h"
 #include "lib/stdlib.h"
 
 const volatile char *vm_start = (volatile char *)0x800B8000;
@@ -42,4 +43,36 @@ uint GRAPHIC_write_color_string_to_vm(u32 offset, u16 color, const char *str) {
     if (*(pCh + 1) == 0)
         *(pCh + 1) = color; // make cursor visible
     return (uint)pCh - (uint)vm_start;
+}
+
+void panic_proto(const char *str, const char *s_fn, const char *b_fn,
+                 const int ln) {
+    // check cs for privilege
+    uint cs = 0;
+    asm("mov %%cs, %0" : "=r"(cs));
+    // TODO: set panic int to receive panic from user processes
+    if ((uint)(cs & 3) != 0) // you cannot panic in ring1-3, please use panic
+                             // int pass message to kernel
+        return;
+    asm volatile("cli"); // close interrupt
+    GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
+                                     "                    "
+                                     "                    "
+                                     "                    "
+                                     "                   ");
+    char  buf[4];
+    char *p_str = (char *)str;
+    uint  i     = 0;
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), "[PANIC] ");
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), p_str);
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " in line ");
+    itoa(ln, buf, 10);
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), buf);
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " of ");
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), s_fn);
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), " based on ");
+    i = GRAPHIC_write_color_string_to_vm(i, COLOR(BLUE, WHITE), b_fn);
+    magic_break();
+    while (1)
+        ;
 }

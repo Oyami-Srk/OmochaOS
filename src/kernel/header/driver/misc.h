@@ -1,5 +1,5 @@
-#ifndef __MISC_H__
-#define __MISC_H__
+#ifndef __DRIVER_MISC_H__
+#define __DRIVER_MISC_H__
 
 #include "generic/asm.h"
 
