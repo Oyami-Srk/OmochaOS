@@ -15,6 +15,9 @@ int   sprintf(char *buf, const char *fmt, ...);
 
 extern void panic_proto(const char *str, const char *s_fn, const char *b_fn,
                         const int ln);
+#else
+#define panic(str)
+#define assert(exp)
 #endif
 
 #define MIN(a, b) ((a) > (b) ? (b) : (a))

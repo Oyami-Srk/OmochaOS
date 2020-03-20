@@ -14,6 +14,9 @@
 #define PROC_STATUS_SENDING  0x40
 #define PROC_STATUS_RECEVING 0x80
 
+#define PROC_ANY       0xFFFFFFFE
+#define PROC_INTERRUPT 0xFFFFFFFF
+
 typedef struct {
     u16  gs, pd1, fs, pd2, es, pd3, ds, pd4;
     u32  edi, esi, ebp, oesp, ebx, edx, ecx, eax;

@@ -26,15 +26,23 @@ void delay() {
 }
 
 void TaskTest(void) {
+    message msg;
     while (1) {
-        kprintf("%d.", get_ticks());
+        msg.receiver = 1;
+        msg.major    = get_ticks();
+        msg.type     = 2333;
+        kprintf("A send\"%d\"to B.", msg.major);
+        send_msg(&msg);
         delay();
     }
 }
 
 void TaskTestB(void) {
+    uint    i = 0;
+    message msg;
     while (1) {
-        kprintf("B.");
+        recv_msg(&msg, PROC_ANY);
+        kprintf("Recv\"%d\"from%d.", msg.major, msg.sender);
         delay();
     }
 }

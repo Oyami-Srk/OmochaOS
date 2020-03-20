@@ -28,10 +28,8 @@ typedef char *va_list;
 typedef struct __message {
     uint sender;
     uint receiver;
-    struct {
-        uint ready : 1;
-        uint type : 7;
-    } type;
+    uint ready : 1;
+    uint type : 31;
     uint major;
     union {
         struct {

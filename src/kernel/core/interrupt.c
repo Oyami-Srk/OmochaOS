@@ -130,7 +130,7 @@ void interrupt_handler(stack_frame *intf) {
                      "push %%ebx\n\t"
                      "push %%ecx\n\t"
                      "push %%eax\n\t"
-                     "call %1\n\t"
+                     "call *%1\n\t"
                      "movl %%eax, %0\n\t"
                      "add $16, %%esp\n\t"
                      : "=r"(retval)

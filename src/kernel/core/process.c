@@ -30,14 +30,12 @@ void core_setup_proc() {
 
 // proc initialized here is running under ring1
 uint init_proc(uint pid, void *entry, u32 page_dir) {
-    if (check_bit(proc_bitmap, pid))
+    if (check_bit(proc_bitmap, pid) || (pid == PROC_INTERRUPT) ||
+        (pid == PROC_ANY))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
     process *proc = &proc_table[pid];
-    if (proc > proc_table_end) {
-        magic_break();
-        while (1)
-            ;
-    }
+    if (proc > proc_table_end)
+        panic("No enough slot for process.");
     set_bit(proc_bitmap, pid);
     proc_count++;
 
@@ -53,13 +51,14 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     proc->stack.eflags = 0x1202;
     proc->page_dir     = (u32)KV2P(page_dir);
 
-    proc->status = 0;
+    proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
     proc->pid    = pid;
     return proc->pid;
 }
 
-// for placeholder
-#define UNRUNABLE (0x1 | 0x2 | 0x3)
+#define UNRUNABLE                                                              \
+    (PROC_STATUS_RECEVING | PROC_STATUS_SENDING | PROC_STATUS_SUSPEND |        \
+     PROC_STATUS_STOP | PROC_STATUS_ERROR)
 uint scheduler_i = 0;
 
 void scheduler(void) {
