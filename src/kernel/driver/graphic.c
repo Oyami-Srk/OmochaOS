@@ -51,9 +51,14 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
     uint cs = 0;
     asm("mov %%cs, %0" : "=r"(cs));
     // TODO: set panic int to receive panic from user processes
-    if ((uint)(cs & 3) != 0) // you cannot panic in ring1-3, please use panic
-                             // int pass message to kernel
+    if ((uint)(cs & 3) != 0) { // you cannot panic in ring1-3, please use panic
+                               // int pass message to kernel
+#ifdef __DEBUG
+        ;
+#else
         return;
+#endif
+    }
     asm volatile("cli"); // close interrupt
     GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
                                      "                    "

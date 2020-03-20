@@ -64,13 +64,10 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     init_timer();
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
-    kprintf("gdt is located in 0x%08x\n", gdt);
     core_setup_proc();
-    kprintf("proc table max: %d\n", PG_SIZE / sizeof(process));
-    kprintf("proc size: %d\n", sizeof(process));
-    init_proc(0, (void *)TaskTest, (u32)entry_page_dir);
-    init_proc(1, (void *)TaskTestB, (u32)entry_page_dir);
-    move_to_proc(0);
+    /* init_proc(0, (void *)TaskTest, (u32)entry_page_dir); */
+    /* init_proc(0, (void *)TaskTestB, (u32)entry_page_dir); */
+    /* move_to_proc(0); */
     while (1) {
         ;
     }
