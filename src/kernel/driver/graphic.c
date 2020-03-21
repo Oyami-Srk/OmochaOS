@@ -1,6 +1,7 @@
 #include "driver/graphic.h"
 #include "generic/asm.h"
 #include "lib/stdlib.h"
+#include "lib/string.h"
 
 const volatile char *vm_start = (volatile char *)0x800B8000;
 uint                 disp_pos = 0;
@@ -80,4 +81,32 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
     magic_break();
     while (1)
         ;
+}
+
+void GRAPHIC_set_vm_display_addr(uint offset) {
+    // cli
+    asm volatile("cli");
+    outb(0x3D4, 0x0D);
+    outb(0x3D5, (u16)((offset / 2) & 0xFF));
+    outb(0x3D4, 0x0C);
+    outb(0x3D5, (u16)(((offset / 2) >> 8) & 0xFF));
+    asm volatile("sti");
+    // sti
+}
+
+void GRAPHIC_set_cursor_addr(uint offset) {
+    // cli
+    asm volatile("cli");
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (u16)((offset / 2) & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (u16)(((offset / 2) >> 8) & 0xFF));
+    asm volatile("sti");
+    // sti
+}
+
+void GRAPHIC_init(void) {
+    memset((void *)vm_start, 0, 32 * 1024); // 32KB video memory
+    GRAPHIC_set_cursor_addr(0);
+    GRAPHIC_set_vm_display_addr(0);
 }
