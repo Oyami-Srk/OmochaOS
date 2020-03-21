@@ -23,6 +23,15 @@ uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
 
 uint beats = 0;
 
+void SysIdle() {
+    // reflect msg to sender
+    message msg;
+    while (1) {
+        recv_msg(&msg, PROC_ANY);
+        SEND_BACK(msg);
+    }
+}
+
 void delay() {
     for (uint i = 0; i < 1000; i++)
         for (uint j = 0; j < 500; j++)
@@ -69,6 +78,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
     core_setup_proc();
+    init_proc(0, SysIdle, (u32)entry_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         init_proc(modules_preferred_pid[i], (void *)modules[i],
                   (u32)entry_page_dir);

@@ -6,6 +6,8 @@
 #define SYSCALL_INT   0xE9
 #define MSG_INTERRUPT 0x7FFFFFFF
 
+// True syscall
+
 static inline uint get_ticks() {
     volatile uint beats;
     asm volatile("movl $0, %%eax\n\t"
@@ -41,5 +43,11 @@ static inline uint recv_msg(message *msg, uint recv_from) {
                  : "memory", "%eax");
     return rv;
 }
+
+#define SEND_BACK(msg)                                                         \
+    ((msg).receiver = (msg).sender);                                           \
+    send_msg(&(msg))
+
+// Packaged syscall
 
 #endif
