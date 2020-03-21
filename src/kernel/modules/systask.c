@@ -7,6 +7,7 @@ module:
   preferred_pid: 1
 */
 
+#include "driver/graphic.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 

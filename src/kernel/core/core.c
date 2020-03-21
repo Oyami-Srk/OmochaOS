@@ -10,12 +10,16 @@
 #include "lib/stdlib.h"
 
 #include "generic/syscall.h"
+#include "modules.h"
 
 #define GDT_SIZE 128
 
 Gate       idt[IVT_COUNT];
 Descriptor gdt[GDT_SIZE];
 struct tss tss;
+
+uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
+uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
 
 uint beats = 0;
 
@@ -65,9 +69,12 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_interrupt(idt, IVT_COUNT);
     kprintf("IDT Initialized.\n");
     core_setup_proc();
+    for (uint i = 0; i < __MODULES_COUNT__; i++)
+        init_proc(modules_preferred_pid[i], (void *)modules[i],
+                  (u32)entry_page_dir);
     /* init_proc(0, (void *)TaskTest, (u32)entry_page_dir); */
     /* init_proc(0, (void *)TaskTestB, (u32)entry_page_dir); */
-    /* move_to_proc(0); */
+    move_to_proc(0);
     while (1) {
         ;
     }
