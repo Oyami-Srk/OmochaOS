@@ -31,11 +31,31 @@ const char *exception_message[] = {"#DE: Divide-by-zero Error",
 
 };
 
-extern uint  vector_table[];
-extern void *syscall_table[];
+extern uint             vector_table[];
+extern void *           syscall_table[];
+struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
+uint                    interrupt_suscribed[HW_IRQ_COUNT];
 
 static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
+
+void send_interrupt_msg(uint irq, uint pid) {
+    extern size_t proc_count;
+    assert(pid < proc_count);
+    extern process *proc_table;
+    process *       p = &proc_table[pid];
+    if (p->status & PROC_STATUS_RECEVING) {
+        if (p->p_msg->sender == PROC_ANY ||
+            p->p_msg->sender == PROC_INTERRUPT) {
+            p->p_msg->sender = PROC_INTERRUPT;
+            p->p_msg->type   = MSG_INTERRUPT;
+            p->p_msg->major  = irq;
+            p->status &= ~PROC_STATUS_RECEVING;
+            return;
+        }
+    }
+    p->status |= PROC_STATUS_GOTINT;
+}
 
 void init_8259A() {
     outb(IO_PIC_M, 0x11);     // ICW 1
@@ -86,6 +106,9 @@ void core_init_interrupt(Gate *idt, size_t count) {
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
     interrupt_stack = kalloc();
+    memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed));
+    memset(interrupt_methods, 0,
+           sizeof(struct interrupt_method) * HW_IRQ_COUNT);
     asm("sti");
 }
 
@@ -109,8 +132,16 @@ void interrupt_handler(stack_frame *intf) {
             ;
     }
     if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
-        disable_irq(intf->trap_no - IRQ0);
         // handler interrupt and enable irq
+        if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE) {
+            disable_irq(intf->trap_no - IRQ0);
+            void *       func = interrupt_methods[intf->trap_no - IRQ0].func;
+            typedef void fp_v_v(void);
+            ((fp_v_v *)func)();
+        }
+        if (interrupt_suscribed[intf->trap_no - IRQ0])
+            send_interrupt_msg(intf->trap_no - IRQ0,
+                               interrupt_suscribed[intf->trap_no - IRQ0]);
         if (intf->trap_no - IRQ0 < 8)
             EOI_M();
         else {

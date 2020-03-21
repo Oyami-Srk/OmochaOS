@@ -30,4 +30,10 @@ void core_init_interrupt(Gate *idt, size_t count);
 void enable_irq(uint irq);
 void disable_irq(uint irq);
 
+struct interrupt_method {
+    uint  pid;
+    void *func;
+    uint  avail;
+} __attribute__((packed));
+
 #endif // __INTERRUPT_H__
