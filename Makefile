@@ -24,6 +24,9 @@ DD 		= dd
 CAT 	= cat
 SED 	= sed
 AWK 	= awk
+TEE 	= tee
+RM 		= rm
+MKDIR 	= mkdir
 ifeq ($(UNAME), Darwin)
 UMOUNT  = diskutil eject
 else
@@ -49,7 +52,7 @@ GRUB2CFG 		= $(TOOLS)/grub.cfg
 QEMU_OPTIONS 	= -accel tcg,thread=single -m 128 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
 
 
-export CC CXX LD OBJDUMP OBJCOPY ASM CP DD CAT SED AWK PY SRC TOOLS BUILD BUILD_TYPE UNAME
+export CC CXX LD OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY SRC TOOLS BUILD BUILD_TYPE UNAME
 
 .PHONY: all
 all:

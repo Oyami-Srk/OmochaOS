@@ -4,15 +4,15 @@
 KERNEL_BUILD 	= $(BUILD)/kernel
 KERNEL_LD_FLAGS = -m elf_i386 -N
 KERNEL_HEADER 	= $(shell pwd)/header
-SRC_DIRS = core driver lib
+SRC_DIRS = core driver lib modules
 
 .PHONY: all
 all: pre-build kernel
 
 .PHONY: create_dirs
 create_dirs:
-	@mkdir -p $(KERNEL_BUILD)
-	@mkdir -p $(foreach n, $(SRC_DIRS), $(KERNEL_BUILD)/$(n))
+	@$(MKDIR) -p $(KERNEL_BUILD)
+	@$(MKDIR) -p $(foreach n, $(SRC_DIRS), $(KERNEL_BUILD)/$(n))
 
 .PHONY: pre-build
 pre-build: create_dirs generate_sources
@@ -28,7 +28,7 @@ $(KERNEL_BUILD)/%.o: %.asm
 $(KERNEL_BUILD)/%.d: %.c
 	@set -e; rm -f $@; $(CC) -MM $< -I$(KERNEL_HEADER)  > $@.$$$$; \
 	$(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-	rm -f $@.$$$$
+	$(RM) -f $@.$$$$
 
 
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
@@ -42,8 +42,12 @@ ifneq ($(filter pre-build,$(MAKECMDGOALS)),pre-build)
 endif
 
 .PHONY: generate_sources
-generate_sources: $(KERNEL_BUILD)/multiboot.i
+generate_sources: $(KERNEL_BUILD)/multiboot.i header/modules.h
 
 $(KERNEL_BUILD)/multiboot.i: header/core/multiboot.h
 	@echo "; auto generated code, DO NOT MODIFIY." > $@
-	$(CC) -E -dM -I$(KERNEL_HEADER) $(CC_FLAGS) $^ | awk -F' ' 'substr($$2,0,1)!="_" {gsub(/#/,"%"); print}' >> $@
+	$(CC) -E -dM -I$(KERNEL_HEADER) $(CC_FLAGS) $^ | $(AWK) -F' ' 'substr($$2,0,1)!="_" {gsub(/#/,"%"); print}' >> $@
+
+header/modules.h: $(wildcard modules/*.c)
+	$(PY3) modules/module_parser.py -m modules -a $@ --dryrun
+	$(PY3) modules/module_parser.py -m modules -a $@

@@ -30,8 +30,8 @@ void core_setup_proc() {
 
 // proc initialized here is running under ring1
 uint init_proc(uint pid, void *entry, u32 page_dir) {
-    if (check_bit(proc_bitmap, pid) || (pid == PROC_INTERRUPT) ||
-        (pid == PROC_ANY))
+    if ((pid == PROC_INTERRUPT) || (pid == PROC_ANY) ||
+        check_bit(proc_bitmap, pid))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
     process *proc = &proc_table[pid];
     if (proc > proc_table_end)
