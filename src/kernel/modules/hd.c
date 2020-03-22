@@ -5,7 +5,7 @@ module:
   summary: HD Process
   entry: Task_HD
 */
-#include "hd.h"
+#include "modules/hd.h"
 #include "core/interrupt.h"
 #include "core/process.h"
 #include "generic/asm.h"
