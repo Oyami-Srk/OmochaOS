@@ -15,7 +15,7 @@ void write_console(struct console *con, const char *str) {
 }
 
 void clear_console(struct console *con, uint offset, size_t len) {
-    memset((void *)(0xB8000 + con->origin_offset + offset), 0, len);
+    memset((void *)(0x800B8000 + con->origin_offset + offset), 0, len);
 }
 
 void init_console(struct console *con, int vm_nr) {

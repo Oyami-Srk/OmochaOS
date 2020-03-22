@@ -2,6 +2,8 @@
 #define __MODULE_HD__
 
 #include "generic/typedefs.h"
+#include "lib/syscall.h"
+#include "modules/systask.h"
 
 #define HD_REG_DATA     0x1F0
 #define HD_REG_FEATURES 0x1F1
@@ -87,9 +89,12 @@ static inline struct HD_Command *HD_make_command(struct HD_Command *cmd,
 #define HD_BUFFER_SIZE 4096
 
 struct HD_PartInfo {
+    u8   bootable;
+    u8   fsid;
     uint base;
     uint size;
 };
+
 struct HD_Info {
     uint               open_cnt;
     struct HD_PartInfo primary[PRIM_PER_DRIVE];

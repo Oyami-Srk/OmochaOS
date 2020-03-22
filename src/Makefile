@@ -4,7 +4,7 @@
 CC_FLAGS = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
 
 ifeq ($(BUILD_TYPE), debug)
-	CC_FLAGS += -D__DEBUG__ -D__HD_DEBUG__
+	CC_FLAGS += -D__DEBUG__ -D__HD_DEBUG__ -D__FS_DEBUG__
 endif
 
 export CC_FLAGS

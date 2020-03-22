@@ -116,8 +116,10 @@ void init_partitions(int drv, int type, uint extend_id) {
             if (part_table[i].fsid == HD_PART_TYPE_NONE)
                 continue;
             prim_parts++;
-            info->primary[i + 1].base = part_table[i].lba_begin;
-            info->primary[i + 1].size = part_table[i].size;
+            info->primary[i + 1].base     = part_table[i].lba_begin;
+            info->primary[i + 1].size     = part_table[i].size;
+            info->primary[i + 1].bootable = part_table[i].bootable;
+            info->primary[i + 1].fsid     = part_table[i].fsid;
 
             if (part_table[i].fsid == HD_PART_TYPE_EXTEND)
                 init_partitions(drv, HD_PART_TYPE_EXTEND, i + 1);
@@ -133,7 +135,9 @@ void init_partitions(int drv, int type, uint extend_id) {
             part_table_read(drv, sect, part_table);
             info->logical[start_ext_part + i].base =
                 sect + part_table[0].lba_begin;
-            info->logical[start_ext_part + i].size = part_table[0].size;
+            info->logical[start_ext_part + i].size     = part_table[0].size;
+            info->logical[start_ext_part + i].bootable = part_table[0].bootable;
+            info->logical[start_ext_part + i].fsid     = part_table[0].fsid;
 
             sect = ext_base + part_table[1].lba_begin;
 
@@ -145,18 +149,20 @@ void init_partitions(int drv, int type, uint extend_id) {
 
 void print_part_info(struct HD_Info *info) {
     for (uint i = 0; i < PART_PER_DRIVE + 1; i++) {
-        printf("%sPART_%d: Begin %d(0x%x) Size %d(0x%x)\n",
+        printf("%sPART_%d: Begin %d(0x%x) Size %d(0x%x) Boot:0x%x FSID:0x%x\n",
                i == 0 ? " " : "    ", i, info->primary[i].base,
                info->primary[i].base, info->primary[i].size,
-               info->primary[i].size);
+               info->primary[i].size, info->primary[i].bootable,
+               info->primary[i].fsid);
     }
     for (uint i = 0; i < SUB_PER_DRIVE; i++) {
         if (info->logical[i].size == 0)
             continue;
         printf("        "
-               "%d: Begin %d(0x%x) Size %d(0x%x)\n",
+               "%d: Begin %d(0x%x) Size %d(0x%x) Boot:0x%x FSID:0x%x\n",
                i, info->logical[i].base, info->logical[i].base,
-               info->logical[i].size, info->logical[i].size);
+               info->logical[i].size, info->logical[i].size,
+               info->logical[i].bootable, info->logical[i].fsid);
     }
 }
 
@@ -296,32 +302,33 @@ void Task_HD() {
             msg.receiver = msg.sender;
             send_msg(&msg);
             break;
-        case DEV_INFO:
-            if (SPLIT_DEV_PART(msg.major) <= PRIM_PER_DRIVE) {
-                ((struct HD_PartInfo *)(msg.data.uint_arr.d1))->size =
-                    hd_info[SPLIT_DRV_DEV(msg.major)]
-                        .primary[SPLIT_DEV_PART(msg.major)]
-                        .size *
-                    SECTOR_SIZE;
-                ((struct HD_PartInfo *)(msg.data.uint_arr.d1))->base =
-                    hd_info[SPLIT_DRV_DEV(msg.major)]
-                        .primary[SPLIT_DEV_PART(msg.major)]
-                        .base;
-            } else if (SPLIT_DEV_PART(msg.major) <= PRIM_PER_DRIVE) {
-                ((struct HD_PartInfo *)(msg.data.uint_arr.d1))->size =
-                    hd_info[SPLIT_DRV_DEV(msg.major)]
-                        .logical[SPLIT_DEV_PART(msg.major)]
-                        .size *
-                    SECTOR_SIZE;
-                ((struct HD_PartInfo *)(msg.data.uint_arr.d1))->base =
-                    hd_info[SPLIT_DRV_DEV(msg.major)]
-                        .logical[SPLIT_DEV_PART(msg.major) - PRIM_PER_DRIVE]
-                        .base;
+        case DEV_INFO: {
+            struct HD_PartInfo *p =
+                (struct HD_PartInfo *)(msg.data.uint_arr.d1);
+            ushort dev  = SPLIT_DRV_DEV(msg.major);
+            ushort part = SPLIT_DEV_PART(msg.major);
+
+            if (part <= PRIM_PER_DRIVE) {
+                p->size     = hd_info[dev].primary[part].size * SECTOR_SIZE;
+                p->base     = hd_info[dev].primary[part].base;
+                p->bootable = hd_info[dev].primary[part].bootable;
+                p->fsid     = hd_info[dev].primary[part].fsid;
+            } else if (part + PRIM_PER_DRIVE <= SUB_PER_DRIVE) {
+                p->size = hd_info[dev].logical[part - PRIM_PER_DRIVE].size *
+                          SECTOR_SIZE;
+                p->base = hd_info[dev].logical[part - PRIM_PER_DRIVE].base;
+                p->bootable =
+                    hd_info[dev].logical[part - PRIM_PER_DRIVE].bootable;
+                p->fsid = hd_info[dev].logical[part - PRIM_PER_DRIVE].fsid;
             } else
                 panic("HD Part exceed");
             msg.major    = 0;
             msg.receiver = msg.sender;
             send_msg(&msg);
+            break;
+        }
+        default:
+            break;
         }
     }
 }

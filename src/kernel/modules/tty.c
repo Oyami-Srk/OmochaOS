@@ -37,6 +37,7 @@ void Task_TTY() {
         if (peek_msg()) {
             recv_msg(&msg, PROC_ANY);
             write_console(&con[cur_con], (const char *)msg.major);
+            SEND_BACK(msg);
         }
         if (!((key = kbd_read()) & 0x0100)) {
             char buf[2];
@@ -96,5 +97,6 @@ int printf(const char *fmt, ...) {
         return 0;
     msg.receiver = task_tty;
     send_msg(&msg);
+    recv_msg(&msg, task_tty);
     return strlen(buf);
 }
