@@ -7,13 +7,13 @@ module:
   preferred_pid: 1
 */
 
-#include "generic/systask.h"
+#include "modules/systask.h"
 #include "core/interrupt.h"
 #include "core/process.h"
 #include "driver/graphic.h"
-#include "generic/syscall.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
+#include "lib/syscall.h"
 
 // this task will be at the same addr sapce as the kernel does
 // like a macrokernel, just because I am a good vegetable

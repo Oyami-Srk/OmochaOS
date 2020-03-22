@@ -1,9 +1,10 @@
 #include "kbd.h"
 #include "core/interrupt.h"
 #include "generic/asm.h"
-#include "generic/syscall.h"
 #include "generic/typedefs.h"
 #include "keymap.h"
+#include "lib/syscall.h"
+#include "modules/systask.h"
 
 uint shift_l, shift_r, alt_l, alt_r, ctrl_l, ctrl_r, caps_lock, num_lock,
     scr_lock;

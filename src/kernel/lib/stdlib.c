@@ -1,5 +1,8 @@
+#include "driver/misc.h"
 #include "generic/typedefs.h"
 #include "lib/string.h"
+#include "lib/syscall.h"
+#include "modules/systask.h"
 
 char *itoa(uint value, char *str, int base) {
     char *rc;
@@ -109,4 +112,10 @@ int vsprintf(char *buf, const char *fmt, va_list args) {
 int sprintf(char *buf, const char *fmt, ...) {
     va_list arg = (va_list)((char *)(&fmt) + 4);
     return vsprintf(buf, fmt, arg);
+}
+
+void delay_ms(uint ms) {
+    uint beats_begin = get_ticks_msg();
+    while (((get_ticks_msg() - beats_begin) * 1000 / BEATS_RATE) < ms)
+        ;
 }

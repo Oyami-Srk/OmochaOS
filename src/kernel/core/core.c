@@ -9,8 +9,8 @@
 #include "generic/typedefs.h"
 #include "lib/stdlib.h"
 
-#include "generic/syscall.h"
-#include "modules.h"
+#include "lib/syscall.h"
+#include "modules/modules.h"
 
 #define GDT_SIZE 128
 
@@ -60,14 +60,17 @@ void TaskTestB(void) {
     }
 }
 
-unsigned int entry_page_dir[PDE_SIZE];
+unsigned int     entry_page_dir[PDE_SIZE];
+multiboot_info_t boot_info;
 
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
+    memcpy(&boot_info, multiboot_header, sizeof(multiboot_info_t));
     if (magic == MULTIBOOT_BOOTLOADER_MAGIC)
         kprintf("Venlafaxos is booting by multiboot bootloader.\n");
     else
         kprintf("Venlafaxos is booting. magic is 0x%08x\n", magic);
-    kprintf("KERN_VEND: 0x%08x\n", KERN_VEND);
+    kprintf("KERN_VEND: 0x%08x, mbflags is %08x\n", KERN_VEND,
+            multiboot_header->flags);
     kprintf("MEM_LOWER is 0x%08x\nMEM_UPPER is 0x%08x\n",
             multiboot_header->mem_lower, multiboot_header->mem_upper);
     core_init_memory(KERN_VEND,

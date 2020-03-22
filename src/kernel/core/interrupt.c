@@ -2,9 +2,9 @@
 #include "core/memory.h"
 #include "driver/graphic.h"
 #include "generic/asm.h"
-#include "generic/syscall.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
+#include "lib/syscall.h"
 
 void *interrupt_stack;
 

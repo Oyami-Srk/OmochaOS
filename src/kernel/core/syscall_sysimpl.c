@@ -1,9 +1,9 @@
 #include "core/process.h"
 #include "generic/asm.h"
-#include "generic/syscall.h"
 #include "generic/typedefs.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
+#include "lib/syscall.h"
 
 extern uint     beats;
 extern process *proc_table; // TODO: not hardcode

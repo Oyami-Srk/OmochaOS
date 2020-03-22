@@ -6,6 +6,7 @@
 char *itoa(unsigned int value, char *str, int base);
 int   vsprintf(char *buf, const char *fmt, va_list args);
 int   sprintf(char *buf, const char *fmt, ...);
+void  delay_ms(uint ms);
 
 #ifdef __DEBUG__
 #define panic(str) panic_proto(#str, __FILE__, __BASE_FILE__, __LINE__)
