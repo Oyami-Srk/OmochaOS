@@ -12,16 +12,11 @@
 #include "lib/syscall.h"
 #include "modules/modules.h"
 
-#define GDT_SIZE 128
-
-Gate       idt[IVT_COUNT];
-Descriptor gdt[GDT_SIZE];
-struct tss tss;
+#include "core/environment.h"
+#include "core/init.h"
 
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
-
-uint beats = 0;
 
 void SysIdle() {
     // reflect msg to sender
@@ -32,62 +27,39 @@ void SysIdle() {
     }
 }
 
-void delay() {
-    for (uint i = 0; i < 1000; i++)
-        for (uint j = 0; j < 500; j++)
-            asm volatile("nop");
-}
-
-void TaskTest(void) {
-    message msg;
-    while (1) {
-        msg.receiver = 1;
-        msg.major    = get_ticks();
-        msg.type     = 2333;
-        kprintf("A send\"%d\"to B.", msg.major);
-        send_msg(&msg);
-        delay();
-    }
-}
-
-void TaskTestB(void) {
-    uint    i = 0;
-    message msg;
-    while (1) {
-        recv_msg(&msg, PROC_ANY);
-        kprintf("Recv\"%d\"from%d.", msg.major, msg.sender);
-        delay();
-    }
-}
-
-unsigned int     entry_page_dir[PDE_SIZE];
-multiboot_info_t boot_info;
+unsigned int    entry_page_dir[PDE_SIZE];
+struct core_env core_env;
 
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
-    memcpy(&boot_info, multiboot_header, sizeof(multiboot_info_t));
-    if (magic == MULTIBOOT_BOOTLOADER_MAGIC)
-        kprintf("Venlafaxos is booting by multiboot bootloader.\n");
-    else
-        kprintf("Venlafaxos is booting. magic is 0x%08x\n", magic);
-    kprintf("KERN_VEND: 0x%08x, mbflags is %08x\n", KERN_VEND,
-            multiboot_header->flags);
-    kprintf("MEM_LOWER is 0x%08x\nMEM_UPPER is 0x%08x\n",
-            multiboot_header->mem_lower, multiboot_header->mem_upper);
+    memset(&core_env, 0, sizeof(struct core_env));
+    init_timer();
+
     core_init_memory(KERN_VEND,
                      KP2V(4 * 1024 * 1024)); // to 4MB, the first remap
-    core_init_gdt(gdt, GDT_SIZE, &tss);
-    kprintf("GDT Initialized.\n");
-    init_timer();
-    core_init_interrupt(idt, IVT_COUNT);
-    kprintf("IDT Initialized.\n");
-    core_setup_proc();
+
+    memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
+
+    core_env.beats    = 0;
+    core_env.gdt_size = GDT_SIZE;
+    core_env.idt_size = IDT_SIZE;
+
+    core_env.proc_table       = (process *)kalloc();
+    core_env.proc_max         = (PG_SIZE / sizeof(process));
+    core_env.proc_count       = 0;
+    core_env.proc_bitmap      = (bitset *)kalloc();
+    core_env.proc_bitmap_size = (PG_SIZE / sizeof(bitset));
+    memset(core_env.proc_table, 0, PG_SIZE);
+    memset(core_env.proc_bitmap, 0, PG_SIZE);
+
+    core_init_gdt(&core_env);
+    core_init_interrupt(&core_env);
+    core_init_proc(&core_env);
+
     init_proc(0, SysIdle, (u32)entry_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         init_proc(modules_preferred_pid[i], (void *)modules[i],
                   (u32)entry_page_dir);
-    /* init_proc(0, (void *)TaskTest, (u32)entry_page_dir); */
-    /* init_proc(0, (void *)TaskTestB, (u32)entry_page_dir); */
-    move_to_proc(0);
+    move_to_proc();
     while (1) {
         ;
     }

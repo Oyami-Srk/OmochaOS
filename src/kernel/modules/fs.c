@@ -289,6 +289,20 @@ static void write_8_3_filename(uchar *fname, uchar *buffer) {
     }
 }
 
+void read_file(struct FAT32_FileSystem *fs, uint clus, uint size, void *buf) {
+    uint bytes_per_clus = (fs->BytesPerSec * fs->SecPerClus);
+    uint clus_count =
+        (size / bytes_per_clus) + (size % bytes_per_clus) == 0 ? 0 : 1;
+    ubyte rf_hd_buf[512];
+    if (bytes_per_clus != 512)
+        panic("FAT32 Bytes per Clus is not 512");
+    for (uint i = 0; i < clus_count; i++) {
+        HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus + i), rf_hd_buf, 512);
+        memcpy(buf + bytes_per_clus * i, rf_hd_buf,
+               (clus_count - i) == 1 ? size % bytes_per_clus : bytes_per_clus);
+    }
+}
+
 void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
     uchar hd_buf[512];
     HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), hd_buf, 512);
@@ -311,7 +325,8 @@ void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
         read_8_3_filename(DirEnt.Name, buf);
         memset(buffer, 0, 16);
         memcpy(buffer, DirEnt.Name, 11);
-        printf("%s\n", buf);
+        printf("%s: Clus%d, Size%d\n", buf,
+               DirEnt.FstClusHI << 16 | DirEnt.FstClusLO, DirEnt.FileSize);
         if (DirEnt.Attr & ATTR_DIR) {
             /* list_dir(fs, DirEnt.FstClusHI << 16 | DirEnt.FstClusLO, */
             /* tabsize + 1); */
@@ -341,6 +356,10 @@ void Task_FS() {
     }
     */
     list_dir(&fs, fs.RootClus, 0); // 2 is root dir first clus, no more explain
+    char f[32];
+    memset(f, 0, sizeof(f));
+    read_file(&fs, 14457, 13, f);
+    printf("1.TXT:%s\n", f);
     HD_dev_close(0);
     while (1) {
     }

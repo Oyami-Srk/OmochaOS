@@ -115,8 +115,4 @@ static uint KERN_GDT[][3] = {
 #define SEL_CODE_DPL3 ((6 << 3) | SA_RPL3)
 #define SEL_DATA_DPL4 ((7 << 3) | SA_RPL3)
 
-void core_init_gdt(Descriptor *GDT, size_t gdt_count, struct tss *tss);
-u16  allocate_ldt(u32 LDT_base, size_t LDT_size);
-void deallocate_ldt(u16 ldt_selector);
-
 #endif // __PROTECT_H__

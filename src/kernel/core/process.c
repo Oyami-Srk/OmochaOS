@@ -1,4 +1,5 @@
 #include "core/process.h"
+#include "core/environment.h"
 #include "core/memory.h"
 #include "core/paging.h"
 #include "core/protect.h"
@@ -8,24 +9,33 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 
-const uint MAX_PROC = 65535;
-
 process *proc_running   = NULL;
 process *proc_table     = NULL;
 process *proc_table_end = NULL; // last item of proc table
-size_t   proc_count     = 0;
+size_t * proc_count     = 0;
 bitset * proc_bitmap;
 size_t   proc_bitmap_size;
 
 // proc table setup
-void core_setup_proc() {
-    proc_table           = (process *)kalloc();
-    proc_bitmap          = (bitset *)kalloc();
-    proc_bitmap_size     = PG_SIZE / sizeof(bitset);
-    uint proc_table_size = (uint)(PG_SIZE / sizeof(process));
-    proc_table_end       = proc_table + proc_table_size - 1;
-    memset(proc_table, 0, PG_SIZE);
-    memset(proc_bitmap, 0, PG_SIZE);
+void core_init_proc(struct core_env *env) {
+    /* proc_table           = (process *)kalloc(); */
+    /* proc_bitmap          = (bitset *)kalloc(); */
+    /* proc_bitmap_size     = PG_SIZE / sizeof(bitset); */
+    /* uint proc_table_size = (uint)(PG_SIZE / sizeof(process)); */
+    /* proc_table_end       = proc_table + proc_table_size - 1; */
+    /* memset(proc_table, 0, PG_SIZE); */
+    /* memset(proc_bitmap, 0, PG_SIZE); */
+    /* env.proc_table  = proc_table; */
+    /* env.proc_bitmap = proc_bitmap; */
+    /* env.proc_count  = 0; */
+    /* proc_count      = &env.proc_count; */
+    /* env.proc_max    = (proc_table_end - proc_table); */
+    proc_table       = env->proc_table;
+    proc_bitmap      = env->proc_bitmap;
+    proc_bitmap_size = env->proc_bitmap_size;
+    proc_count       = &env->proc_count;
+    proc_table_end   = env->proc_table + env->proc_max;
+    proc_running     = proc_table;
 }
 
 // proc initialized here is running under ring1
@@ -37,7 +47,7 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     if (proc > proc_table_end)
         panic("No enough slot for process.");
     set_bit(proc_bitmap, pid);
-    proc_count++;
+    (*proc_count)++;
 
     proc->stack.cs = SEL_CODE_DPL1;
     proc->stack.ds = SEL_DATA_DPL1;
@@ -66,7 +76,7 @@ void scheduler(void) {
         return;
     do {
         scheduler_i++;
-        if (scheduler_i >= proc_count)
+        if (scheduler_i >= *proc_count)
             scheduler_i = 0;
     } while ((proc_table[scheduler_i].status & 0xFF) & UNRUNABLE);
     proc_running = &proc_table[scheduler_i];

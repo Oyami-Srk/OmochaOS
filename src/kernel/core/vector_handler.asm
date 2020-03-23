@@ -5,10 +5,10 @@
 [BITS 32]
 [SECTION .text]
 
-extern interrupt_handler
-extern proc_running
-extern tss
-extern interrupt_stack
+extern interrupt_handler    ; define in interrupt.c
+extern proc_running         ; define in process.c
+extern tss                  ; define in protect.c, is a pointer
+extern interrupt_stack      ; define in interrupt.c
 
 interrupt_count dd 1
 
@@ -55,7 +55,8 @@ vector_handler_ret:
 .set_esp0:
     mov esp, ecx
     add ecx, process.page_dir
-    mov dword [tss + __tss.esp0], ecx
+    mov eax, [tss]
+    mov dword [eax + __tss.esp0], ecx
 .non_zero:
     pop gs
     pop fs

@@ -1,11 +1,14 @@
 #include "core/protect.h"
+#include "core/environment.h"
 #include "core/memory.h"
 #include "generic/asm.h"
+#include "lib/stdlib.h"
 #include "lib/string.h"
 
 Descriptor *_GDT_start;
 Descriptor *_GDT_current; // point to next empty slot;
 Descriptor *_GDT_end;
+struct tss *tss;
 
 // must be called after set _GDT_start and _GDT_end
 void __lgdt__(BOOL has_tss, u16 selector_tss) {
@@ -36,30 +39,28 @@ void __lgdt__(BOOL has_tss, u16 selector_tss) {
         asm volatile("ltr %%ax" ::"a"(selector_tss));
 }
 
-void core_init_gdt(Descriptor *GDT, size_t gdt_count, struct tss *tss) {
+void core_init_gdt(struct core_env *env) {
     size_t size         = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
     BOOL   has_tss      = FALSE;
     uint   gdt_n        = 0;
     u16    selector_tss = 0;
 
-    if (size > gdt_count) {
-        magic_break();
-        while (1)
-            ;
+    if (size > env->gdt_size) {
+        panic("PreDefined GDT Entities more than GDT Size");
     }
 
-    _GDT_start   = GDT;
+    _GDT_start   = env->gdt;
     _GDT_current = _GDT_start;
-    _GDT_end     = _GDT_start + gdt_count - 1;
+    _GDT_end     = _GDT_start + env->gdt_size - 1;
+    tss          = &env->tss;
 
     for (uint i = 0; i < size; i++)
         switch (KERN_GDT[i][2]) {
         case DA_386TSS:
             has_tss      = TRUE;
             selector_tss = i << 3;
-            memset(tss, 0, sizeof(struct tss));
-            tss->ss0 = 2 << 3; // data selector, hard code is bad
-            make_descriptor(_GDT_current, (uint)(KV2P(tss)),
+            env->tss.ss0 = 2 << 3; // data selector, hard code is bad
+            make_descriptor(_GDT_current, (uint)(KV2P(&env->tss)),
                             sizeof(struct tss) - 1, DA_386TSS);
             _GDT_current++;
             break;

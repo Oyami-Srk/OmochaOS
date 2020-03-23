@@ -24,9 +24,6 @@
 #define IRQ_KBD   (IRQ0 + HW_IRQ_KBD)
 #define IRQ_AT    (IRQ0 + HW_IRQ_AT)
 
-#define IVT_COUNT 256 // must match IVT.asm
-
-void core_init_interrupt(Gate *idt, size_t count);
 void enable_irq(uint irq);
 void disable_irq(uint irq);
 

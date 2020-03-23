@@ -1,4 +1,5 @@
 #include "core/interrupt.h"
+#include "core/environment.h"
 #include "core/memory.h"
 #include "driver/graphic.h"
 #include "generic/asm.h"
@@ -31,10 +32,11 @@ const char *exception_message[] = {"#DE: Divide-by-zero Error",
 
 };
 
-extern uint             vector_table[];
-extern void *           syscall_table[];
-struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
-uint                    interrupt_suscribed[HW_IRQ_COUNT];
+extern uint              vector_table[];
+extern void *            syscall_table[];
+struct interrupt_method *interrupt_methods;
+uint *                   interrupt_suscribed;
+uint *                   beats;
 
 static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
@@ -86,33 +88,32 @@ void disable_irq(uint irq) {
         outb(IO_PIC_S + 1, inb(IO_PIC_S) | (1 << irq));
 }
 
-void core_init_interrupt(Gate *idt, size_t count) {
-    if (count < IVT_COUNT) {
-        magic_break();
-        while (1)
-            ; // panic
-    }
-    for (uint i = 0; i < IVT_COUNT; i++) {
+void core_init_interrupt(struct core_env *env) {
+    for (uint i = 0; i < env->idt_size; i++) {
         if (i == SYSCALL_INT)
-            make_gate(&idt[i], 1 << 3, (uint)vector_table[i], DPL3, GATE_INT32);
+            make_gate(&env->idt[i], 1 << 3, (uint)vector_table[i], DPL3,
+                      GATE_INT32);
         else
-            make_gate(&idt[i], 1 << 3, (uint)vector_table[i], DPL0, GATE_INT32);
+            make_gate(&env->idt[i], 1 << 3, (uint)vector_table[i], DPL0,
+                      GATE_INT32);
     }
     uchar idt_ptr[6];
     u16 * idt_limit = (u16 *)(&idt_ptr[0]);
     u32 * idt_base  = (u32 *)(&idt_ptr[2]);
-    *idt_limit      = count * sizeof(Gate) - 1;
-    *idt_base       = (u32)KV2P(idt);
+    *idt_limit      = env->idt_size * sizeof(Gate) - 1;
+    *idt_base       = (u32)KV2P(env->idt);
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
-    interrupt_stack = kalloc();
-    memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed));
-    memset(interrupt_methods, 0,
-           sizeof(struct interrupt_method) * HW_IRQ_COUNT);
+    interrupt_stack = kalloc(); // notice here allocate
+    /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
+    /* memset(interrupt_methods, 0, */
+    /* sizeof(struct interrupt_method) * HW_IRQ_COUNT); */
+    interrupt_suscribed = env->interrupt_suscribed;
+    interrupt_methods   = env->interrupt_methods;
+    beats               = &env->beats; // TODO: not use pointer anyway
     asm("sti");
 }
 
-extern uint beats;
 extern void scheduler();
 
 void interrupt_handler(stack_frame *intf) {
@@ -151,7 +152,7 @@ void interrupt_handler(stack_frame *intf) {
     }
     switch (intf->trap_no) {
     case IRQ_TIMER:
-        beats++;
+        (*beats)++;
         scheduler();
         EOI_M();
         break;

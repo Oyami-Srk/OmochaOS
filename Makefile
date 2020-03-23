@@ -30,7 +30,6 @@ MKDIR 	= mkdir
 ifeq ($(UNAME), Darwin)
 UMOUNT  = diskutil eject
 else
-UMOUNT 	= umount
 endif
 
 BXIMAGE = bximage
@@ -49,6 +48,7 @@ BUILD_TYPE 	= debug
 BOOTIMG 		= $(BUILD)/HD.img
 GRUB2IMG 		= $(TOOLS)/HD_grub2.img
 GRUB2CFG 		= $(TOOLS)/grub.cfg
+ROOT_DIR 		= $(TOOLS)/root_dir
 QEMU_OPTIONS 	= -accel tcg,thread=single -m 128 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
 
 
@@ -83,15 +83,18 @@ endif
 ifeq ($(GRUB2CFG),$(wildcard $(GRUB2CFG)))
 	$(CP) "$(GRUB2CFG)" "$(shell $(CAT) $(BOOTIMG).lock)/boot/grub/"
 endif
+	-$(CP) -n -R "$(ROOT_DIR)/" "$(shell $(CAT) $(BOOTIMG).lock)/"
 
 .PHONY: bochs
 bochs: detach
 	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\".*\"/\"$(subst /,\/,$(BOOTIMG))\"/g' > $(BUILD)/bochsrc
-	$(BOCHS) -q -f $(BUILD)/bochsrc
+	-$(BOCHS) -q -f $(BUILD)/bochsrc
+	@echo "Simulation Terminated"
 
 .PHONY: qemu
 qemu: detach
-	$(QEMU) $(QEMU_OPTIONS)
+	-$(QEMU) $(QEMU_OPTIONS)
+	@echo "Simulation Terminated"
 
 .PHONY: attach
 ifeq ($(UNAME), Darwin)
