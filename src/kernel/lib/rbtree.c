@@ -6,15 +6,19 @@
     ((struct _rb_node *)(((struct _rb_node *)n)->parent_and_color &            \
                          0xFFFFFFFCL))
 #define SET_PARENT(n, p)                                                       \
-    ((struct _rb_node *)n)->parent_and_color &= 0x00000003;                    \
-    ((struct _rb_node *)n)->parent_and_color |= (unsigned int)p
+    do {                                                                       \
+        ((struct _rb_node *)n)->parent_and_color &= 0x00000003;                \
+        ((struct _rb_node *)n)->parent_and_color |= (unsigned int)p;           \
+    } while (0)
 #define GET_COLOR(n)                                                           \
     (unsigned int)(((struct _rb_node *)n)->parent_and_color & 0x00000003)
 #define SET_COLOR(n, c)                                                        \
-    ((struct _rb_node *)n)->parent_and_color &= 0xFFFFFFFC;                    \
-    ((struct _rb_node *)n)->parent_and_color |= (unsigned int)c
+    do {                                                                       \
+        ((struct _rb_node *)n)->parent_and_color &= 0xFFFFFFFC;                \
+        ((struct _rb_node *)n)->parent_and_color |= (unsigned int)c;           \
+    } while (0)
 
-rb_node *search(rb_node *x, uint key) {
+rb_node *rb_search(rb_node *x, uint key) {
     while (x != NULL) {
         if (x->key == key)
             break;
@@ -26,7 +30,7 @@ rb_node *search(rb_node *x, uint key) {
     return x;
 }
 
-rb_node *detach(rb_node *x) {
+rb_node *rb_detach(rb_node *x) {
     rb_node *p = GET_PARENT(x);
     if (p) {
         if (p->L == x)
@@ -38,27 +42,24 @@ rb_node *detach(rb_node *x) {
     return x;
 }
 
-// mov src to dst place and return a detached dst
-rb_node *change(rb_tree *rb_tree, rb_node *dst, rb_node *src) {
+rb_node *rb_transplant(rb_tree *rb_tree, rb_node *dst, rb_node *src) {
     if (rb_tree && rb_tree->root == dst)
         rb_tree->root = src;
     else if (dst == GET_PARENT(dst)->R)
         GET_PARENT(dst)->R = src;
     else if (dst == GET_PARENT(dst)->L)
         GET_PARENT(dst)->L = src;
-    if (GET_PARENT(dst))
-        SET_PARENT(src, GET_PARENT(dst));
-    SET_PARENT(dst, NULL);
+    SET_PARENT(src, GET_PARENT(dst));
     return dst;
 }
 
 void rb_left_rotate(rb_tree *rb_tree, rb_node *x) {
     if (x->R == NULL)
         return;
-    rb_node *a = detach(x->R);
-    change(rb_tree, x, a);
+    rb_node *a = rb_detach(x->R);
+    rb_transplant(rb_tree, x, a);
     if (a->L) {
-        rb_node *b = detach(a->L);
+        rb_node *b = rb_detach(a->L);
         a->L       = x;
         SET_PARENT(x, a);
         x->R = b;
@@ -72,10 +73,10 @@ void rb_left_rotate(rb_tree *rb_tree, rb_node *x) {
 void rb_right_rotate(rb_tree *rb_tree, rb_node *x) {
     if (x->L == NULL)
         return;
-    rb_node *a = detach(x->L);
-    change(rb_tree, x, a);
+    rb_node *a = rb_detach(x->L);
+    rb_transplant(rb_tree, x, a);
     if (a->R) {
-        rb_node *b = detach(a->R);
+        rb_node *b = rb_detach(a->R);
         a->R       = x;
         SET_PARENT(x, a);
         x->L = b;
@@ -83,17 +84,6 @@ void rb_right_rotate(rb_tree *rb_tree, rb_node *x) {
     } else {
         a->R = x;
         SET_PARENT(x, a);
-    }
-}
-
-void build_parent(rb_node *root) {
-    if (root->R) {
-        SET_PARENT(root->R, root);
-        build_parent(root->R);
-    }
-    if (root->L) {
-        SET_PARENT(root->L, root);
-        build_parent(root->L);
     }
 }
 
@@ -206,7 +196,6 @@ void rb_remove_fixup(rb_tree *t, rb_node *n, rb_node *parent) {
         if (parent->L == n) {
             other = parent->R;
             if (GET_COLOR(other) == RB_RED) {
-                // Case 1: x的兄弟w是红色的
                 SET_COLOR(other, RB_BLACK);
                 SET_COLOR(parent, RB_RED);
                 rb_left_rotate(t, parent);
@@ -214,21 +203,16 @@ void rb_remove_fixup(rb_tree *t, rb_node *n, rb_node *parent) {
             }
             if ((!other->L || GET_COLOR(other->L) == RB_BLACK) &&
                 (!other->R || GET_COLOR(other->R) == RB_BLACK)) {
-                // Case 2: x的兄弟w是黑色，且w的俩个孩子也都是黑色的
                 SET_COLOR(other, RB_RED);
                 n      = parent;
                 parent = GET_PARENT(n);
             } else {
                 if (!other->R || GET_COLOR(other->R) == RB_BLACK) {
-                    // Case 3:
-                    // x的兄弟w是黑色的，并且w的左孩子是红色，右孩子为黑色。
                     SET_COLOR(other->L, RB_BLACK);
                     SET_COLOR(other, RB_RED);
                     rb_right_rotate(t, other);
                     other = parent->R;
                 }
-                // Case 4:
-                // x的兄弟w是黑色的；并且w的右孩子是红色的，左孩子任意颜色。
                 SET_COLOR(other, GET_COLOR(parent));
                 SET_COLOR(parent, RB_BLACK);
                 SET_COLOR(other->R, RB_BLACK);
@@ -239,7 +223,6 @@ void rb_remove_fixup(rb_tree *t, rb_node *n, rb_node *parent) {
         } else {
             other = parent->L;
             if (GET_COLOR(other) == RB_RED) {
-                // Case 1: x的兄弟w是红色的
                 SET_COLOR(other, RB_BLACK);
                 SET_COLOR(parent, RB_RED);
                 rb_right_rotate(t, parent);
@@ -247,21 +230,16 @@ void rb_remove_fixup(rb_tree *t, rb_node *n, rb_node *parent) {
             }
             if ((!other->L || GET_COLOR(other->L) == RB_BLACK) &&
                 (!other->R || GET_COLOR(other->R) == RB_BLACK)) {
-                // Case 2: x的兄弟w是黑色，且w的俩个孩子也都是黑色的
                 SET_COLOR(other, RB_RED);
                 n      = parent;
                 parent = GET_PARENT(n);
             } else {
                 if (!other->L || GET_COLOR(other->L) == RB_BLACK) {
-                    // Case 3:
-                    // x的兄弟w是黑色的，并且w的左孩子是红色，右孩子为黑色。
                     SET_COLOR(other->R, RB_BLACK);
                     SET_COLOR(other, RB_RED);
                     rb_left_rotate(t, other);
                     other = parent->L;
                 }
-                // Case 4:
-                // x的兄弟w是黑色的；并且w的右孩子是红色的，左孩子任意颜色。
                 SET_COLOR(other, GET_COLOR(parent));
                 SET_COLOR(parent, RB_BLACK);
                 SET_COLOR(other->L, RB_BLACK);
@@ -276,76 +254,33 @@ void rb_remove_fixup(rb_tree *t, rb_node *n, rb_node *parent) {
 }
 
 void rb_remove(rb_tree *t, rb_node *n) {
-    rb_node *child = NULL;
-    rb_node *p     = NULL;
-    int      color;
+    rb_node *r = n;
+    rb_node *child;
+    int      color = GET_COLOR(n);
 
-    // 被删除节点的"左右孩子都不为空"的情况。
-    if ((n->L != NULL) && (n->R != NULL)) {
-        rb_node *p       = GET_PARENT(n);
-        rb_node *replace = rb_succ(n);
-
-        // "rb_node节点"不是根节点(只有根节点不存在父节点)
-        if (p) {
-            if (p->L == n)
-                p->L = replace;
-            else
-                p->R = replace;
-        } else
-            t->root = replace;
-
-        // child是"取代节点"的右孩子，也是需要"调整的节点"。
-        // "取代节点"肯定不存在左孩子！因为它是一个后继节点。
-        child = replace->R;
-        p     = GET_PARENT(replace);
-        // 保存"取代节点"的颜色
-        color = GET_COLOR(replace);
-
-        // "被删除节点"是"它的后继节点的父节点"
-        if (p == n) {
-            p = replace;
-        } else {
-            // child不为空
-            if (child)
-                SET_PARENT(child, p);
-            p->L = child;
-
-            replace->R = n->R;
-            SET_PARENT(replace->R, replace);
-        }
-
-        SET_PARENT(replace, n);
-        SET_COLOR(replace, GET_COLOR(n));
-        replace->L = n->L;
-        SET_PARENT(replace->L, replace);
-
-        if (color == RB_BLACK)
-            rb_remove_fixup(t, child, p);
-        return;
-    }
-
-    if (n->L != NULL)
-        child = n->L;
-    else
+    if (n->L == NULL) {
         child = n->R;
-
-    p = GET_PARENT(n);
-    // 保存"取代节点"的颜色
-    color = GET_COLOR(n);
-
-    if (child) {
-        SET_PARENT(child, p);
+        rb_transplant(t, n, child);
+    } else if (n->R == NULL) {
+        child = n->L;
+        rb_transplant(t, n, child);
+    } else {
+        r     = rb_succ(n);
+        color = GET_COLOR(r);
+        child = r->R;
+        if (GET_PARENT(r) == n) { // replace is node->right
+            if (child)
+                SET_PARENT(child, r);
+        } else { // replace is node->right->left(most)
+            rb_transplant(t, r, r->R);
+            r->R = n->R;
+            SET_PARENT(r->R, r);
+        }
+        rb_transplant(t, n, r);
+        r->L = n->L;
+        SET_PARENT(r->L, r);
+        SET_COLOR(r, GET_COLOR(n));
     }
-
-    // "rb_node节点"不是根节点
-    if (p) {
-        if (p->L == n)
-            p->L = child;
-        else
-            p->R = child;
-    } else
-        t->root = child;
-
     if (color == RB_BLACK)
-        rb_remove_fixup(t, child, p);
+        rb_remove_fixup(t, child, r);
 }
