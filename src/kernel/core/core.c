@@ -39,9 +39,10 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
 
-    core_env.beats    = 0;
-    core_env.gdt_size = GDT_SIZE;
-    core_env.idt_size = IDT_SIZE;
+    core_env.beats     = 0;
+    core_env.core_vend = (uint)KERN_VEND;
+    core_env.gdt_size  = GDT_SIZE;
+    core_env.idt_size  = IDT_SIZE;
 
     core_env.proc_table       = (process *)kalloc();
     core_env.proc_max         = (PG_SIZE / sizeof(process));
