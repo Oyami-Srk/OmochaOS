@@ -1,10 +1,13 @@
 #ifndef __MODULE_SYSTASK_H__
 #define __MODULE_SYSTASK_H__
 
+#include "driver/misc.h"
 #include "generic/typedefs.h"
 #include "lib/syscall.h"
 
 #define SYSTASK_PID 1
+
+#define QUERY_PROC_TIMEOUT 2000 // in ms
 
 #define GET_TICKS      1
 #define REG_PROC       2
@@ -15,6 +18,7 @@
 #define REG_INT_MSG    7
 #define UNREG_INT_MSG  8
 #define PEEK_MSG       9
+#define QUERY_ENV      10
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -56,14 +60,21 @@ static inline uint unreg_proc() {
 
 static inline uint query_proc(const char *name) {
     message msg;
-    msg.type     = QUERY_PROC;
-    msg.receiver = SYSTASK_PID;
     if (strlen(name) > 16)
         return 0;
     strcpy(msg.data.b16, (char *)name);
-    send_msg(&msg);
-    recv_msg(&msg, SYSTASK_PID);
-    return msg.major;
+    uint pid         = 0;
+    uint beats_begin = get_ticks_msg();
+    while (pid == 0 &&
+           ((get_ticks_msg() - beats_begin) * 1000 / BEATS_RATE) <
+               QUERY_PROC_TIMEOUT) { // if cannot find proc, halt and retry
+        msg.type     = QUERY_PROC;
+        msg.receiver = SYSTASK_PID;
+        send_msg(&msg);
+        recv_msg(&msg, SYSTASK_PID);
+        pid = msg.major;
+    }
+    return pid;
 }
 
 static inline uint reg_int_func(uint irq, void *func) {
@@ -112,6 +123,23 @@ static inline uint peek_msg() {
     message msg;
     msg.type     = PEEK_MSG;
     msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return msg.major;
+}
+
+#define ENV_KEY_MEMORY_LOWER 1
+#define ENV_KEY_MEMORY_UPPER 2
+#define ENV_KEY_BOOT_INFO    3
+#define ENV_KEY_MMAP         4
+
+static inline uint query_env(unsigned int KEY, ubyte *buf, size_t buf_size) {
+    message msg;
+    msg.type             = QUERY_ENV;
+    msg.receiver         = SYSTASK_PID;
+    msg.major            = KEY;
+    msg.data.uint_arr.d1 = (uint)buf;
+    msg.data.uint_arr.d2 = (uint)buf_size;
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return msg.major;

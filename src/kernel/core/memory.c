@@ -1,11 +1,13 @@
 #include "core/memory.h"
+#include "core/environment.h"
+#include "core/multiboot.h"
 #include "generic/asm.h"
 #include "generic/typedefs.h"
 #include "lib/string.h"
 
 list *freemem;
 
-// free a page
+// free pages
 void kfree(char *p) {
     list *current;
     // only free page higher then Kernel's end and lower than 0xE00000 in phy.
@@ -24,8 +26,8 @@ void kfree(char *p) {
     freemem       = current;
 }
 
-// allocate a page
-char *kalloc(void) {
+// allocate pages
+char *kalloc(size_t pages) {
     list *current;
     current = freemem;
     if (current)
@@ -34,7 +36,20 @@ char *kalloc(void) {
 }
 
 // init memory for very first time being
-void core_init_memory(void *vstart, void *vend) {
+void core_init_memory(struct core_env *env) {
+    multiboot_memory_map_t *mmap =
+        KP2V((multiboot_memory_map_t *)env->boot_info.mmap_addr);
+    for (uint i = 0; (uint)mmap < (uint)KP2V(env->boot_info.mmap_addr) +
+                                      env->boot_info.mmap_length;
+         mmap = (multiboot_memory_map_t *)((uint)mmap + mmap->size +
+                                           sizeof(mmap->size))) {
+        env->memory_zone[i].addr   = mmap->addr_low;
+        env->memory_zone[i].length = mmap->len_low;
+        env->memory_zone[i].type   = mmap->type;
+        i++;
+    }
+    void *vstart = (void *)env->core_space_start;
+    void *vend   = (void *)env->core_space_end;
     // align to higher addr than vstart
     void *p = (void *)((uint)(vstart + PG_SIZE - 1) & ~(PG_SIZE - 1));
     for (; p + PG_SIZE <= vend; p += PG_SIZE)

@@ -32,22 +32,22 @@ struct core_env core_env;
 
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memset(&core_env, 0, sizeof(struct core_env));
+    memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
     init_timer();
 
-    core_init_memory(KERN_VEND,
-                     KP2V(4 * 1024 * 1024)); // to 4MB, the first remap
+    core_env.beats            = 0;
+    core_env.core_vend        = (uint)KERN_VEND;
+    core_env.core_space_start = (uint)KERN_VEND;
+    core_env.core_space_end   = (uint)KP2V(4 * 1024 * 1024); // 4MB
+    core_env.gdt_size         = GDT_SIZE;
+    core_env.idt_size         = IDT_SIZE;
 
-    memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
+    core_init_memory(&core_env);
 
-    core_env.beats     = 0;
-    core_env.core_vend = (uint)KERN_VEND;
-    core_env.gdt_size  = GDT_SIZE;
-    core_env.idt_size  = IDT_SIZE;
-
-    core_env.proc_table       = (process *)kalloc();
+    core_env.proc_table       = (process *)kalloc(0);
     core_env.proc_max         = (PG_SIZE / sizeof(process));
     core_env.proc_count       = 0;
-    core_env.proc_bitmap      = (bitset *)kalloc();
+    core_env.proc_bitmap      = (bitset *)kalloc(0);
     core_env.proc_bitmap_size = (PG_SIZE / sizeof(bitset));
     memset(core_env.proc_table, 0, PG_SIZE);
     memset(core_env.proc_bitmap, 0, PG_SIZE);
@@ -61,9 +61,8 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         init_proc(modules_preferred_pid[i], (void *)modules[i],
                   (u32)entry_page_dir);
     move_to_proc();
-    while (1) {
+    while (1)
         ;
-    }
 }
 
 __attribute__((__aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE] = {

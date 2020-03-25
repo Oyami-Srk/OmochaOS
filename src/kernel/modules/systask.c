@@ -12,6 +12,7 @@ module:
 #include "core/interrupt.h"
 #include "core/process.h"
 #include "driver/graphic.h"
+#include "driver/misc.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
@@ -127,6 +128,46 @@ void SysTask() {
             else
                 msg.major = FALSE;
             SEND_BACK(msg);
+            break;
+        case QUERY_ENV:
+            switch (msg.major) {
+            case ENV_KEY_MEMORY_LOWER:
+                msg.major = core_env.boot_info.mem_lower;
+                SEND_BACK(msg);
+                break;
+            case ENV_KEY_MEMORY_UPPER:
+                msg.major = core_env.boot_info.mem_upper;
+                SEND_BACK(msg);
+                break;
+            case ENV_KEY_MMAP: {
+                void * buf      = (void *)msg.data.uint_arr.d1;
+                size_t buf_size = msg.data.uint_arr.d2;
+                if (buf_size < sizeof(struct core_env_memory_zone) *
+                                   core_env.memory_zone_count)
+                    msg.major = 0xFFFFFFFF;
+                else {
+                    memcpy(buf, core_env.memory_zone,
+                           sizeof(struct core_env_memory_zone) *
+                               core_env.memory_zone_count);
+                    msg.major = core_env.memory_zone_count;
+                }
+                SEND_BACK(msg);
+                break;
+            }
+            case ENV_KEY_BOOT_INFO: {
+                void * buf      = (void *)msg.data.uint_arr.d1;
+                size_t buf_size = msg.data.uint_arr.d2;
+                if (buf_size < sizeof(core_env.boot_info))
+                    msg.major = 0xFFFFFFFF;
+                else {
+                    memcpy(buf, &core_env.boot_info,
+                           sizeof(core_env.boot_info));
+                    msg.major = 0;
+                }
+                SEND_BACK(msg);
+                break;
+            }
+            }
             break;
         default:
             break;

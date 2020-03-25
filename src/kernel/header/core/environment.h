@@ -8,18 +8,33 @@
 #include "generic/typedefs.h"
 #include "lib/bitset.h"
 
-#define GDT_SIZE 128
-#define IDT_SIZE 256 // must match IVT.asm
+#define GDT_SIZE        128
+#define IDT_SIZE        256 // must match IVT.asm
+#define MEMORY_ZONE_MAX 16
+
+struct core_env_memory_zone {
+    uint addr;
+    uint length;
+    uint type;
+#define MEMORY_AVAILABLE        1
+#define MEMORY_RESERVED         2
+#define MEMORY_ACPI_RECLAIMABLE 3
+#define MEMORY_NVS              4
+#define MEMORY_BADRAM           5
+};
 
 struct core_env {
     uint             beats;
     multiboot_info_t boot_info;
     uint             core_vend;
+    uint             core_space_start;
+    uint             core_space_end;
     size_t           gdt_size; // = GDT_SIZE
     Descriptor       gdt[GDT_SIZE];
     size_t           idt_size; // = IDT_SIZE
     Gate             idt[IDT_SIZE];
     struct tss       tss;
+    unsigned int *   page_dir;
     process *        proc_table;
     size_t           proc_count;
     size_t           proc_max;
@@ -28,6 +43,9 @@ struct core_env {
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
     uint                    interrupt_suscribed[HW_IRQ_COUNT];
-};
+
+    struct core_env_memory_zone memory_zone[MEMORY_ZONE_MAX];
+    uint                        memory_zone_count;
+} __attribute__((aligned(4096))); // 4KB aligned
 
 #endif // __ENVIRONMENT_H__

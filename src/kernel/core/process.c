@@ -43,6 +43,8 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     if ((pid == PROC_INTERRUPT) || (pid == PROC_ANY) ||
         check_bit(proc_bitmap, pid))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
+    if (pid == 0xFFFFFFFF)
+        panic("bitset full");
     process *proc = &proc_table[pid];
     if (proc > proc_table_end)
         panic("No enough slot for process.");
@@ -57,7 +59,7 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     proc->stack.ss = SEL_DATA_DPL1;
 
     proc->stack.eip    = (u32)(entry);
-    proc->stack.esp    = (uint)kalloc() + 4096; // task stack
+    proc->stack.esp    = (uint)kalloc(0) + 4096; // task stack
     proc->stack.eflags = 0x1202;
     proc->page_dir     = (u32)KV2P(page_dir);
 
