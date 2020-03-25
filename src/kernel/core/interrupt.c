@@ -7,7 +7,7 @@
 #include "lib/string.h"
 #include "lib/syscall.h"
 
-void *interrupt_stack;
+/* void *interrupt_stack; */
 
 const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#DB: Debug",
@@ -104,7 +104,7 @@ void core_init_interrupt(struct core_env *env) {
     *idt_base       = (u32)KV2P(env->idt);
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
-    interrupt_stack = kalloc(0); // notice here allocate
+    /* interrupt_stack = kalloc(0); // notice here allocate */
     /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
     /* memset(interrupt_methods, 0, */
     /* sizeof(struct interrupt_method) * HW_IRQ_COUNT); */

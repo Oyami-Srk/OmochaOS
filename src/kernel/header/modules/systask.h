@@ -3,11 +3,12 @@
 
 #include "driver/misc.h"
 #include "generic/typedefs.h"
+#include "lib/stdlib.h"
 #include "lib/syscall.h"
 
 #define SYSTASK_PID 1
 
-#define QUERY_PROC_TIMEOUT 2000 // in ms
+#define QUERY_PROC_TIMEOUT 5000 // in ms
 
 #define GET_TICKS      1
 #define REG_PROC       2
@@ -73,6 +74,9 @@ static inline uint query_proc(const char *name) {
         send_msg(&msg);
         recv_msg(&msg, SYSTASK_PID);
         pid = msg.major;
+        if (pid)
+            break;
+        delay_ms(QUERY_PROC_TIMEOUT / 10); // retry 10 times
     }
     return pid;
 }

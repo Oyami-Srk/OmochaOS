@@ -8,9 +8,12 @@
 extern interrupt_handler    ; define in interrupt.c
 extern proc_running         ; define in process.c
 extern tss                  ; define in protect.c, is a pointer
-extern interrupt_stack      ; define in interrupt.c
+; extern interrupt_stack      ; define in interrupt.c
 
 interrupt_count dd 1
+interrupt_stack resb 8196 ; 8KB Interrupt stack defined in .text
+interrupt_stack_bottom:
+
 
 global vector_handler
 vector_handler:
@@ -29,7 +32,7 @@ vector_handler:
     mov ecx, esp
     cmp dword [interrupt_count], 0
     jne .non_zero
-    mov esp, interrupt_stack + 4096
+    mov esp, interrupt_stack_bottom
 .non_zero:
     inc dword [interrupt_count]
     push dword ecx ; original stack top

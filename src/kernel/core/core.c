@@ -35,22 +35,38 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
     init_timer();
 
-    core_env.beats            = 0;
-    core_env.core_vend        = (uint)KERN_VEND;
-    core_env.core_space_start = (uint)KERN_VEND;
-    core_env.core_space_end   = (uint)KP2V(4 * 1024 * 1024); // 4MB
-    core_env.gdt_size         = GDT_SIZE;
-    core_env.idt_size         = IDT_SIZE;
+    core_env.beats     = 0;
+    core_env.core_vend = (uint)KERN_VEND;
+    core_env.core_space_start =
+        ((uint)KERN_VEND & 0xFFF00000) + 0x100000; // align 1MB
+    core_env.core_space_free_start = core_env.core_space_start;
+    core_env.core_space_free_end =
+        core_env.core_space_free_start + 0x100000;         // 1MB
+    core_env.core_space_end = (uint)KP2V(4 * 1024 * 1024); // 4MB
+    core_env.gdt_size       = GDT_SIZE;
+    core_env.idt_size       = IDT_SIZE;
+
+    memset((void *)core_env.core_space_start, 0,
+           core_env.core_space_end - core_env.core_space_start);
 
     core_init_memory(&core_env);
 
-    core_env.proc_table       = (process *)kalloc(0);
-    core_env.proc_max         = (PG_SIZE / sizeof(process));
-    core_env.proc_count       = 0;
-    core_env.proc_bitmap      = (bitset *)kalloc(0);
-    core_env.proc_bitmap_size = (PG_SIZE / sizeof(bitset));
-    memset(core_env.proc_table, 0, PG_SIZE);
-    memset(core_env.proc_bitmap, 0, PG_SIZE);
+    core_env.proc_table = (process *)core_env.core_space_free_end;
+    size_t ideal_proc_max =
+        ((core_env.core_space_end - core_env.core_space_free_end) /
+         sizeof(process));
+    size_t bitmap_size = ideal_proc_max / 8; // in bytes
+    core_env.proc_max =
+        ideal_proc_max - (bitmap_size / sizeof(process) +
+                          (bitmap_size % sizeof(process) == 0 ? 0 : 1));
+    core_env.proc_count  = 0;
+    core_env.proc_bitmap = (bitset *)(core_env.core_space_end - bitmap_size);
+    core_env.proc_bitmap_size = (bitmap_size / sizeof(bitset));
+
+    kprintf("\n\nproc_max: %d\nbitmap_size: %d\n", core_env.proc_max,
+            core_env.proc_bitmap_size);
+    kprintf("Proc table start: 0x%x\n", core_env.proc_table);
+    kprintf("Bitmap start: 0x%x\n", core_env.proc_bitmap);
 
     core_init_gdt(&core_env);
     core_init_interrupt(&core_env);
@@ -65,6 +81,8 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         ;
 }
 
-__attribute__((__aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE] = {
+// map 4MB
+__attribute__((
+    __aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE_STARTUP] = {
     [0]               = (0) | PG_Present | PG_Writeable | PG_PS,
     [KERN_BASE >> 22] = (0) | PG_Present | PG_Writeable | PG_PS};

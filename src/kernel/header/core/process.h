@@ -49,7 +49,7 @@ struct __process {
     // quene_head_sending_to_this_process->proc.quene_body->.quene_body->....
     struct __process *quene_head_sending_to_this_process;
     struct __process *quene_body;
-} __attribute__((packed));
+} __attribute__((aligned(32)));
 
 typedef struct __process process;
 
