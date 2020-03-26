@@ -114,7 +114,8 @@ void core_init_interrupt(struct core_env *env) {
     asm("sti");
 }
 
-extern void scheduler();
+extern void     scheduler();
+extern process *proc_running;
 
 void interrupt_handler(stack_frame *intf) {
     if (intf->trap_no <= 19) {
@@ -126,7 +127,7 @@ void interrupt_handler(stack_frame *intf) {
                                          "                   ");
         char buf[128];
         sprintf(buf, "Exception %s in proc %d",
-                exception_message[intf->trap_no], 0);
+                exception_message[intf->trap_no], proc_running->pid);
         GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, RED), buf);
         magic_break();
         while (1)

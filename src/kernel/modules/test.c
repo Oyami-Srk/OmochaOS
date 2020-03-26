@@ -27,7 +27,5 @@ void Task_Test(void) {
         printf("Addr: 0x%x, Length: 0x%x, Type: %d\n", zone[i].addr,
                zone[i].length, zone[i].type);
     }
-
-    while (1)
-        ;
+    exit_proc();
 }

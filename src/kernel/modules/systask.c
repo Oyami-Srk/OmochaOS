@@ -22,6 +22,20 @@ module:
 
 extern struct core_env core_env;
 
+static int __reg_proc(uint pid, char *name) {
+    for (uint i = 0; i < core_env.proc_count; i++)
+        if (strcmp(name, core_env.proc_table[i].name) == 0 && i != pid)
+            return -1;
+    size_t len = strlen(name);
+    strcpy(core_env.proc_table[pid].name, name);
+    return 0;
+}
+
+static void __unreg_proc(uint pid) {
+    memset(core_env.proc_table[pid].name, 0,
+           sizeof(core_env.proc_table[pid].name));
+}
+
 void SysTask() {
     message msg;
     msg.receiver = 0;
@@ -40,32 +54,23 @@ void SysTask() {
             break;
         }
         case REG_PROC: {
-            char *name = msg.data.b16;
-            for (uint i = 0; i < core_env.proc_count; i++)
-                if (strcmp(name, core_env.proc_table[i].name) == 0 &&
-                    i != msg.sender) {
-                    msg.major = -1;
-                    SEND_BACK(msg);
-                }
-            size_t len = strlen(name);
-            strcpy(core_env.proc_table[msg.sender].name, name);
-            msg.major = 0;
+            msg.major = __reg_proc(msg.sender, (char *)msg.data.b16);
             SEND_BACK(msg);
             break;
         }
         case UNREG_PROC:
-            memset(core_env.proc_table[msg.sender].name, 0,
-                   sizeof(core_env.proc_table[msg.sender].name));
+            __unreg_proc(msg.sender);
             msg.major = 0;
             SEND_BACK(msg);
         case QUERY_PROC: {
             uint  pid  = 0;
             char *name = msg.data.b16;
-            for (uint i = 0; i < core_env.proc_count; i++)
-                if (strcmp(name, core_env.proc_table[i].name) == 0) {
-                    pid = i;
+            for (process *p = core_env.proc_list; p != NULL; p = p->next) {
+                if (strcmp(name, p->name) == 0) {
+                    pid = p->pid;
                     break;
                 }
+            }
             msg.major = pid;
             SEND_BACK(msg);
             break;
@@ -169,6 +174,45 @@ void SysTask() {
             }
             }
             break;
+        case EXIT_PROC: {
+            __unreg_proc(msg.sender);
+            clear_bit(core_env.proc_bitmap, msg.sender);
+            uint proc_stack =
+                PGROUNDDOWN(core_env.proc_table[msg.sender].stack.esp);
+            if (proc_stack <
+                core_env.core_space_free_end) // core free stack is managed by
+                                              // memory.c
+                kfree((char *)proc_stack);
+            else {
+                ; // free stack by memory modules
+            }
+            // free page dir
+            uint proc_pd = core_env.proc_table[msg.sender].page_dir;
+            // if proc_pd's reference is 1 free it
+            // call memory module to free page dir
+            core_env.proc_count--;
+            process *target = &core_env.proc_table[msg.sender];
+            process *p      = core_env.proc_list;
+
+            if (target == p) {
+                core_env.proc_list = target;
+            } else {
+                process *f  = p;
+                process *ff = NULL;
+                while (p) {
+                    f = p;
+                    p = p->next;
+                    if (p == target) {
+                        ff = f;
+                        break;
+                    }
+                }
+                ff->next = target->next;
+            }
+
+            memset(&core_env.proc_table[msg.sender], 0, sizeof(process));
+            break;
+        }
         default:
             break;
         }

@@ -1,6 +1,7 @@
 #ifndef __MODULE_SYSTASK_H__
 #define __MODULE_SYSTASK_H__
 
+#include "core/memory.h"
 #include "driver/misc.h"
 #include "generic/typedefs.h"
 #include "lib/stdlib.h"
@@ -20,6 +21,7 @@
 #define UNREG_INT_MSG  8
 #define PEEK_MSG       9
 #define QUERY_ENV      10
+#define EXIT_PROC      11
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -147,6 +149,14 @@ static inline uint query_env(unsigned int KEY, ubyte *buf, size_t buf_size) {
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return msg.major;
+}
+
+static inline uint exit_proc() {
+    message msg;
+    msg.type     = EXIT_PROC;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    return 0; // actually you cannot run into this line
 }
 
 #endif // __MODULE_SYSTASK_H__

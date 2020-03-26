@@ -38,6 +38,7 @@ struct core_env {
     struct tss       tss;
     unsigned int *   page_dir;
     process *        proc_table;
+    process *        proc_list;
     size_t           proc_count;
     size_t           proc_max;
     bitset *         proc_bitmap;

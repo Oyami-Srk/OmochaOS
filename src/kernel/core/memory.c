@@ -7,9 +7,6 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 
-#define PGROUNDUP(sz)  (((sz) + PG_SIZE - 1) & ~(PG_SIZE - 1))
-#define PGROUNDDOWN(a) (((a)) & ~(PG_SIZE - 1))
-
 list *freemem;
 
 // free pages

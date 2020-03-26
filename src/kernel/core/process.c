@@ -9,12 +9,13 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 
-process *proc_running   = NULL;
-process *proc_table     = NULL;
-process *proc_table_end = NULL; // last item of proc table
-size_t * proc_count     = 0;
-bitset * proc_bitmap;
-size_t   proc_bitmap_size;
+process * proc_running   = NULL;
+process * proc_table     = NULL;
+process * proc_table_end = NULL; // last item of proc table
+size_t *  proc_count     = 0;
+bitset *  proc_bitmap;
+size_t    proc_bitmap_size;
+process **proc_list;
 
 // proc table setup
 void core_init_proc(struct core_env *env) {
@@ -36,6 +37,7 @@ void core_init_proc(struct core_env *env) {
     proc_count       = &env->proc_count;
     proc_table_end   = env->proc_table + env->proc_max;
     proc_running     = proc_table;
+    proc_list        = &env->proc_list;
 }
 
 // proc initialized here is running under ring1
@@ -65,21 +67,32 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
 
     proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
     proc->pid    = pid;
+
+    if (*proc_list) {
+        process *p = *proc_list;
+        process *f = p;
+        while (p) {
+            f = p;
+            p = p->next;
+        }
+        f->next = proc;
+    } else
+        *proc_list = proc;
+    proc->next = NULL;
     return proc->pid;
 }
 
 #define UNRUNABLE                                                              \
     (PROC_STATUS_RECEVING | PROC_STATUS_SENDING | PROC_STATUS_SUSPEND |        \
      PROC_STATUS_STOP | PROC_STATUS_ERROR)
-uint scheduler_i = 0;
 
 void scheduler(void) {
     if (!proc_running)
         return;
     do {
-        scheduler_i++;
-        if (scheduler_i >= *proc_count)
-            scheduler_i = 0;
-    } while ((proc_table[scheduler_i].status & 0xFF) & UNRUNABLE);
-    proc_running = &proc_table[scheduler_i];
+        if (proc_running->next == NULL)
+            proc_running = *proc_list;
+        else
+            proc_running = proc_running->next;
+    } while ((proc_running->status & 0xFF) & UNRUNABLE);
 }
