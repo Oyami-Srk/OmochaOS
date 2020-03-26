@@ -73,6 +73,20 @@ void core_init_memory(struct core_env *env) {
 
     env->memory_zone_count = i;
 
+    void *       top_memory       = (void *)(0x100000 + upper_mem_length);
+    const size_t PAGE_SIZE_EXTEND = PG_SIZE * 1024; // 4MB
+    /* memset(env->page_dir, 0, PDE_SIZE); */
+    unsigned int *pde_i    = env->page_dir;
+    size_t        pg_count = (uint)top_memory / PAGE_SIZE_EXTEND;
+    void *        pa       = 0;
+    for (; pde_i < env->page_dir + pg_count; pde_i++) {
+        *pde_i = (uint)pa | PG_PS | PG_Present | PG_Writeable;
+        pa += PAGE_SIZE_EXTEND;
+    }
+    /* env->page_dir[KERN_BASE << 22] = (0) | PG_PS | PG_Present | PG_Writeable;
+     */
+    /* asm volatile("movl %0, %%cr3" ::"r"(KV2P(env->page_dir))); */
+
     /* unsigned int *page_dir = env->page_dir; */
     /* if ((uint)page_dir & 0xFFF) */
     /* panic("Env's page dir is not aligned."); */

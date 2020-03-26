@@ -45,6 +45,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_env.core_space_end = (uint)KP2V(4 * 1024 * 1024); // 4MB
     core_env.gdt_size       = GDT_SIZE;
     core_env.idt_size       = IDT_SIZE;
+    core_env.page_dir       = entry_page_dir;
 
     memset((void *)core_env.core_space_start, 0,
            core_env.core_space_end - core_env.core_space_start);
@@ -76,13 +77,13 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         init_proc(modules_preferred_pid[i], (void *)modules[i],
                   (u32)entry_page_dir);
+
     move_to_proc();
     while (1)
         ;
 }
 
 // map 4MB
-__attribute__((
-    __aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE_STARTUP] = {
+__attribute__((__aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE] = {
     [0]               = (0) | PG_Present | PG_Writeable | PG_PS,
     [KERN_BASE >> 22] = (0) | PG_Present | PG_Writeable | PG_PS};
