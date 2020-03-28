@@ -172,6 +172,23 @@ void SysTask() {
                 SEND_BACK(msg);
                 break;
             }
+            case ENV_KEY_MEMORY_USAGE: {
+                size_t buf_size = msg.data.uint_arr.d2;
+                if (buf_size < sizeof(struct core_memory_usage))
+                    msg.major = 0xFFFFFFFF;
+                else {
+                    struct core_memory_usage *buf =
+                        (void *)msg.data.uint_arr.d1;
+                    buf->core_space_start      = core_env.core_space_start;
+                    buf->core_space_end        = core_env.core_space_end;
+                    buf->core_space_free_start = core_env.core_space_free_start;
+                    buf->core_space_free_end   = core_env.core_space_free_end;
+                    buf->memory_end            = core_env.memory_end;
+                    msg.major                  = 0;
+                }
+                SEND_BACK(msg);
+                break;
+            }
             }
             break;
         case EXIT_PROC: {

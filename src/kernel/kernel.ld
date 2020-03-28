@@ -15,11 +15,21 @@ SECTIONS {
     }
 
     .text ALIGN(0x1000) : AT(ADDR(.text) - _KERN_BASE) {
-        *(.text .stub .text.*)
+        *(.text .stub .text.* .gnu.linkonce.t.*)
     }
 
     .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - _KERN_BASE) {
-        *(.rodata .rodata.*)
+        *(.rodata .rodata.* .gnu.linkonce.r.*)
+    }
+
+    .stab : { /* debug infomation */
+        *(.stab)
+        BYTE(0)
+    }
+
+    .stabstr : {
+        *(.stabstr)
+        BYTE(0)
     }
 
     .data ALIGN(0x1000) : AT(ADDR(.data) - _KERN_BASE){

@@ -167,8 +167,6 @@ void print_part_info(struct HD_Info *info) {
 }
 
 void init_hd() {
-    uchar *pDrives_n = (uchar *)0x80000475;
-    printf("[HD] Drives num: %d\n", *pDrives_n);
     if (reg_int_msg(HW_IRQ_AT))
         printf("[HD] Cannot attach to interrupt AT\n");
     enable_irq(2); // Cascade

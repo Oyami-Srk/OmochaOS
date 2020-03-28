@@ -23,26 +23,39 @@ struct core_env_memory_zone {
 #define MEMORY_BADRAM           5
 };
 
+struct core_memory_usage {
+    uint core_space_start;
+    uint core_space_free_start;
+    uint core_space_free_end;
+    uint core_space_end;
+    uint memory_end;
+};
+
 struct core_env {
     uint             beats;
     multiboot_info_t boot_info; // notice: mem_upper and mem_lower is in kb
     uint             core_vend;
-    uint             core_space_start;
-    uint             core_space_free_start;
-    uint             core_space_free_end;
-    uint             core_space_end;
-    size_t           gdt_size; // = GDT_SIZE
-    Descriptor       gdt[GDT_SIZE];
-    size_t           idt_size; // = IDT_SIZE
-    Gate             idt[IDT_SIZE];
-    struct tss       tss;
-    unsigned int *   page_dir;
-    process *        proc_table;
-    process *        proc_list;
-    size_t           proc_count;
-    size_t           proc_max;
-    bitset *         proc_bitmap;
-    size_t           proc_bitmap_size; // count of array
+
+    /*      memory usage start     */
+    uint core_space_start;
+    uint core_space_free_start;
+    uint core_space_free_end;
+    uint core_space_end;
+    /*      memory usage end       */
+
+    uint          memory_end;
+    size_t        gdt_size; // = GDT_SIZE
+    Descriptor    gdt[GDT_SIZE];
+    size_t        idt_size; // = IDT_SIZE
+    Gate          idt[IDT_SIZE];
+    struct tss    tss;
+    unsigned int *page_dir;
+    process *     proc_table;
+    process *     proc_list;
+    size_t        proc_count;
+    size_t        proc_max;
+    bitset *      proc_bitmap;
+    size_t        proc_bitmap_size; // count of array
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
     uint                    interrupt_suscribed[HW_IRQ_COUNT];

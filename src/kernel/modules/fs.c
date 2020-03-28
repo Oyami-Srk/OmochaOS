@@ -336,6 +336,8 @@ void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
 }
 
 void Task_FS() {
+    while (1) // halt
+        ;
     delay_ms(200);
     printf("[FS] Initializing.\n");
     delay_ms(500);

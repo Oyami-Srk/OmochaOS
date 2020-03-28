@@ -138,6 +138,7 @@ static inline uint peek_msg() {
 #define ENV_KEY_MEMORY_UPPER 2
 #define ENV_KEY_BOOT_INFO    3
 #define ENV_KEY_MMAP         4
+#define ENV_KEY_MEMORY_USAGE 5
 
 static inline uint query_env(unsigned int KEY, ubyte *buf, size_t buf_size) {
     message msg;

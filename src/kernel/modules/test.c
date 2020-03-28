@@ -16,7 +16,6 @@ module:
 #include "core/environment.h"
 
 void Task_Test(void) {
-    printf("Hello world!\n");
     uint mem_lower = query_env(ENV_KEY_MEMORY_LOWER, NULL, 0);
     uint mem_upper = query_env(ENV_KEY_MEMORY_UPPER, NULL, 0);
     printf("MEM_LOWER: 0x%x, MEM_UPPER: 0x%x\n", mem_lower, mem_upper);

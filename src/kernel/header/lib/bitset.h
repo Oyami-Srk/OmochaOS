@@ -17,6 +17,10 @@ static inline int check_bit(bitset *bitarray, unsigned int i) {
     return bitarray[i / BITS_PER_BITSET] & (1 << (i % BITS_PER_BITSET)) ? 1 : 0;
 }
 
+static inline int xor_bit(bitset *bitarray, unsigned int i, unsigned int x) {
+    return (bitarray[i / BITS_PER_BITSET] ^= (1 << (i % BITS_PER_BITSET)));
+}
+
 static inline unsigned int find_first_unset_bit(bitset *     bitarray,
                                                 unsigned int array_size) {
     // basicly from http://graphics.stanford.edu/~seander/bithacks.html

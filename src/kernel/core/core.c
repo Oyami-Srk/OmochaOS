@@ -27,7 +27,8 @@ void SysIdle() {
     }
 }
 
-unsigned int    entry_page_dir[PDE_SIZE];
+unsigned int entry_page_dir[PDE_SIZE];
+
 struct core_env core_env;
 
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
