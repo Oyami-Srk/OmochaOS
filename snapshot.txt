@@ -1,0 +1,25 @@
+Monitor Initialized!
+Console #1>
+[HD] Initialized
+MEM_LOWER: 0x27C, MEM_UPPER: 0x3FBC0
+Addr: 0x0, Length: 0x9F000, Type: 1
+¾ddr: 0x9F000, Length: 0x1000, Type: 2
+Addr: 0xE8000, Length: 0x18000, Type: 2
+Addr: 0x100000, Length: 0xFEF0000, Type: 1
+Addr: 0xFFF0000, Length: 0x10000, Type: 3
+Addr: 0xFFFC0000, Length: 0x40000, Type: 2
+Init memory 0x400000 - 0xFFF0000
+Init buddy map on 0xFFEE000, size 8192(0x0) bytes.
+4MB Block is :63
+Rest of pages is 1048558
+usable end:0xFFEE000, pg:0x10000000
+ÿ
+
+
+
+
+
+
+
+
+

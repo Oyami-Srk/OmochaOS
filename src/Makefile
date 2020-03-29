@@ -1,7 +1,8 @@
 # GNU Makefile
 # src
 
-CC_FLAGS = -fno-pic -O -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
+# max optimaze level is 2
+CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
 
 ifeq ($(BUILD_TYPE), debug)
 	CC_FLAGS += -D__DEBUG__
