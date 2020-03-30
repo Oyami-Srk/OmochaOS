@@ -95,59 +95,63 @@ static block_list *attach_to_free_list(struct memory_info *mem, block_list *p,
     assert(p->next == NULL);
     p->next               = mem->free_list[order];
     p->next->prev         = p;
+    p->prev               = NULL;
     mem->free_list[order] = p;
     return p;
 }
 
-static char *allocate_pages(struct memory_info *mem, size_t pages) {
-    if (pages == 0)
-        return NULL;
-    uint   require_block_size = round_up_power_2(pages);
-    uint   require_order      = trailing_zero(require_block_size);
-    char * free_block         = NULL;
-    size_t free_block_size    = 0; // in pages
-    char * target_block       = NULL;
-    if (mem->free_count[require_order] == 0) {
-        for (uint o = require_order + 1; o < MAX_ORDER; o++)
-            if (mem->free_count[o] != 0) {
-                free_block =
-                    (char *)remove_from_free_list(mem, mem->free_list[o], o);
-                free_block_size = 1 << o;
-                mem->free_count[o]--;
-                uint free_page_idx =
-                    ((uint)free_block - mem->memory_start) / PG_SIZE;
-                xor_bit(mem->buddy_map[o], free_page_idx >> (o + 1), 1);
-                break;
-            }
-        return NULL;
-    } else {
-        free_block = (char *)remove_from_free_list(
-            mem, mem->free_list[require_order], require_order);
-        free_block_size = 1 << require_order;
-        mem->free_count[require_order]--;
-        uint free_page_idx = ((uint)free_block - mem->memory_start) / PG_SIZE;
-        xor_bit(mem->buddy_map[require_order],
-                free_page_idx >> (require_order + 1), 1);
-    }
+static inline int xor_buddy_map(struct memory_info *mem, char *p, uint order) {
+    uint page_idx = ((uint)p - mem->memory_start) / PG_SIZE;
+    xor_bit(mem->buddy_map[order], page_idx >> (order + 1), 1);
+    return check_bit(mem->buddy_map[order], page_idx >> (order + 1));
+}
 
-    target_block    = free_block + (free_block_size - pages) * PG_SIZE;
-    uint rest_pages = free_block_size - pages;
-    for (uint s = rest_pages; s > 0; s -= round_down_power_2(s)) {
-        block_list *current            = (block_list *)free_block;
-        uint        current_block_size = round_down_power_2(s);
-        uint        order              = trailing_zero(current_block_size);
-        current->prev                  = NULL;
-        if (mem->free_list[order]) {
-            block_list *next = mem->free_list[order];
-            current->next    = next;
-            next->prev       = current;
-        } else
-            current->next = NULL;
-        mem->free_list[order] = current;
+static char *get_pages_of_power_2(struct memory_info *mem, uint order) {
+    if (order >= MAX_ORDER)
+        return NULL;
+    char *block = NULL;
+    if (mem->free_count[order] == 0) {
+        block = get_pages_of_power_2(mem, order + 1);
+        attach_to_free_list(mem, (block_list *)block, order);
         mem->free_count[order]++;
-        free_block += (1 << order) * PG_SIZE;
+        // printf("= PUT %x into order %d free list =\n", block);
+        block += ((1 << order) * PG_SIZE);
+        xor_buddy_map(mem, block, order); // higher half is returned
+        return block;
+    } else {
+        block =
+            (char *)remove_from_free_list(mem, mem->free_list[order], order);
+        mem->free_count[order]--;
+        xor_buddy_map(mem, block, order);
+        return block;
     }
-    return target_block;
+    return NULL;
+}
+
+static void free_pages_of_power_2(struct memory_info *mem, char *p,
+                                  uint order) {
+    if (p == NULL)
+        return;
+    uint buddy_bit = xor_buddy_map(mem, p, order);
+    if (buddy_bit == 0 && order + 1 < MAX_ORDER) {
+        char *buddy               = NULL;
+        uint  page_idx            = ((uint)p - mem->memory_start) / PG_SIZE;
+        uint  buddy_even_page_idx = (page_idx >> (order + 1)) << (order + 1);
+        if (page_idx == buddy_even_page_idx)
+            buddy = p + (1 << order) * PG_SIZE;
+        else
+            buddy = p - (1 << order) * PG_SIZE;
+        // printf("= REMOVE %x from order %d free list =\n", buddy, order);
+        remove_from_free_list(mem, (block_list *)buddy, order);
+        mem->free_count[order]--;
+        if (buddy < p)
+            free_pages_of_power_2(mem, buddy, order + 1);
+        else
+            free_pages_of_power_2(mem, p, order + 1);
+    } else {
+        attach_to_free_list(mem, (block_list *)p, order);
+        mem->free_count[order]++;
+    }
 }
 
 void print_free_info(struct memory_info *mem) {
@@ -191,18 +195,12 @@ void init_memory(struct memory_info *mem) {
          pg += max_block_size) {
         // free max block first
         block_list *current = (block_list *)pg;
-        current->prev       = NULL;
-        if (mem->free_list[MAX_ORDER - 1]) {
-            block_list *next = mem->free_list[MAX_ORDER - 1];
-            current->next    = next;
-            next->prev       = current;
-        } else
-            current->next = NULL;
-        mem->free_list[MAX_ORDER - 1] = current;
+        attach_to_free_list(mem, current, MAX_ORDER - 1);
         mem->free_count[MAX_ORDER - 1]++;
     }
-    pg -= max_block_size;
     // split reset memory into other size block
+    /*
+    pg -= max_block_size;
     uint rest_pages = (mem->usable_end - (uint)pg) / PG_SIZE;
     for (uint s = rest_pages; s > 0;
          s -= round_down_power_2(s)) { // actually those two loops can be merge
@@ -220,7 +218,7 @@ void init_memory(struct memory_info *mem) {
         mem->free_list[order] = current;
         mem->free_count[order]++;
         pg += (1 << (order)) * PG_SIZE;
-    }
+    }*/ // do not need to do that
     printf("[MEM] Initialized.\n");
     print_free_info(mem);
     return;
@@ -240,10 +238,18 @@ void Task_Memory(void) {
     mem_info.memory_end   = core_usage.memory_end;
 
     init_memory(&mem_info);
+    for (uint i = 0; i < MAX_ORDER; i++)
+        printf("%x, ", mem_info.free_list[i]);
+    printf("\n");
 
-    char *test = allocate_pages(&mem_info, 89);
-    printf("Allocated 89 pages at 0x%x\n", test);
+    char *test = get_pages_of_power_2(&mem_info, trailing_zero(128));
+    printf("Allocated pages at 0x%x\n", test);
     print_free_info(&mem_info);
+    free_pages_of_power_2(&mem_info, test, trailing_zero(128));
+    print_free_info(&mem_info);
+    for (uint i = 0; i < MAX_ORDER; i++)
+        printf("%x, ", mem_info.free_list[i]);
+    printf("\n");
 
     while (1)
         ;
