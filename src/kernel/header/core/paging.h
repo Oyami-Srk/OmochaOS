@@ -10,4 +10,7 @@
 #define PDE_SIZE    0x1000
 #define PTE_PER_PDE 1024
 
+typedef unsigned int pte_t; // page table entity
+typedef unsigned int pde_t; // page dir entity
+
 #endif // __PAGING_H__

@@ -230,6 +230,28 @@ void SysTask() {
             memset(&core_env.proc_table[msg.sender], 0, sizeof(process));
             break;
         }
+        case MODIFY_PROC: {
+            uint   KEY      = msg.major;
+            uint   major    = msg.data.uint_arr.d1;
+            ubyte *buf      = (ubyte *)msg.data.uint_arr.d2;
+            size_t buf_size = msg.data.uint_arr.d3;
+            uint   pid      = msg.data.uint_arr.d4;
+            // check sender's privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
+                panic("NO Permission to modify proc.");
+            switch (KEY) {
+            case MOD_PROC_CR3: {
+                core_env.proc_table[pid].page_dir = major;
+                msg.major                         = 0;
+                break;
+            }
+            default:
+                msg.major = 0xFFFFFFFF;
+                break;
+            }
+            break;
+            SEND_BACK(msg);
+        }
         default:
             break;
         }

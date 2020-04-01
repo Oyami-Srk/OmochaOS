@@ -7,11 +7,16 @@ module:
 */
 #include "core/memory.h"
 #include "core/environment.h"
+#include "core/paging.h"
 #include "lib/bitset.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
 #include "modules/systask.h"
 #include "modules/tty.h"
+
+unsigned int sys_mapping[][3] = {
+    // paddr, vaddr, page size
+    {0, KERN_BASE, PG_SIZE * 1024}};
 
 #define PAGE_TYPE_USABLE   0x01
 #define PAGE_TYPE_RESERVED 0x02
@@ -24,6 +29,7 @@ struct page {
     unsigned int type;
     int          reference;
     void *       vaddr;
+    int          reserv;
 };
 
 struct _block_list {
@@ -35,15 +41,24 @@ typedef struct _block_list block_list;
 
 struct memory_info {
 #define MAX_ORDER 11
-    block_list *free_list[MAX_ORDER]; // max block size is 2^(MAX_ORDER-1)=4MB
-    size_t      free_count[MAX_ORDER];
-    bitset *    buddy_map[MAX_ORDER];
-    uint        memory_start;
-    uint        memory_end;
-    uint        usable_end; // buddy map located on the end of memory
+    block_list * free_list[MAX_ORDER]; // max block size is 2^(MAX_ORDER-1)=4MB
+    size_t       free_count[MAX_ORDER];
+    bitset *     buddy_map[MAX_ORDER];
+    uint         memory_start;
+    uint         memory_end;
+    uint         usable_end; // buddy map located on the end of memory
+    uint         page_count; // only memory_start to memory_end
+    struct page *pages_info;
 };
 
+#define GET_PAGE_BY_ID(mem, id) (((mem)->memory_start + ((id)*PG_SIZE)))
+
 struct memory_info mem_info;
+// in pages, not in bytes
+#define page_alloc(pages)                                                      \
+    allocate_pages_of_power_2(&mem_info, round_up_power_2(pages))
+#define page_free(p, pages)                                                    \
+    free_pages_of_power_2(&mem_info, (char *)p, round_up_power_2(pages))
 
 static inline uint round_down_power_2(uint x) {
     if (x == 0)
@@ -106,12 +121,12 @@ static inline int xor_buddy_map(struct memory_info *mem, char *p, uint order) {
     return check_bit(mem->buddy_map[order], page_idx >> (order + 1));
 }
 
-static char *get_pages_of_power_2(struct memory_info *mem, uint order) {
+static char *allocate_pages_of_power_2(struct memory_info *mem, uint order) {
     if (order >= MAX_ORDER)
         return NULL;
     char *block = NULL;
     if (mem->free_count[order] == 0) {
-        block = get_pages_of_power_2(mem, order + 1);
+        block = allocate_pages_of_power_2(mem, order + 1);
         attach_to_free_list(mem, (block_list *)block, order);
         mem->free_count[order]++;
         // printf("= PUT %x into order %d free list =\n", block);
@@ -155,13 +170,66 @@ static void free_pages_of_power_2(struct memory_info *mem, char *p,
 }
 
 void print_free_info(struct memory_info *mem) {
-    printf("[MEM] free block is\n[MEM] ");
+    printf("[MEM] free blocks count is\n[MEM] ");
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%04d, ", 1 << i);
     printf("\n[MEM] ");
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%04d, ", mem->free_count[i]);
     printf("\n");
+}
+
+// return NULL if cannot find.
+static pte_t *get_pte(pde_t *page_dir, void *va) {
+    pte_t *pg_tab = NULL;
+    pde_t  pde    = page_dir[(uint)va >> 22];
+    if (!(pde & PG_Present))
+        return NULL;
+    pg_tab = (pte_t *)(pde & ~0xFFF);
+    return &pg_tab[((uint)va >> 12) & 0x3FF];
+}
+
+static pte_t *create_page_table(pde_t *page_dir, void *va) {
+    pte_t *pte = get_pte(page_dir, va);
+    if (pte)
+        return pte;
+    pde_t *pde    = &page_dir[(uint)va >> 22];
+    pte_t *pg_tab = (pte_t *)page_alloc(1);
+    if (pg_tab == NULL)
+        return NULL;
+    memset(pg_tab, 0, PG_SIZE);
+    // memory proc cr3 is directly mapped, no need for V2P
+    *pde = (uint)pg_tab | PG_Present | PG_Writeable | PG_User;
+    return &pg_tab[((uint)va >> 12) & 0x3FF];
+}
+
+// size in bytes
+static int map_pages(pde_t *page_dir, void *va, void *pa, size_t size,
+                     uint pte_attr) {
+    va         = (void *)PGROUNDDOWN((uint)va);
+    void * end = (void *)PGROUNDDOWN(((uint)va) + size - 1);
+    pte_t *pte = NULL;
+    for (; (uint)va < (uint)end; va += PG_SIZE, pa += PG_SIZE) {
+        if ((pte = create_page_table(page_dir, va)) == NULL)
+            return -1;
+        if (*pte & PG_Present)
+            panic("memory remap");
+        *pte = (uint)pa | PG_Present | pte_attr;
+    }
+    return 0;
+}
+
+static pde_t *create_page_dir(void) {
+    pde_t *page_dir = (pde_t *)page_alloc(1);
+    if (page_dir == NULL)
+        return NULL;
+    memset(page_dir, 0, PG_SIZE);
+    size_t sys_map_size = sizeof(sys_mapping) / sizeof(sys_mapping[0]);
+    for (uint i = 0; i < sys_map_size; i++)
+        map_pages(page_dir, (void *)sys_mapping[i][1],
+                  (void *)sys_mapping[i][0], sys_mapping[i][2],
+                  PG_Present | PG_Writeable);
+    return page_dir;
 }
 
 // page_id = (page_paddr - pstart) / PG_SIZE
@@ -172,11 +240,14 @@ void print_free_info(struct memory_info *mem) {
 void init_memory(struct memory_info *mem) {
     printf("[MEM] Init memory 0x%x - 0x%x\n", mem->memory_start,
            mem->memory_end);
-    size_t pg_count = (mem->memory_end - mem->memory_start) / PG_SIZE;
-    uint   buddy_total_bits =
+    size_t pg_count     = (mem->memory_end - mem->memory_start) / PG_SIZE;
+    size_t pg_info_size = pg_count * sizeof(struct page);
+    mem->page_count     = pg_count;
+    uint buddy_total_bits =
         ((1 << (MAX_ORDER)) - 1) * pg_count / (1 << MAX_ORDER);
     size_t buddy_bytes = buddy_total_bits / 8;
-    mem->usable_end    = PGROUNDDOWN(mem->memory_end - buddy_bytes);
+    mem->usable_end = PGROUNDDOWN(mem->memory_end - buddy_bytes - pg_info_size);
+    mem->pages_info = (struct page *)(mem->usable_end);
     mem->buddy_map[0]  = (bitset *)(mem->memory_end - buddy_bytes);
     mem->free_list[0]  = (block_list *)NULL;
     mem->free_count[0] = 0;
@@ -198,28 +269,16 @@ void init_memory(struct memory_info *mem) {
         attach_to_free_list(mem, current, MAX_ORDER - 1);
         mem->free_count[MAX_ORDER - 1]++;
     }
-    // split reset memory into other size block
-    /*
-    pg -= max_block_size;
-    uint rest_pages = (mem->usable_end - (uint)pg) / PG_SIZE;
-    for (uint s = rest_pages; s > 0;
-         s -= round_down_power_2(s)) { // actually those two loops can be merge
-                                       // into one, but I'm lazy to do so
-        block_list *current            = (block_list *)pg;
-        uint        current_block_size = round_down_power_2(s);
-        uint        order              = trailing_zero(current_block_size);
-        current->prev                  = NULL;
-        if (mem->free_list[order]) {
-            block_list *next = mem->free_list[order];
-            current->next    = next;
-            next->prev       = current;
-        } else
-            current->next = NULL;
-        mem->free_list[order] = current;
-        mem->free_count[order]++;
-        pg += (1 << (order)) * PG_SIZE;
-    }*/ // do not need to do that
-    printf("[MEM] Initialized.\n");
+    printf("[MEM] pages info size: %d KB\n",
+           pg_count * sizeof(struct page) / 1024);
+    for (uint i = 0; i < pg_count; i++) {
+        if (GET_PAGE_BY_ID(mem, i) < mem->usable_end)
+            mem->pages_info[i].type = PAGE_TYPE_FREE | PAGE_TYPE_USABLE;
+        else
+            mem->pages_info[i].type = PAGE_TYPE_INUSE | PAGE_TYPE_SYSTEM;
+        mem->pages_info[i].vaddr = (void *)0xFFFFFFFF;
+    }
+    printf("[MEM] Initialized. Total %d pages.\n", pg_count);
     print_free_info(mem);
     return;
 }
@@ -232,17 +291,17 @@ void Task_Memory(void) {
     query_env(ENV_KEY_MEMORY_USAGE, (ubyte *)&core_usage, sizeof(core_usage));
 
     /* struct page *pages_info = (struct page *)core_usage.core_space_end; */
-    delay_ms(2000);
 
     mem_info.memory_start = (uint)KV2P(core_usage.core_space_end);
     mem_info.memory_end   = core_usage.memory_end;
 
     init_memory(&mem_info);
+    /*
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%x, ", mem_info.free_list[i]);
     printf("\n");
 
-    char *test = get_pages_of_power_2(&mem_info, trailing_zero(128));
+    char *test = allocate_pages_of_power_2(&mem_info, trailing_zero(128));
     printf("Allocated pages at 0x%x\n", test);
     print_free_info(&mem_info);
     free_pages_of_power_2(&mem_info, test, trailing_zero(128));
@@ -250,7 +309,13 @@ void Task_Memory(void) {
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%x, ", mem_info.free_list[i]);
     printf("\n");
+    */
+    // note：每一个进程都应该有自己的中断栈，大小8K。系统初期的进程共享一个中断栈。
+    // 每一个进程都有自己的普通栈，大小应为4MB。系统初期的进程只有4KB（一页大小）
+    // 系统映射在0x80000000之后的4MB内，这是全局的映射，用户进程有此map但是不能访问（权限过低）
 
-    while (1)
-        ;
+    message msg;
+    while (1) {
+        recv_msg(&msg, PROC_ANY);
+    }
 }

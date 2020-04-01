@@ -22,6 +22,7 @@
 #define PEEK_MSG       9
 #define QUERY_ENV      10
 #define EXIT_PROC      11
+#define MODIFY_PROC    12
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -158,6 +159,23 @@ static inline uint exit_proc() {
     msg.receiver = SYSTASK_PID;
     send_msg(&msg);
     return 0; // actually you cannot run into this line
+}
+
+#define MOD_PROC_CR3 1
+
+static inline uint modify_proc(uint pid, uint KEY, uint major, ubyte *buf,
+                               size_t buf_size) {
+    message msg;
+    msg.type             = MODIFY_PROC;
+    msg.receiver         = SYSTASK_PID;
+    msg.major            = KEY;
+    msg.data.uint_arr.d1 = (uint)major;
+    msg.data.uint_arr.d2 = (uint)buf;
+    msg.data.uint_arr.d3 = (uint)buf_size;
+    msg.data.uint_arr.d4 = (uint)pid;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return msg.major;
 }
 
 #endif // __MODULE_SYSTASK_H__
