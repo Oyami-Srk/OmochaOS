@@ -38,6 +38,7 @@ BOCHS 	= bochs
 QEMU 	= qemu-system-i386
 
 PY 		= python3
+PY3 	= python3
 
 
 # directories
@@ -53,7 +54,7 @@ ROOT_DIR 		= $(TOOLS)/root_dir
 QEMU_OPTIONS 	= -accel tcg,thread=single -m 128 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
 
 
-export CC CXX LD AR OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME
+export CC CXX LD AR OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY PY3 SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME
 
 .PHONY: all
 all:
