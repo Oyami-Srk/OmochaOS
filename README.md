@@ -1,3 +1,5 @@
+Project Archived, large part of code is inherited by https://github.com/Oyami-Srk/Venlafaxos
+
 ## Omocha OS - A Personal OS Project For Study
 
 编写一个操作系统从初中开来就是我的梦想，花花绿绿的界面、动画流畅的UI，向来对我的吸引力没有黑框框白点点的命令行强大。
