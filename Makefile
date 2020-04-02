@@ -63,7 +63,7 @@ all:
 	@echo "Building on $(UNAME) platform..."
 	@echo "Built binary is under [$(BUILD)] with type like [$(BUILD_TYPE)]"
 	@echo "So, ["$(CC)"] is used for compiling."
-	make -C $(SRC)
+	$(MAKE) -C $(SRC)
 
 .PHONY: boot
 .PHONY: copy_img

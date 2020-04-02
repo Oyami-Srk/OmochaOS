@@ -1,4 +1,0 @@
-%c -std=gnu11
--m32
--fno-builtin
--Wno-implicit-function-declaration

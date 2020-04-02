@@ -18,9 +18,9 @@ ifeq ($(and $(CC),$(CXX),$(LD),$(OBJDUMP),$(OBJCOPY),$(ASM),$(DD),$(CAT),$(SED),
 	$(error Build cannot progress, because toolchain is not set)
 endif
 	@echo Build with CCFLAGS "$(CC_FLAGS)"
-	make -C boot
-	make -C kernel pre-build
-	make -C kernel
-	make -C modules pre-build
-	make -C modules
+	$(MAKE) -C boot
+	$(MAKE) -C kernel pre-build
+	$(MAKE) -C kernel
+	$(MAKE) -C modules pre-build
+	$(MAKE) -C modules
 

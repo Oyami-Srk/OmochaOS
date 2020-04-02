@@ -1,0 +1,422 @@
+[
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/driver/graphic.o",
+            "driver/graphic.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "driver/graphic.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/tty.o",
+            "modules/tty.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/tty.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/memory.o",
+            "core/memory.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/memory.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/lib/rbtree.o",
+            "lib/rbtree.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "lib/rbtree.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/syscall_sysimpl.o",
+            "core/syscall_sysimpl.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/syscall_sysimpl.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/protect.o",
+            "core/protect.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/protect.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/driver/misc.o",
+            "driver/misc.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "driver/misc.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/interrupt.o",
+            "core/interrupt.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/interrupt.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/libos.o",
+            "modules/libos.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/libos.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/process.o",
+            "core/process.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/process.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/core/core.o",
+            "core/core.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "core/core.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/monitor.o",
+            "modules/monitor.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/monitor.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/lib/stdlib.o",
+            "lib/stdlib.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "lib/stdlib.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/lib/string.o",
+            "lib/string.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "lib/string.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/hd.o",
+            "modules/hd.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/hd.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/fs.o",
+            "modules/fs.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/fs.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/systask.o",
+            "modules/systask.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/systask.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/modules/test/main.o",
+            "test/main.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/modules",
+        "file": "test/main.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/loader.o",
+            "modules/loader.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/loader.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/kbd.o",
+            "modules/kbd.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/kbd.c"
+    },
+    {
+        "arguments": [
+            "x86_64-elf-gcc",
+            "-c",
+            "-fno-pic",
+            "-nostdinc",
+            "-fno-builtin",
+            "-fno-strict-aliasing",
+            "-m32",
+            "-fno-stack-protector",
+            "-g",
+            "-D__DEBUG__",
+            "-I/Users/shiroko/Projects/Venlafaxos/src/kernel/header",
+            "-o",
+            "/Users/shiroko/Projects/Venlafaxos/build/kernel/modules/memory.o",
+            "modules/memory.c"
+        ],
+        "directory": "/Users/shiroko/Projects/Venlafaxos/src/kernel",
+        "file": "modules/memory.c"
+    }
+]
