@@ -9,6 +9,7 @@ module:
 #include "core/environment.h"
 #include "core/paging.h"
 #include "lib/bitset.h"
+#include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
 #include "modules/systask.h"

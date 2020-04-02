@@ -49,8 +49,4 @@ static inline uint recv_msg(message *msg, uint recv_from) {
     ((msg).receiver = (msg).sender);                                           \
     send_msg(&(msg))
 
-// Packaged syscall
-
-// tty.c
-
 #endif
