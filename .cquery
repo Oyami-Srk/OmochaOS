@@ -1,5 +1,4 @@
 %c -std=gnu11
 -m32
 -fno-builtin
--Isrc/kernel/header/
 -Wno-implicit-function-declaration

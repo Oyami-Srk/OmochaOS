@@ -14,6 +14,7 @@ DEBUG_WAY 			= qemu
 CC 		= $(TOOLCHAIN_PREFIX)gcc
 CXX 	= $(TOOLCHAIN_PREFIX)g++
 LD 		= $(TOOLCHAIN_PREFIX)ld
+AR 		= $(TOOLCHAIN_PREFIX)ar
 OBJDUMP = $(TOOLCHAIN_PREFIX)objdump
 OBJCOPY = $(TOOLCHAIN_PREFIX)objcopy
 
@@ -52,7 +53,7 @@ ROOT_DIR 		= $(TOOLS)/root_dir
 QEMU_OPTIONS 	= -accel tcg,thread=single -m 128 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
 
 
-export CC CXX LD OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY SRC TOOLS BUILD BUILD_TYPE UNAME
+export CC CXX LD AR OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME
 
 .PHONY: all
 all:
@@ -144,6 +145,7 @@ debug:
 clean:
 	$(RM) -rf $(BUILD)/kernel
 	$(RM) -rf $(BUILD)/kernel.disasm
+	$(RM) -rf $(BUILD)/modules
 
 .PHONY: disasm
 disasm:

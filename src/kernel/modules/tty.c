@@ -82,21 +82,3 @@ void Task_TTY() {
         }
     }
 }
-
-int printf(const char *fmt, ...) {
-    message msg;
-    int     i;
-    char    buf[256];
-    va_list arg   = (va_list)((char *)(&fmt) + 4);
-    i             = vsprintf(buf, fmt, arg);
-    buf[i]        = 0;
-    msg.major     = (uint)buf;
-    msg.type      = 1;
-    uint task_tty = query_proc("TaskTTY");
-    if (task_tty == 0)
-        return 0;
-    msg.receiver = task_tty;
-    send_msg(&msg);
-    recv_msg(&msg, task_tty);
-    return strlen(buf);
-}

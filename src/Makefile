@@ -3,12 +3,13 @@
 
 # max optimaze level is 2
 CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
+HEADER = $(shell pwd)/header
 
 ifeq ($(BUILD_TYPE), debug)
 	CC_FLAGS += -D__DEBUG__
 endif
 
-export CC_FLAGS
+export CC_FLAGS HEADER
 
 
 .PHONY: all
@@ -20,4 +21,6 @@ endif
 	make -C boot
 	make -C kernel pre-build
 	make -C kernel
+	make -C modules pre-build
+	make -C modules
 

@@ -34,7 +34,13 @@ $(KERNEL_BUILD)/%.d: %.c
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
 	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS)
 
-kernel: $(KERNEL_BUILD)/kernel.out
+LIBOS_OBJS = lib/string lib/rbtree lib/stdlib modules/libos
+LIBOS_OBJS := $(foreach o,$(LIBOS_OBJS),$(KERNEL_BUILD)/$(o).o)
+
+$(BUILD)/libos.a: $(LIBOS_OBJS)
+	$(AR) -rcs $@ $(LIBOS_OBJS)
+
+kernel: $(KERNEL_BUILD)/kernel.out $(BUILD)/libos.a
 	@echo Kernel is built.
 
 ifneq ($(filter pre-build,$(MAKECMDGOALS)),pre-build)

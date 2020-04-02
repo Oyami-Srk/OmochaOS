@@ -258,29 +258,3 @@ void SysTask() {
         }
     }
 }
-
-// =====
-
-#include "driver/misc.h"
-
-uint query_proc(const char *name) {
-    message msg;
-    if (strlen(name) > 16)
-        return 0;
-    strcpy(msg.data.b16, (char *)name);
-    uint pid         = 0;
-    uint beats_begin = get_ticks_msg();
-    while (pid == 0 &&
-           ((get_ticks_msg() - beats_begin) * 1000 / BEATS_RATE) <
-               QUERY_PROC_TIMEOUT) { // if cannot find proc, halt and retry
-        msg.type     = QUERY_PROC;
-        msg.receiver = SYSTASK_PID;
-        send_msg(&msg);
-        recv_msg(&msg, SYSTASK_PID);
-        pid = msg.major;
-        if (pid)
-            break;
-        delay_ms(QUERY_PROC_TIMEOUT / 10); // retry 10 times
-    }
-    return pid;
-}
