@@ -21,6 +21,7 @@ OBJCOPY = $(TOOLCHAIN_PREFIX)objcopy
 ASM 	= nasm
 
 CP 		= cp
+RSYNC 	= rsync
 DD 		= dd
 CAT 	= cat
 SED 	= sed
@@ -85,7 +86,7 @@ endif
 ifeq ($(GRUB2CFG),$(wildcard $(GRUB2CFG)))
 	$(CP) "$(GRUB2CFG)" "$(shell $(CAT) $(BOOTIMG).lock)/boot/grub/"
 endif
-	-$(CP) -n -R "$(ROOT_DIR)/" "$(shell $(CAT) $(BOOTIMG).lock)/"
+	$(RSYNC) -avh --progress "$(ROOT_DIR)/" "$(shell $(CAT) $(BOOTIMG).lock)/"
 
 .PHONY: bochs
 bochs: detach
@@ -144,9 +145,7 @@ debug:
 	
 .PHONY: clean
 clean:
-	$(RM) -rf $(BUILD)/kernel
-	$(RM) -rf $(BUILD)/kernel.disasm
-	$(RM) -rf $(BUILD)/modules
+	$(RM) -rf $(BUILD)
 
 .PHONY: disasm
 disasm:
