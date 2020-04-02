@@ -42,7 +42,7 @@ def iter_c_files_in_dir(dir: str):
                 except Exception as e:
                     import sys
                     print(e, file=sys.stderr)
-                    exit(1)
+                    pass
     return modules
 
 
@@ -53,6 +53,8 @@ def generate_header_file(fn: str, modules: list, dryrun: bool):
     wrote = False
 
     content = '\n'
+
+    modules = sorted(modules, key=lambda k: k.get('preferred_pid', 9999999999))
 
     for info in modules:
         content += template.format(info=info["summary"], fn=info["entry"])

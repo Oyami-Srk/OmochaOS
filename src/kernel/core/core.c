@@ -76,8 +76,13 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     init_proc(0, SysIdle, (u32)entry_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
-        init_proc(modules_preferred_pid[i], (void *)modules[i],
-                  (u32)entry_page_dir);
+        if (modules_preferred_pid[i] < 0xFFFF)
+            init_proc(modules_preferred_pid[i], (void *)modules[i],
+                      (u32)entry_page_dir);
+    for (uint i = 0; i < __MODULES_COUNT__; i++)
+        if (modules_preferred_pid[i] >= 0xFFFF)
+            init_proc(modules_preferred_pid[i], (void *)modules[i],
+                      (u32)entry_page_dir);
 
     move_to_proc();
     while (1)

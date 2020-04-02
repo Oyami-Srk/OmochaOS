@@ -206,7 +206,7 @@ size_t hd_rw(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
     HD_send_command(&cmd);
     message msg;
     size_t  bytes_left = count;
-    void *  addr       = (void *)buf; // 当定址空间分开的时候 or
+    void *  addr       = (void *)buf; // TODO:当定址空间分开的时候 or
                                       // 实现了Memory Manager的时候
                                       // 这里应该获取硬件地址
 

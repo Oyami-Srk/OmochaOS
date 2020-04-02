@@ -317,6 +317,6 @@ void Task_Memory(void) {
 
     message msg;
     while (1) {
-        recv_msg(&msg, PROC_ANY);
+        /* recv_msg(&msg, PROC_ANY); */;
     }
 }

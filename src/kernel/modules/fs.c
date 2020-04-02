@@ -6,6 +6,7 @@ module:
   entry: Task_FS
 */
 
+#include "modules/fs.h"
 #include "core/memory.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -228,6 +229,7 @@ static inline char char_upper(char c) {
 }
 
 // read_8_3_filename assume that thr length of buffer is >= 12
+// turn 8.3fn into normal one
 static void read_8_3_filename(uchar *fname, uchar *buffer) {
     char ext[3];
     char name[8];
@@ -241,6 +243,7 @@ static void read_8_3_filename(uchar *fname, uchar *buffer) {
     memcpy(buffer + strlen((const char *)buffer), ext, 3);
 }
 
+// turn normal fn into 8.3 one
 static void write_8_3_filename(uchar *fname, uchar *buffer) {
     memset(buffer, ' ', 11);
     u32 namelen = strlen((const char *)fname);
@@ -289,18 +292,8 @@ static void write_8_3_filename(uchar *fname, uchar *buffer) {
     }
 }
 
-void read_file(struct FAT32_FileSystem *fs, uint clus, uint size, void *buf) {
-    uint bytes_per_clus = (fs->BytesPerSec * fs->SecPerClus);
-    uint clus_count =
-        (size / bytes_per_clus) + (size % bytes_per_clus) == 0 ? 0 : 1;
-    ubyte rf_hd_buf[512];
-    if (bytes_per_clus != 512)
-        panic("FAT32 Bytes per Clus is not 512");
-    for (uint i = 0; i < clus_count; i++) {
-        HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus + i), rf_hd_buf, 512);
-        memcpy(buf + bytes_per_clus * i, rf_hd_buf,
-               (clus_count - i) == 1 ? size % bytes_per_clus : bytes_per_clus);
-    }
+void read_clus(struct FAT32_FileSystem *fs, uint clus, uint size, void *buf) {
+    HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), buf, size);
 }
 
 void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
@@ -335,33 +328,79 @@ void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
     // check whether this is the end of dir.
 }
 
+int get_file_info(uint dir_clus, struct FAT32_FileSystem *fs, const char *fn,
+                  struct fs_file_info *fileinfo) {
+    size_t fn_size = strlen(fn);
+    if (fn[fn_size - 1] == '/')
+        return 2; // not a file
+    ubyte hd_buf[512];
+    uchar name_83[12] = {[0 ... 11] = 0};
+    uchar name[12]    = {[0 ... 11] = 0};
+    uchar dname[12]   = {[0 ... 11] = 0};
+    uint  p           = 1;
+    BOOL  is_file     = FALSE;
+    for (; p < 12; p++) {
+        if (fn[p] == '/')
+            break;
+        if (fn[p] == 0) {
+            is_file = TRUE;
+            break;
+        }
+    }
+    memcpy(name, fn + 1, p - 1);
+    write_8_3_filename(name, name_83);
+
+    HD_drv_read(fs->drv, CLUS2SECTOR(fs, dir_clus), hd_buf, 512);
+    union FAT32_DirEnt DirEnt;
+    for (uint offset = 0; offset < 512; offset += sizeof(union FAT32_DirEnt)) {
+        memcpy(&DirEnt, hd_buf + offset, sizeof(union FAT32_DirEnt));
+        if (DirEnt.Name[0] == 0)
+            break;
+        if (DirEnt.Name[0] == 0xE5 || DirEnt.Name[0] == 0x05)
+            continue;
+        if (DirEnt.Attr == FS_ATTR_LONGNAME)
+            continue;
+        if (DirEnt.Name[0] == 0x2E)
+            continue;
+        memcpy(dname, DirEnt.Name, 11);
+        if (strcmp((const char *)name_83, (const char *)dname) == 0) {
+            if ((DirEnt.Attr & ATTR_DIR) && is_file == FALSE)
+                return get_file_info(DirEnt.FstClusHI << 16 | DirEnt.FstClusLO,
+                                     fs, fn + p, fileinfo);
+            if ((DirEnt.Attr & ATTR_DIR) && is_file == TRUE)
+                return 3; // require not match type
+            if ((!(DirEnt.Attr & ATTR_DIR)) && is_file == FALSE)
+                return 3;
+            if ((!(DirEnt.Attr & ATTR_DIR)) && is_file == TRUE) {
+                // found it
+                memcpy(fileinfo->filename, name, strlen((const char *)name));
+                fileinfo->size = DirEnt.FileSize;
+                fileinfo->clus = DirEnt.FstClusHI << 16 | DirEnt.FstClusLO;
+                return 0; // found
+            }
+        }
+    }
+    return 1; // not found
+}
+
 void Task_FS() {
-    while (1) // halt
-        ;
     delay_ms(200);
     printf("[FS] Initializing.\n");
     delay_ms(500);
-    printf("Reading Boot Sector\n");
+    printf("[FS] Reading Boot Sector\n");
     HD_dev_open(0);
     struct FAT32_FileSystem fs;
     ReadBootSector(MAKE_DRV(0, 1), &fs);
     char buf[8];
     memset(buf, 0, sizeof(buf));
     TrimWhiteSpace(fs.VolumeLabel, buf);
-    printf("Opened FS \"%s\", About %d MB.\n", buf,
+    printf("[FS] Opened FS \"%s\", About %d MB.\n", buf,
            fs.TotalSector * fs.BytesPerSec / 1024 / 1024);
     ReadFSInfo(&fs);
-    /*
-    HD_drv_read(fs.drv, CLUS2SECTOR(&fs, 2), hd_buf, 512);
-    for (uint i = 0; i < 512; i++) {
-      printf("%x ", hd_buf[i]);
-    }
-    */
+
     list_dir(&fs, fs.RootClus, 0); // 2 is root dir first clus, no more explain
-    char f[32];
-    memset(f, 0, sizeof(f));
-    read_file(&fs, 14457, 13, f);
-    printf("1.TXT:%s\n", f);
+    struct fs_file_info fileinfo;
+    get_file_info(fs.RootClus, &fs, "/boot/grub/grub.cfg", &fileinfo);
     HD_dev_close(0);
     while (1) {
     }
