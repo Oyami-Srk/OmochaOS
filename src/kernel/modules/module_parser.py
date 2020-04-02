@@ -39,8 +39,10 @@ def iter_c_files_in_dir(dir: str):
                 try:
                     modules.append(
                         generate_from_yaml(parse_c_file(dir + '/' + f)))
-                except:
-                    pass
+                except Exception as e:
+                    import sys
+                    print(e, file=sys.stderr)
+                    exit(1)
     return modules
 
 
