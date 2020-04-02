@@ -32,6 +32,7 @@ MKDIR 	= mkdir
 ifeq ($(UNAME), Darwin)
 UMOUNT  = diskutil eject
 else
+UMOUNT 	= umount
 endif
 
 BXIMAGE = bximage
