@@ -37,6 +37,17 @@ static void __unreg_proc(uint pid) {
            sizeof(core_env.proc_table[pid].name));
 }
 
+static uint __query_proc(const char *name) {
+    uint pid = 0;
+    for (process *p = core_env.proc_list; p != NULL; p = p->next) {
+        if (strcmp(name, p->name) == 0) {
+            pid = p->pid;
+            break;
+        }
+    }
+    return pid;
+}
+
 void SysTask() {
     message msg;
     msg.receiver = 0;
@@ -64,15 +75,7 @@ void SysTask() {
             msg.major = 0;
             SEND_BACK(msg);
         case QUERY_PROC: {
-            uint  pid  = 0;
-            char *name = msg.data.b16;
-            for (process *p = core_env.proc_list; p != NULL; p = p->next) {
-                if (strcmp(name, p->name) == 0) {
-                    pid = p->pid;
-                    break;
-                }
-            }
-            msg.major = pid;
+            msg.major = __query_proc((const char *)msg.data.b16);
             SEND_BACK(msg);
             break;
         }

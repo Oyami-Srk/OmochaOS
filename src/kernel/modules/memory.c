@@ -12,6 +12,7 @@ module:
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
+#include "modules/memory.h"
 #include "modules/systask.h"
 #include "modules/tty.h"
 
@@ -279,8 +280,9 @@ void init_memory(struct memory_info *mem) {
             mem->pages_info[i].type = PAGE_TYPE_INUSE | PAGE_TYPE_SYSTEM;
         mem->pages_info[i].vaddr = (void *)0xFFFFFFFF;
     }
-    printf("[MEM] Initialized. Total %d pages.\n", pg_count);
-    print_free_info(mem);
+    printf("[MEM] Initialized. Total %d pages. 4M Block Count: %d.\n", pg_count,
+           mem->free_count[MAX_ORDER - 1]);
+    /* print_free_info(mem); */
     return;
 }
 
@@ -317,6 +319,23 @@ void Task_Memory(void) {
 
     message msg;
     while (1) {
-        /* recv_msg(&msg, PROC_ANY); */;
+        recv_msg(&msg, PROC_ANY);
+        switch (msg.type) {
+        case MEM_ALLOC_PAGES:
+            // TODO: alloc and map pages, use proc's cr3 V2P
+            msg.major = (uint)allocate_pages_of_power_2(
+                &mem_info, round_up_power_2(msg.major));
+            SEND_BACK(msg);
+            break;
+        case MEM_FREE_PAGES:
+            // TODO: unmap pages and free, V2P
+            free_pages_of_power_2(&mem_info, (char *)msg.data.uint_arr.d1,
+                                  round_up_power_2(msg.major));
+            msg.major = 0;
+            SEND_BACK(msg);
+            break;
+        default:
+            break;
+        }
     }
 }

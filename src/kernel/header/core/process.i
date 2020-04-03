@@ -61,4 +61,5 @@ endstruc
 struc process
 .stack resb stack_frame_size
 .page_dir resd 1
+.kstack resd 1
 endstruc

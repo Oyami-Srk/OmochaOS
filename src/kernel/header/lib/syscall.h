@@ -6,6 +6,12 @@
 
 #define SYSCALL_INT   0xE9
 #define MSG_INTERRUPT 0x7FFFFFFF
+#ifndef PROC_ANY
+#define PROC_ANY 0xFFFFFFFE
+#endif
+#ifndef PROC_INTERRUPT
+#define PROC_INTERRUPT 0xFFFFFFFF
+#endif
 
 // True syscall
 

@@ -42,6 +42,7 @@ struct __process {
     u32         page_dir;
     uint        status;
     uint        pid;
+    uint        parent_pid;
     char        name[16];
 
     message *p_msg;

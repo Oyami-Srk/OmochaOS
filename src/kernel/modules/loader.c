@@ -16,6 +16,10 @@ module:
 #include "core/environment.h"
 
 void Task_Loader(void) {
+    /* delay_ms(1000); */
     printf("[LOADER] Loading Execs from Disk.\n");
-    exit_proc();
+    printf("[Loader] sizeof process is %d\n", sizeof(process));
+    /* exit_proc(); */
+    while (1)
+        ;
 }

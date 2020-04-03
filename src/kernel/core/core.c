@@ -27,6 +27,12 @@ void SysIdle() {
     }
 }
 
+// every processes' mother proc
+void SysInit() {
+    while (1)
+        ;
+}
+
 unsigned int entry_page_dir[PDE_SIZE];
 
 struct core_env core_env;
@@ -75,6 +81,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_proc(&core_env);
 
     init_proc(0, SysIdle, (u32)entry_page_dir);
+    init_proc(1, SysIdle, (u32)entry_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] < 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],

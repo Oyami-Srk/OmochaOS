@@ -67,6 +67,10 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
 
     proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
     proc->pid    = pid;
+    if (pid == 1 || pid == 0)
+        proc->parent_pid = 0;
+    else
+        proc->parent_pid = 1;
 
     if (*proc_list) {
         process *p = *proc_list;

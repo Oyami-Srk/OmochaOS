@@ -12,7 +12,7 @@ struct fs_file_info {
     uint   clus;
 };
 
-// offset in clus (512bytes)
+// offset in bytes
 static inline uint FS_read_file(struct fs_file_info *fileinfo, uint offset,
                                 ubyte *buf, size_t buf_size) {
     uint    task_fs = query_proc("TaskFS");
@@ -32,7 +32,7 @@ static inline uint FS_get_file_info(const char *         filename,
                                     struct fs_file_info *fileinfo) {
     uint    task_fs = query_proc("TaskFS");
     message msg;
-    msg.type             = FS_READ_FILE;
+    msg.type             = FS_GET_FILE_INFO;
     msg.major            = (uint)filename;
     msg.data.uint_arr.d1 = (uint)fileinfo;
     msg.receiver         = task_fs;

@@ -259,7 +259,7 @@ size_t hd_rw_drv(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
 void Task_HD() {
     message msg;
     if (reg_proc("TaskHD") != 0)
-        printf("[HD] Cannot register as TaskHD");
+        printf("[HD] Cannot register as TaskHD\n");
     printf("\n[HD] Initialized\n");
     init_hd();
     delay_ms(200);

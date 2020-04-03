@@ -7,11 +7,11 @@ module:
 */
 
 #include "modules/fs.h"
-#include "core/memory.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
 #include "modules/hd.h"
+#include "modules/memory.h"
 #include "modules/tty.h"
 
 ubyte hd_buf[512];
@@ -297,7 +297,6 @@ void read_clus(struct FAT32_FileSystem *fs, uint clus, uint size, void *buf) {
 }
 
 void list_dir(struct FAT32_FileSystem *fs, uint clus, uint tabsize) {
-    uchar hd_buf[512];
     HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), hd_buf, 512);
     union FAT32_DirEnt DirEnt;
     for (uint offset = 0; offset < 512; offset += sizeof(union FAT32_DirEnt)) {
@@ -333,7 +332,6 @@ int get_file_info(uint dir_clus, struct FAT32_FileSystem *fs, const char *fn,
     size_t fn_size = strlen(fn);
     if (fn[fn_size - 1] == '/')
         return 2; // not a file
-    ubyte hd_buf[512];
     uchar name_83[12] = {[0 ... 11] = 0};
     uchar name[12]    = {[0 ... 11] = 0};
     uchar dname[12]   = {[0 ... 11] = 0};
@@ -383,25 +381,58 @@ int get_file_info(uint dir_clus, struct FAT32_FileSystem *fs, const char *fn,
     return 1; // not found
 }
 
+// return actually read size
+size_t read_file(struct FAT32_FileSystem *fs, struct fs_file_info *fileinfo,
+                 uint offset, ubyte *buf, size_t buf_size) {
+    size_t bytes_per_clus = fs->BytesPerSec * fs->SecPerClus;
+
+    uint start_clus_offset = offset / bytes_per_clus;
+    uint offset_start      = offset % bytes_per_clus;
+    uint total_clus_to_read =
+        (offset_start + buf_size + bytes_per_clus - 1) / bytes_per_clus;
+    size_t aligned_buf_size = total_clus_to_read * bytes_per_clus;
+    ubyte *aligned_buf =
+        (ubyte *)mem_alloc_pages((aligned_buf_size + PG_SIZE - 1) / PG_SIZE);
+    read_clus(fs, fileinfo->clus + start_clus_offset, aligned_buf_size,
+              aligned_buf);
+    // copy to user
+    memcpy(buf, aligned_buf + offset_start, buf_size);
+    return 0;
+}
+
 void Task_FS() {
+    if (reg_proc("TaskFS") != 0)
+        printf("[FS] Cannot register as TaskFS\n");
     delay_ms(200);
-    printf("[FS] Initializing.\n");
-    delay_ms(500);
-    printf("[FS] Reading Boot Sector\n");
     HD_dev_open(0);
     struct FAT32_FileSystem fs;
     ReadBootSector(MAKE_DRV(0, 1), &fs);
-    char buf[8];
-    memset(buf, 0, sizeof(buf));
-    TrimWhiteSpace(fs.VolumeLabel, buf);
-    printf("[FS] Opened FS \"%s\", About %d MB.\n", buf,
-           fs.TotalSector * fs.BytesPerSec / 1024 / 1024);
     ReadFSInfo(&fs);
-
-    list_dir(&fs, fs.RootClus, 0); // 2 is root dir first clus, no more explain
-    struct fs_file_info fileinfo;
-    get_file_info(fs.RootClus, &fs, "/boot/grub/grub.cfg", &fileinfo);
-    HD_dev_close(0);
+    printf("[FS] Initialized.\n");
+    message msg;
     while (1) {
+        recv_msg(&msg, PROC_ANY);
+        switch (msg.type) {
+        case FS_READ_FILE: {
+            struct fs_file_info *fileinfo =
+                (struct fs_file_info *)msg.data.uint_arr.d1;
+            ubyte *buf      = (ubyte *)msg.data.uint_arr.d2;
+            size_t buf_size = (size_t)msg.data.uint_arr.d3;
+            uint   offset   = msg.major;
+            SEND_BACK(msg);
+            break;
+        }
+        case FS_GET_FILE_INFO: {
+            struct fs_file_info *fileinfo =
+                (struct fs_file_info *)msg.data.uint_arr.d1;
+            const char *fn = (const char *)msg.major;
+            msg.major      = get_file_info(fs.RootClus, &fs, fn, fileinfo);
+            SEND_BACK(msg);
+            break;
+        }
+        default:
+            break;
+        }
     }
+    HD_dev_close(0);
 }
