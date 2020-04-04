@@ -11,6 +11,7 @@
 
 #include "lib/syscall.h"
 #include "modules/modules.h"
+#include "modules/systask.h"
 
 #include "core/environment.h"
 #include "core/init.h"
@@ -25,12 +26,6 @@ void SysIdle() {
         recv_msg(&msg, PROC_ANY);
         SEND_BACK(msg);
     }
-}
-
-// every processes' mother proc
-void SysInit() {
-    while (1)
-        ;
 }
 
 unsigned int entry_page_dir[PDE_SIZE];
@@ -69,7 +64,9 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
                           (bitmap_size % sizeof(process) == 0 ? 0 : 1));
     core_env.proc_count  = 0;
     core_env.proc_bitmap = (bitset *)(core_env.core_space_end - bitmap_size);
-    core_env.proc_bitmap_size = (bitmap_size / sizeof(bitset));
+    /* core_env.proc_bitmap_size = (bitmap_size / sizeof(bitset)); */
+    // someof last pid cannot be used
+    core_env.proc_bitmap_size = ((core_env.proc_max / 8) / sizeof(bitset));
 
     kprintf("\n\nproc_max: %d\nbitmap_size: %d\n", core_env.proc_max,
             core_env.proc_bitmap_size);
@@ -81,7 +78,8 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_proc(&core_env);
 
     init_proc(0, SysIdle, (u32)entry_page_dir);
-    init_proc(1, SysIdle, (u32)entry_page_dir);
+    /* init_proc(1, SysIdle, (u32)entry_page_dir); */
+    set_bit(core_env.proc_bitmap, 1); // leave pid 1 to init
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] < 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],

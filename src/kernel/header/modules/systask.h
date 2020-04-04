@@ -4,7 +4,7 @@
 #include "generic/typedefs.h"
 #include "lib/syscall.h"
 
-#define SYSTASK_PID 1
+#define SYSTASK_PID 2
 
 #define QUERY_PROC_TIMEOUT 5000 // in ms
 
@@ -20,6 +20,8 @@
 #define QUERY_ENV      10
 #define EXIT_PROC      11
 #define MODIFY_PROC    12
+#define ALLOC_PROC     13
+#define GET_PROC       14
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -153,6 +155,26 @@ static inline uint modify_proc(uint pid, uint KEY, uint major, ubyte *buf,
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return msg.major;
+}
+
+// return a free proc slot with pid set
+static inline process *alloc_proc() {
+    message msg;
+    msg.type     = ALLOC_PROC;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return (process *)msg.major;
+}
+
+static inline process *get_proc(uint pid) {
+    message msg;
+    msg.type     = GET_PROC;
+    msg.major    = pid;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return (process *)msg.major;
 }
 
 #endif // __MODULE_SYSTASK_H__

@@ -60,7 +60,8 @@ void core_init_gdt(struct core_env *env) {
             has_tss      = TRUE;
             selector_tss = i << 3;
             env->tss.ss0 = 2 << 3; // data selector, hard code is bad
-            make_descriptor(_GDT_current, (uint)(KV2P(&env->tss)),
+            /* env->tss.cr3 = (u32)KV2P(env->page_dir); */
+            make_descriptor(_GDT_current, (uint)((&env->tss)),
                             sizeof(struct tss) - 1, DA_386TSS);
             _GDT_current++;
             break;

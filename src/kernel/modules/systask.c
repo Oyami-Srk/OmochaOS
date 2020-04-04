@@ -4,7 +4,7 @@ module:
   author: Shiroko
   summary: System Task's process
   entry: SysTask
-  preferred_pid: 1
+  preferred_pid: 2
 */
 
 #include "modules/systask.h"
@@ -126,6 +126,8 @@ void SysTask() {
                 panic("Cannot unsuscribe an interrupt bigger than 16");
             if (core_env.interrupt_suscribed[msg.major] == 0)
                 panic("Cannot unsuscribe an unsuscribed interrupt");
+            if (core_env.interrupt_suscribed[msg.major] != msg.sender)
+                panic("Cannot unsuscribe interrupt not suscribe by you");
             core_env.interrupt_suscribed[msg.major] = 0;
             msg.major                               = 0;
             SEND_BACK(msg);
@@ -197,9 +199,18 @@ void SysTask() {
             break;
         case EXIT_PROC: {
             __unreg_proc(msg.sender);
+            for (uint i = 0; i < HW_IRQ_COUNT; i++) {
+                // unreg and unsus int
+                if (core_env.interrupt_suscribed[i] == msg.sender)
+                    core_env.interrupt_suscribed[i] = 0;
+                if (core_env.interrupt_methods[i].pid == msg.sender) {
+                    core_env.interrupt_methods[i].pid   = 0;
+                    core_env.interrupt_methods[i].avail = FALSE;
+                    core_env.interrupt_methods[i].func  = NULL;
+                }
+            }
             clear_bit(core_env.proc_bitmap, msg.sender);
-            uint proc_stack =
-                PGROUNDDOWN(core_env.proc_table[msg.sender].stack.esp);
+            uint proc_stack = (uint)core_env.proc_table[msg.sender].pstack;
             if (proc_stack <
                 core_env.core_space_free_end) // core free stack is managed by
                                               // memory.c
@@ -255,6 +266,45 @@ void SysTask() {
             }
             break;
             SEND_BACK(msg);
+        }
+        case ALLOC_PROC: {
+            // check sender's privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
+                panic("NO Permission to alloc proc.");
+            uint pid = find_first_unset_bit(core_env.proc_bitmap,
+                                            core_env.proc_bitmap_size);
+            if (pid == 0xFFFFFFFF) {
+                msg.major = NULL;
+                SEND_BACK(msg);
+                break;
+            }
+            process *proc = &core_env.proc_table[pid];
+            proc->status  = PROC_STATUS_SUSPEND;
+            if (core_env.proc_list) {
+                process *p = core_env.proc_list;
+                process *f = p;
+                while (p) {
+                    f = p;
+                    p = p->next;
+                }
+                f->next = proc;
+            } else
+                core_env.proc_list = proc;
+            proc->next         = NULL;
+            proc->parent_pid   = 1;
+            proc->stack.eflags = 0x1202; // IOPL=1
+            core_env.proc_count++;
+            msg.major = (uint)proc;
+            SEND_BACK(msg);
+            break;
+        }
+        case GET_PROC: {
+            // check sender's privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
+                panic("NO Permission to get proc.");
+            msg.major = (uint)&core_env.proc_table[msg.major];
+            SEND_BACK(msg);
+            break;
         }
         default:
             break;

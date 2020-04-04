@@ -53,6 +53,9 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     set_bit(proc_bitmap, pid);
     (*proc_count)++;
 
+    proc->pstack      = (char *)kalloc(0);
+    proc->pstack_size = PG_SIZE;
+
     proc->stack.cs = SEL_CODE_DPL1;
     proc->stack.ds = SEL_DATA_DPL1;
     proc->stack.gs = SEL_DATA_DPL1;
@@ -61,7 +64,7 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     proc->stack.ss = SEL_DATA_DPL1;
 
     proc->stack.eip    = (u32)(entry);
-    proc->stack.esp    = (uint)kalloc(0) + 4096; // task stack
+    proc->stack.esp    = (u32)proc->pstack + proc->pstack_size;
     proc->stack.eflags = 0x1202;
     proc->page_dir     = (u32)KV2P(page_dir);
 

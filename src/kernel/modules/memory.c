@@ -8,6 +8,7 @@ module:
 #include "core/memory.h"
 #include "core/environment.h"
 #include "core/paging.h"
+#include "generic/asm.h"
 #include "lib/bitset.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
@@ -18,6 +19,7 @@ module:
 
 unsigned int sys_mapping[][3] = {
     // paddr, vaddr, page size
+    /* {0, 0, PG_SIZE * 1024}, */
     {0, KERN_BASE, PG_SIZE * 1024}};
 
 #define PAGE_TYPE_USABLE   0x01
@@ -211,7 +213,7 @@ static int map_pages(pde_t *page_dir, void *va, void *pa, size_t size,
     va         = (void *)PGROUNDDOWN((uint)va);
     void * end = (void *)PGROUNDDOWN(((uint)va) + size - 1);
     pte_t *pte = NULL;
-    for (; (uint)va < (uint)end; va += PG_SIZE, pa += PG_SIZE) {
+    for (; (uint)va <= (uint)end; va += PG_SIZE, pa += PG_SIZE) {
         if ((pte = create_page_table(page_dir, va)) == NULL)
             return -1;
         if (*pte & PG_Present)
@@ -231,6 +233,7 @@ static pde_t *create_page_dir(void) {
         map_pages(page_dir, (void *)sys_mapping[i][1],
                   (void *)sys_mapping[i][0], sys_mapping[i][2],
                   PG_Present | PG_Writeable);
+    /* page_dir[KERN_BASE >> 22] = 0 | PG_Present | PG_PS; */
     return page_dir;
 }
 
@@ -286,6 +289,65 @@ void init_memory(struct memory_info *mem) {
     return;
 }
 
+static char *vir2phy(pde_t *pg_dir, char *vaddr) {
+    return (char *)((*get_pte(pg_dir, vaddr) & ~0xFFF) + ((uint)vaddr & 0xFFF));
+}
+
+// return child proc's pid
+static uint fork_proc(uint pid) {
+    process *child_proc    = alloc_proc();
+    process *parent_proc   = get_proc(pid);
+    child_proc->parent_pid = pid;
+
+    return 1;
+}
+
+extern void init(void); // init.c
+
+static void start_up_init() {
+    process *init_proc = get_proc(1);
+
+    init_proc->stack.cs = SEL_CODE_DPL1;
+    init_proc->stack.ds = SEL_DATA_DPL1;
+    init_proc->stack.es = SEL_DATA_DPL1;
+    init_proc->stack.fs = SEL_DATA_DPL1;
+    init_proc->stack.gs = SEL_DATA_DPL1;
+    init_proc->stack.ss = SEL_DATA_DPL1;
+
+    init_proc->stack.eip   = (u32)init;
+    init_proc->pstack      = page_alloc(2); // 8KB
+    init_proc->pstack_size = 2 * PG_SIZE;
+    init_proc->stack.esp = (uint)init_proc->pstack + init_proc->pstack_size - 1;
+    init_proc->stack.eflags = 0x1202;
+    init_proc->page_dir     = (uint)create_page_dir();
+    map_pages((pde_t *)init_proc->page_dir, init_proc->pstack,
+              init_proc->pstack, init_proc->pstack_size,
+              PG_Present | PG_Writeable | PG_User);
+    printf("Init Init proc with pd: %x\n", init_proc->page_dir);
+    printf("esp is %x, mapped to %x\n", init_proc->stack.esp,
+           vir2phy(init_proc->page_dir, init_proc->stack.esp));
+    printf("Entry is %x\n", vir2phy(init_proc->page_dir, init_proc->stack.eip));
+
+    init_proc->pid        = 1;
+    init_proc->status     = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
+    init_proc->parent_pid = 0;
+
+    extern process **proc_list;  // process.c
+    extern size_t *  proc_count; // process.c
+
+    process *p = *proc_list;
+    process *f = p;
+    while (p) {
+        f = p;
+        p = p->next;
+    }
+    init_proc->next = NULL;
+    f->next         = init_proc;
+    (*proc_count)++;
+
+    printf("Allocated proc is %d\n", init_proc->pid);
+}
+
 void Task_Memory(void) {
     struct core_env_memory_zone zone[10];
     size_t                   zone_count = query_env(ENV_KEY_MMAP, (ubyte *)zone,
@@ -313,9 +375,10 @@ void Task_Memory(void) {
         printf("%x, ", mem_info.free_list[i]);
     printf("\n");
     */
-    // note：每一个进程都应该有自己的中断栈，大小8K。系统初期的进程共享一个中断栈。
     // 每一个进程都有自己的普通栈，大小应为4MB。系统初期的进程只有4KB（一页大小）
     // 系统映射在0x80000000之后的4MB内，这是全局的映射，用户进程有此map但是不能访问（权限过低）
+
+    start_up_init(); // system startup
 
     message msg;
     while (1) {
@@ -332,6 +395,10 @@ void Task_Memory(void) {
             free_pages_of_power_2(&mem_info, (char *)msg.data.uint_arr.d1,
                                   round_up_power_2(msg.major));
             msg.major = 0;
+            SEND_BACK(msg);
+            break;
+        case MEM_FORK_PROC:
+            msg.major = fork_proc(msg.sender);
             SEND_BACK(msg);
             break;
         default:

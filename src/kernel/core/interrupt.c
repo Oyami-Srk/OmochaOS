@@ -101,7 +101,7 @@ void core_init_interrupt(struct core_env *env) {
     u16 * idt_limit = (u16 *)(&idt_ptr[0]);
     u32 * idt_base  = (u32 *)(&idt_ptr[2]);
     *idt_limit      = env->idt_size * sizeof(Gate) - 1;
-    *idt_base       = (u32)KV2P(env->idt);
+    *idt_base       = (u32)(env->idt);
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
     /* interrupt_stack = kalloc(0); // notice here allocate */
