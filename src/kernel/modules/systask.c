@@ -279,7 +279,7 @@ void SysTask() {
                 break;
             }
             process *proc = &core_env.proc_table[pid];
-            proc->status  = PROC_STATUS_SUSPEND;
+            proc->status  = PROC_STATUS_STOP;
             if (core_env.proc_list) {
                 process *p = core_env.proc_list;
                 process *f = p;
@@ -292,6 +292,7 @@ void SysTask() {
                 core_env.proc_list = proc;
             proc->next         = NULL;
             proc->parent_pid   = 1;
+            proc->pid          = pid;
             proc->stack.eflags = 0x1202; // IOPL=1
             core_env.proc_count++;
             msg.major = (uint)proc;
