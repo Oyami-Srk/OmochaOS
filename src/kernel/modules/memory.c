@@ -313,19 +313,9 @@ static uint fork_proc(pid_t pid) {
            vir2phy(parent_proc->page_dir, parent_proc->pstack),
            child_proc->pstack_size);
 
-    message *child_msg =
-        (message *)vir2phy(child_proc->page_dir, (char *)child_proc->p_msg);
-    message *parent_msg =
-        (message *)vir2phy(parent_proc->page_dir, (char *)parent_proc->p_msg);
-
-    printf(" [parent_msg sender is %d, receiver is %d, type is %d ] \n",
-           parent_msg->sender, parent_msg->receiver, parent_msg->type);
-    printf(" [child_msg sender is %d, receiver is %d, type is %d ] \n",
-           child_msg->sender, child_msg->receiver, child_msg->type);
-
     parent_proc->status &= ~PROC_STATUS_STOP;
     child_proc->status = parent_proc->status;
-    kprintf("Proc status is %x\n", parent_proc->status);
+
     return child_proc->pid;
 }
 
