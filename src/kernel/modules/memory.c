@@ -426,12 +426,9 @@ void Task_Memory(void) {
                 send_msg(&msg); // send to parent proc
                 break;          // no child alloc proc failed
             }
-            kprintf("    Sending to parent%d:%d    \n", msg.receiver,
-                    msg.major);
             send_msg(&msg); // send to parent_proc
             msg.receiver = msg.major;
             msg.major    = 0;
-            kprintf("    Sending to child%d:%d    \n", msg.receiver, msg.major);
             send_msg(&msg); // send to child proc
             break;
         default:

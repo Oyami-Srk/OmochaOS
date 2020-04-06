@@ -12,6 +12,7 @@ module:
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
+#include "modules/memory.h"
 #include "modules/systask.h"
 #include "modules/tty.h"
 
@@ -277,8 +278,11 @@ void Task_HD() {
             send_msg(&msg);
             break;
         case DEV_WRITE: {
-            uint ret  = hd_rw_drv(TRUE, (void *)msg.data.uint_arr.d1, msg.major,
-                                 msg.data.uint_arr.d2, msg.data.uint_arr.d3);
+            ubyte *buf =
+                (ubyte *)proc_vir2phy(msg.sender, (char *)msg.data.uint_arr.d1);
+            // TODO: check buf is sysmem override
+            uint ret  = hd_rw_drv(TRUE, buf, msg.major, msg.data.uint_arr.d2,
+                                 msg.data.uint_arr.d3);
             msg.major = 0;
             msg.data.uint_arr.d1 = ret;
             msg.receiver         = msg.sender;
@@ -286,9 +290,11 @@ void Task_HD() {
             break;
         }
         case DEV_READ: {
-            uint ret = hd_rw_drv(FALSE, (void *)msg.data.uint_arr.d1, msg.major,
-                                 msg.data.uint_arr.d2, msg.data.uint_arr.d3);
-            msg.major            = 0;
+            ubyte *buf =
+                (ubyte *)proc_vir2phy(msg.sender, (char *)msg.data.uint_arr.d1);
+            uint ret  = hd_rw_drv(FALSE, buf, msg.major, msg.data.uint_arr.d2,
+                                 msg.data.uint_arr.d3);
+            msg.major = 0;
             msg.data.uint_arr.d1 = ret;
             msg.receiver         = msg.sender;
             send_msg(&msg);
@@ -301,8 +307,8 @@ void Task_HD() {
             send_msg(&msg);
             break;
         case DEV_INFO: {
-            struct HD_PartInfo *p =
-                (struct HD_PartInfo *)(msg.data.uint_arr.d1);
+            struct HD_PartInfo *p = (struct HD_PartInfo *)proc_vir2phy(
+                msg.sender, (char *)msg.data.uint_arr.d1);
             ushort dev  = SPLIT_DRV_DEV(msg.major);
             ushort part = SPLIT_DEV_PART(msg.major);
 

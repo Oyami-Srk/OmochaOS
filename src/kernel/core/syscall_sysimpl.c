@@ -73,10 +73,6 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
     uint     has_received = FALSE;
     process *sender       = NULL;
 
-    if (receiver->pid == 1 && recv_from == 3) {
-        kprintf("Init1 recv from mem3\n");
-    }
-
     if (receiver->status & PROC_STATUS_GOTINT &&
         (recv_from == PROC_INTERRUPT || recv_from == PROC_ANY)) {
         msg->type   = MSG_INTERRUPT;
@@ -149,9 +145,6 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
         sender->status |= PROC_STATUS_NORMAL;
         sender->status |= PROC_STATUS_RUNNING;
     } else {
-        if (receiver->pid == 1 && recv_from == 3) {
-            kprintf("recv proceed without sender ready\n");
-        }
         msg->ready      = 1;
         msg->sender     = recv_from;
         receiver->p_msg = msg_va;

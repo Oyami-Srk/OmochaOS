@@ -11,6 +11,7 @@ module:
 #include "core/environment.h"
 #include "core/interrupt.h"
 #include "core/memory.h"
+#include "core/paging.h"
 #include "core/process.h"
 #include "driver/graphic.h"
 #include "driver/misc.h"
@@ -66,7 +67,10 @@ void SysTask() {
             break;
         }
         case REG_PROC: {
-            msg.major = __reg_proc(msg.sender, (char *)msg.data.b16);
+            msg.major = __reg_proc(
+                msg.sender,
+                (char *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                (char *)msg.data.b16));
             SEND_BACK(msg);
             break;
         }
@@ -75,7 +79,9 @@ void SysTask() {
             msg.major = 0;
             SEND_BACK(msg);
         case QUERY_PROC: {
-            msg.major = __query_proc((const char *)msg.data.b16);
+            msg.major = __query_proc(
+                (char *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                (char *)msg.data.b16));
             SEND_BACK(msg);
             break;
         }
@@ -89,7 +95,9 @@ void SysTask() {
             core_env.interrupt_methods[msg.major].avail = TRUE;
             core_env.interrupt_methods[msg.major].pid   = msg.sender;
             core_env.interrupt_methods[msg.major].func =
-                (void *)msg.data.uint_arr.d1;
+                (void *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                (char *)msg.data.uint_arr.d1);
+
             msg.major = 0;
             SEND_BACK(msg);
             break;
@@ -151,7 +159,11 @@ void SysTask() {
                 SEND_BACK(msg);
                 break;
             case ENV_KEY_MMAP: {
-                void * buf      = (void *)msg.data.uint_arr.d1;
+                void *buf =
+                    (void *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                    (char *)msg.data.uint_arr.d1);
+                if ((uint)buf >= KERN_BASE && buf <= KERN_VEND)
+                    panic("Override system memory");
                 size_t buf_size = msg.data.uint_arr.d2;
                 if (buf_size < sizeof(struct core_env_memory_zone) *
                                    core_env.memory_zone_count)
@@ -166,7 +178,11 @@ void SysTask() {
                 break;
             }
             case ENV_KEY_BOOT_INFO: {
-                void * buf      = (void *)msg.data.uint_arr.d1;
+                void *buf =
+                    (void *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                    (char *)msg.data.uint_arr.d1);
+                if ((uint)buf >= KERN_BASE && buf <= KERN_VEND)
+                    panic("Override system memory");
                 size_t buf_size = msg.data.uint_arr.d2;
                 if (buf_size < sizeof(core_env.boot_info))
                     msg.major = 0xFFFFFFFF;
@@ -183,8 +199,11 @@ void SysTask() {
                 if (buf_size < sizeof(struct core_memory_usage))
                     msg.major = 0xFFFFFFFF;
                 else {
-                    struct core_memory_usage *buf =
-                        (void *)msg.data.uint_arr.d1;
+                    struct core_memory_usage *buf = (void *)vir2phy(
+                        core_env.proc_table[msg.sender].page_dir,
+                        (char *)msg.data.uint_arr.d1);
+                    if ((uint)buf >= KERN_BASE && (void *)buf <= KERN_VEND)
+                        panic("Override system memory");
                     buf->core_space_start      = core_env.core_space_start;
                     buf->core_space_end        = core_env.core_space_end;
                     buf->core_space_free_start = core_env.core_space_free_start;
@@ -246,9 +265,11 @@ void SysTask() {
             break;
         }
         case MODIFY_PROC: {
-            uint   KEY      = msg.major;
-            uint   major    = msg.data.uint_arr.d1;
-            ubyte *buf      = (ubyte *)msg.data.uint_arr.d2;
+            uint   KEY   = msg.major;
+            uint   major = msg.data.uint_arr.d1;
+            ubyte *buf =
+                (ubyte *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                 (char *)msg.data.uint_arr.d2);
             size_t buf_size = msg.data.uint_arr.d3;
             uint   pid      = msg.data.uint_arr.d4;
             // check sender's privilige
@@ -304,6 +325,13 @@ void SysTask() {
             if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
                 panic("NO Permission to get proc.");
             msg.major = (uint)&core_env.proc_table[msg.major];
+            SEND_BACK(msg);
+            break;
+        }
+        case PROC_VIR2PHY: {
+            char *paddr = vir2phy(core_env.proc_table[msg.major].page_dir,
+                                  (char *)msg.data.uint_arr.d1);
+            msg.major   = (uint)paddr;
             SEND_BACK(msg);
             break;
         }

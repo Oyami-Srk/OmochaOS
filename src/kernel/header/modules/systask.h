@@ -22,6 +22,7 @@
 #define MODIFY_PROC    12
 #define ALLOC_PROC     13
 #define GET_PROC       14
+#define PROC_VIR2PHY   15
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -175,6 +176,17 @@ static inline process *get_proc(uint pid) {
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return (process *)msg.major;
+}
+
+static inline char *proc_vir2phy(pid_t pid, char *va) {
+    message msg;
+    msg.type             = PROC_VIR2PHY;
+    msg.major            = pid;
+    msg.data.uint_arr.d1 = (uint)va;
+    msg.receiver         = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return (char *)msg.major;
 }
 
 #endif // __MODULE_SYSTASK_H__

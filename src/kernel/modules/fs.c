@@ -414,19 +414,21 @@ void Task_FS() {
         recv_msg(&msg, PROC_ANY);
         switch (msg.type) {
         case FS_READ_FILE: {
-            struct fs_file_info *fileinfo =
-                (struct fs_file_info *)msg.data.uint_arr.d1;
-            ubyte *buf      = (ubyte *)msg.data.uint_arr.d2;
+            struct fs_file_info *fileinfo = (struct fs_file_info *)proc_vir2phy(
+                msg.sender, (char *)msg.data.uint_arr.d1);
+            ubyte *buf =
+                (ubyte *)proc_vir2phy(msg.sender, (char *)msg.data.uint_arr.d2);
             size_t buf_size = (size_t)msg.data.uint_arr.d3;
             uint   offset   = msg.major;
             SEND_BACK(msg);
             break;
         }
         case FS_GET_FILE_INFO: {
-            struct fs_file_info *fileinfo =
-                (struct fs_file_info *)msg.data.uint_arr.d1;
-            const char *fn = (const char *)msg.major;
-            msg.major      = get_file_info(fs.RootClus, &fs, fn, fileinfo);
+            struct fs_file_info *fileinfo = (struct fs_file_info *)proc_vir2phy(
+                msg.sender, (char *)msg.data.uint_arr.d1);
+            const char *fn =
+                (const char *)proc_vir2phy(msg.sender, (char *)msg.major);
+            msg.major = get_file_info(fs.RootClus, &fs, fn, fileinfo);
             SEND_BACK(msg);
             break;
         }

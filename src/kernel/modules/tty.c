@@ -12,6 +12,7 @@ module:
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
+#include "modules/memory.h"
 #include "modules/systask.h"
 #include "monitor.h"
 
@@ -36,7 +37,9 @@ void Task_TTY() {
     while (1) {
         if (peek_msg()) {
             recv_msg(&msg, PROC_ANY);
-            write_console(&con[cur_con], (const char *)msg.major);
+            const char *buf =
+                (const char *)proc_vir2phy(msg.sender, (char *)msg.major);
+            write_console(&con[cur_con], buf);
             SEND_BACK(msg);
         }
         if (!((key = kbd_read()) & 0x0100)) {

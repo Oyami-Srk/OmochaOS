@@ -42,5 +42,4 @@ static inline uint fork() {
     recv_msg(&msg, task_mem);
     return msg.major;
 }
-
 #endif // __MODULE_MEMORY__
