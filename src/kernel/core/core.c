@@ -28,7 +28,7 @@ void SysIdle() {
     }
 }
 
-unsigned int entry_page_dir[PDE_SIZE];
+pde_t entry_page_dir[PDE_SIZE];
 
 struct core_env core_env;
 
@@ -77,17 +77,17 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_interrupt(&core_env);
     core_init_proc(&core_env);
 
-    init_proc(0, SysIdle, (u32)entry_page_dir);
+    init_proc(0, SysIdle, entry_page_dir);
     /* init_proc(1, SysIdle, (u32)entry_page_dir); */
     set_bit(core_env.proc_bitmap, 1); // leave pid 1 to init
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] < 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
-                      (u32)entry_page_dir);
+                      entry_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] >= 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
-                      (u32)entry_page_dir);
+                      entry_page_dir);
 
     move_to_proc();
     while (1)
@@ -95,6 +95,6 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 }
 
 // map 4MB
-__attribute__((__aligned__(PG_SIZE))) unsigned int entry_page_dir[PDE_SIZE] = {
+__attribute__((__aligned__(PG_SIZE))) pde_t entry_page_dir[PDE_SIZE] = {
     [0]               = (0) | PG_Present | PG_Writeable | PG_PS,
     [KERN_BASE >> 22] = (0) | PG_Present | PG_Writeable | PG_PS};

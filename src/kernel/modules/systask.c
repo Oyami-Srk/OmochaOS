@@ -219,7 +219,7 @@ void SysTask() {
                 ; // free stack by memory modules
             }
             // free page dir
-            uint proc_pd = core_env.proc_table[msg.sender].page_dir;
+            pde_t *proc_pd = core_env.proc_table[msg.sender].page_dir;
             // if proc_pd's reference is 1 free it
             // call memory module to free page dir
             core_env.proc_count--;
@@ -256,7 +256,7 @@ void SysTask() {
                 panic("NO Permission to modify proc.");
             switch (KEY) {
             case MOD_PROC_CR3: {
-                core_env.proc_table[pid].page_dir = major;
+                core_env.proc_table[pid].page_dir = (pte_t *)major;
                 msg.major                         = 0;
                 break;
             }

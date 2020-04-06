@@ -43,19 +43,19 @@ struct core_env {
     uint core_space_end;
     /*      memory usage end       */
 
-    uint          memory_end;
-    size_t        gdt_size; // = GDT_SIZE
-    Descriptor    gdt[GDT_SIZE];
-    size_t        idt_size; // = IDT_SIZE
-    Gate          idt[IDT_SIZE];
-    struct tss    tss;
-    unsigned int *page_dir;
-    process *     proc_table;
-    process *     proc_list;
-    size_t        proc_count;
-    size_t        proc_max;
-    bitset *      proc_bitmap;
-    size_t        proc_bitmap_size; // count of array
+    uint       memory_end;
+    size_t     gdt_size; // = GDT_SIZE
+    Descriptor gdt[GDT_SIZE];
+    size_t     idt_size; // = IDT_SIZE
+    Gate       idt[IDT_SIZE];
+    struct tss tss;
+    pde_t *    page_dir;
+    process *  proc_table;
+    process *  proc_list;
+    size_t     proc_count;
+    size_t     proc_max;
+    bitset *   proc_bitmap;
+    size_t     proc_bitmap_size; // count of array
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
     uint                    interrupt_suscribed[HW_IRQ_COUNT];

@@ -1,6 +1,8 @@
 #ifndef __PAGING_H__
 #define __PAGING_H__
 
+#include "generic/typedefs.h"
+
 #define PG_Present   0x01
 #define PG_Writeable 0x02
 #define PG_User      0x04
@@ -10,7 +12,14 @@
 #define PDE_SIZE    0x1000
 #define PTE_PER_PDE 1024
 
-typedef unsigned int pte_t; // page table entity
-typedef unsigned int pde_t; // page dir entity
-
+static inline char *vir2phy(pde_t *pg_dir, char *va) {
+    pde_t pde = pg_dir[(unsigned int)va >> 22];
+    if (!(pde & PG_Present))
+        return 0;
+    if (pde & PG_PS)
+        return (char *)(((unsigned int)pde & ~0xFFF) +
+                        ((unsigned int)va & 0x3FFFFF));
+    pte_t pte = ((pte_t *)(pde & ~0xFFF))[((unsigned int)va >> 12) & 0x3FF];
+    return (char *)((pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
+}
 #endif // __PAGING_H__

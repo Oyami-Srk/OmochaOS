@@ -66,12 +66,16 @@ struct tss {
                 // char iomap[2];
 } __attribute__((packed));
 
+typedef unsigned int pte_t; // page table entity
+typedef unsigned int pde_t; // page dir entity
+typedef unsigned int pid_t;
+
 struct __process {
     stack_frame stack;
-    u32         page_dir;
+    pde_t *     page_dir;
     uint        status;
-    uint        pid;
-    uint        parent_pid;
+    pid_t       pid;
+    pid_t       parent_pid;
     char        name[16];
     char *      pstack;
     size_t      pstack_size;

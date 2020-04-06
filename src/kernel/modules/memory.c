@@ -289,12 +289,8 @@ void init_memory(struct memory_info *mem) {
     return;
 }
 
-static char *vir2phy(pde_t *pg_dir, char *vaddr) {
-    return (char *)((*get_pte(pg_dir, vaddr) & ~0xFFF) + ((uint)vaddr & 0xFFF));
-}
-
 // return child proc's pid
-static uint fork_proc(uint pid) {
+static uint fork_proc(pid_t pid) {
     process *child_proc    = alloc_proc();
     process *parent_proc   = get_proc(pid);
     child_proc->parent_pid = pid;
@@ -319,14 +315,15 @@ static void start_up_init() {
     init_proc->pstack_size = 2 * PG_SIZE;
     init_proc->stack.esp = (uint)init_proc->pstack + init_proc->pstack_size - 1;
     init_proc->stack.eflags = 0x1202;
-    init_proc->page_dir     = (uint)create_page_dir();
+    init_proc->page_dir     = create_page_dir();
     map_pages((pde_t *)init_proc->page_dir, init_proc->pstack,
               init_proc->pstack, init_proc->pstack_size,
               PG_Present | PG_Writeable | PG_User);
     printf("Init Init proc with pd: %x\n", init_proc->page_dir);
     printf("esp is %x, mapped to %x\n", init_proc->stack.esp,
-           vir2phy(init_proc->page_dir, init_proc->stack.esp));
-    printf("Entry is %x\n", vir2phy(init_proc->page_dir, init_proc->stack.eip));
+           vir2phy(init_proc->page_dir, (char *)init_proc->stack.esp));
+    printf("Entry is %x\n",
+           vir2phy(init_proc->page_dir, (char *)init_proc->stack.eip));
 
     init_proc->pid        = 1;
     init_proc->status     = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;

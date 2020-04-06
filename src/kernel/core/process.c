@@ -41,7 +41,7 @@ void core_init_proc(struct core_env *env) {
 }
 
 // proc initialized here is running under ring1
-uint init_proc(uint pid, void *entry, u32 page_dir) {
+uint init_proc(uint pid, void *entry, pde_t *page_dir) {
     if ((pid == PROC_INTERRUPT) || (pid == PROC_ANY) ||
         check_bit(proc_bitmap, pid))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
@@ -66,7 +66,7 @@ uint init_proc(uint pid, void *entry, u32 page_dir) {
     proc->stack.eip    = (u32)(entry);
     proc->stack.esp    = (u32)proc->pstack + proc->pstack_size;
     proc->stack.eflags = 0x1202;
-    proc->page_dir     = (u32)KV2P(page_dir);
+    proc->page_dir     = (pde_t *)KV2P(page_dir);
 
     proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
     proc->pid    = pid;

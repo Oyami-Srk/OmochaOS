@@ -25,6 +25,6 @@ static inline void move_to_proc() {
 
 // if provided pid is usable then use, else find a free pid and return it.
 // ret: process' pid
-uint init_proc(uint pid, void *entry, u32 page_dir);
+uint init_proc(uint pid, void *entry, pde_t *page_dir);
 
 #endif // __PROCESS_H__
