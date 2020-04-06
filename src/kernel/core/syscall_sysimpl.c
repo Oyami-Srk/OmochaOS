@@ -102,7 +102,6 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
         sender = &proc_table[recv_from];
         message *send_msg_pa =
             (message *)vir2phy(sender->page_dir, (char *)sender->p_msg);
-        /* message *send_msg_pa = sender->p_msg; */
         if (send_msg_pa && (sender->status & PROC_STATUS_SENDING) &&
             (send_msg_pa->receiver == receiver->pid)) {
             // remove sender from list
@@ -138,7 +137,6 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
     if (sender) {
         message *send_msg_pa =
             (message *)vir2phy(sender->page_dir, (char *)sender->p_msg);
-        /* message *send_msg_pa = sender->p_msg; */
         assert(msg);
         assert(sender->status & PROC_STATUS_SENDING);
         memcpy(msg, send_msg_pa, sizeof(message));

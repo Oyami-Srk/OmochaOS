@@ -291,10 +291,11 @@ void init_memory(struct memory_info *mem) {
 
 // return child proc's pid
 static uint fork_proc(pid_t pid) {
+    process *parent_proc = get_proc(pid);
+    parent_proc->status |= PROC_STATUS_STOP; // stop to wait to be forked
     process *child_proc = alloc_proc();
     if (child_proc == NULL)
         return 0;
-    process *parent_proc   = get_proc(pid);
     child_proc->parent_pid = pid;
     memcpy(&child_proc->stack, &parent_proc->stack, sizeof(stack_frame));
     child_proc->pstack                             = parent_proc->pstack;
@@ -302,7 +303,28 @@ static uint fork_proc(pid_t pid) {
     child_proc->quene_body                         = NULL;
     child_proc->quene_head_sending_to_this_process = NULL;
     // child_proc pmsg is pa of (va of(par pmsg))
+    child_proc->p_msg    = parent_proc->p_msg;
+    child_proc->page_dir = create_page_dir();
 
+    map_pages(child_proc->page_dir, child_proc->pstack,
+              page_alloc(child_proc->pstack_size / PG_SIZE),
+              child_proc->pstack_size, PG_Present | PG_Writeable | PG_User);
+    memcpy(vir2phy(child_proc->page_dir, child_proc->pstack),
+           vir2phy(parent_proc->page_dir, parent_proc->pstack),
+           child_proc->pstack_size);
+
+    message *child_msg =
+        (message *)vir2phy(child_proc->page_dir, (char *)child_proc->p_msg);
+    message *parent_msg =
+        (message *)vir2phy(parent_proc->page_dir, (char *)parent_proc->p_msg);
+
+    printf(" [parent_msg sender is %d, receiver is %d, type is %d ] \n",
+           parent_msg->sender, parent_msg->receiver, parent_msg->type);
+    printf(" [child_msg sender is %d, receiver is %d, type is %d ] \n",
+           child_msg->sender, child_msg->receiver, child_msg->type);
+
+    parent_proc->status &= ~PROC_STATUS_STOP;
+    child_proc->status = parent_proc->status;
     return child_proc->pid;
 }
 
@@ -414,11 +436,11 @@ void Task_Memory(void) {
                 break;          // no child alloc proc failed
             }
             send_msg(&msg); // send to parent_proc
-            kprintf("    Sent to parent    \n");
+            kprintf("    Sent to parent%d    \n", msg.receiver);
             msg.receiver = msg.major;
             msg.major    = 0;
-            /* send_msg(&msg); // send to child proc */
-            kprintf("    Sent to child    \n");
+            send_msg(&msg); // send to child proc
+            kprintf("    Sent to child%d    \n", msg.receiver);
             break;
         default:
             break;
