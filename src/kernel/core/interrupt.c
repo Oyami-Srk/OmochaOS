@@ -1,6 +1,7 @@
 #include "core/interrupt.h"
 #include "core/environment.h"
 #include "core/memory.h"
+#include "core/paging.h"
 #include "driver/graphic.h"
 #include "generic/asm.h"
 #include "lib/stdlib.h"
@@ -37,6 +38,7 @@ extern void *            syscall_table[];
 struct interrupt_method *interrupt_methods;
 uint *                   interrupt_suscribed;
 uint *                   beats;
+extern pde_t             core_page_dir[PDE_SIZE];
 
 static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
@@ -45,13 +47,13 @@ void send_interrupt_msg(uint irq, uint pid) {
     extern size_t proc_count;
     assert(pid < proc_count);
     extern process *proc_table;
-    process *       p = &proc_table[pid];
+    process *       p   = &proc_table[pid];
+    message *       msg = (message *)vir2phy(p->page_dir, (char *)p->p_msg);
     if (p->status & PROC_STATUS_RECEVING) {
-        if (p->p_msg->sender == PROC_ANY ||
-            p->p_msg->sender == PROC_INTERRUPT) {
-            p->p_msg->sender = PROC_INTERRUPT;
-            p->p_msg->type   = MSG_INTERRUPT;
-            p->p_msg->major  = irq;
+        if (msg->sender == PROC_ANY || msg->sender == PROC_INTERRUPT) {
+            msg->sender = PROC_INTERRUPT;
+            msg->type   = MSG_INTERRUPT;
+            msg->major  = irq;
             p->status &= ~PROC_STATUS_RECEVING;
             return;
         }
@@ -158,6 +160,13 @@ void interrupt_handler(stack_frame *intf) {
         EOI_M();
         break;
     case SYSCALL_INT: {
+        pde_t *original_pg_dir = NULL;
+        BOOL   cr3changed      = FALSE;
+        asm volatile("movl %%cr3, %0" : "=r"(original_pg_dir));
+        if (original_pg_dir != KV2P(core_page_dir)) {
+            asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
+            cr3changed = TRUE;
+        }
         volatile int retval = 0;
         asm volatile("push %%edx\n\t"
                      "push %%ebx\n\t"
@@ -170,6 +179,8 @@ void interrupt_handler(stack_frame *intf) {
                      : "r"(syscall_table[intf->eax]), "c"(intf->ecx),
                        "b"(intf->ebx), "d"(intf->edx), "a"(intf)
                      : "memory");
+        if (cr3changed)
+            asm volatile("movl %0, %%cr3" ::"r"(original_pg_dir));
         break;
     }
     default:

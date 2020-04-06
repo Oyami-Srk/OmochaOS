@@ -291,17 +291,26 @@ void init_memory(struct memory_info *mem) {
 
 // return child proc's pid
 static uint fork_proc(pid_t pid) {
-    process *child_proc    = alloc_proc();
+    process *child_proc = alloc_proc();
+    if (child_proc == NULL)
+        return 0;
     process *parent_proc   = get_proc(pid);
     child_proc->parent_pid = pid;
+    memcpy(&child_proc->stack, &parent_proc->stack, sizeof(stack_frame));
+    child_proc->pstack                             = parent_proc->pstack;
+    child_proc->pstack_size                        = parent_proc->pstack_size;
+    child_proc->quene_body                         = NULL;
+    child_proc->quene_head_sending_to_this_process = NULL;
+    // child_proc pmsg is pa of (va of(par pmsg))
 
-    return 1;
+    return child_proc->pid;
 }
 
 extern void init(void); // init.c
 
 static void start_up_init() {
     process *init_proc = get_proc(1);
+    init_proc->status  = PROC_STATUS_STOP;
 
     init_proc->stack.cs = SEL_CODE_DPL1;
     init_proc->stack.ds = SEL_DATA_DPL1;
@@ -326,7 +335,6 @@ static void start_up_init() {
            vir2phy(init_proc->page_dir, (char *)init_proc->stack.eip));
 
     init_proc->pid        = 1;
-    init_proc->status     = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
     init_proc->parent_pid = 0;
 
     extern process **proc_list;  // process.c
@@ -341,11 +349,14 @@ static void start_up_init() {
     init_proc->next = NULL;
     f->next         = init_proc;
     (*proc_count)++;
+    init_proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
 
     printf("Allocated proc is %d\n", init_proc->pid);
 }
 
 void Task_Memory(void) {
+    if (reg_proc("TaskMM") != 0)
+        printf("[MEM] Cannot register as TaskMM\n");
     struct core_env_memory_zone zone[10];
     size_t                   zone_count = query_env(ENV_KEY_MMAP, (ubyte *)zone,
                                   sizeof(struct core_env_memory_zone) * 10);
@@ -395,8 +406,19 @@ void Task_Memory(void) {
             SEND_BACK(msg);
             break;
         case MEM_FORK_PROC:
-            msg.major = fork_proc(msg.sender);
-            SEND_BACK(msg);
+            msg.major    = fork_proc(msg.sender);
+            msg.receiver = msg.sender;
+            if (msg.major == 0) {
+                msg.major = -1;
+                send_msg(&msg); // send to parent proc
+                break;          // no child alloc proc failed
+            }
+            send_msg(&msg); // send to parent_proc
+            kprintf("    Sent to parent    \n");
+            msg.receiver = msg.major;
+            msg.major    = 0;
+            /* send_msg(&msg); // send to child proc */
+            kprintf("    Sent to child    \n");
             break;
         default:
             break;

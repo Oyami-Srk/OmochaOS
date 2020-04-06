@@ -36,7 +36,8 @@ static inline void mem_free_pages(char *block, uint pages) {
 static inline uint fork() {
     uint    task_mem = query_proc("TaskMM");
     message msg;
-    msg.type = MEM_FORK_PROC;
+    msg.type     = MEM_FORK_PROC;
+    msg.receiver = task_mem;
     send_msg(&msg);
     recv_msg(&msg, task_mem);
     return msg.major;

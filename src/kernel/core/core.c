@@ -28,7 +28,7 @@ void SysIdle() {
     }
 }
 
-pde_t entry_page_dir[PDE_SIZE];
+pde_t core_page_dir[PDE_SIZE];
 
 struct core_env core_env;
 
@@ -47,7 +47,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_env.core_space_end = (uint)KP2V(4 * 1024 * 1024); // 4MB
     core_env.gdt_size       = GDT_SIZE;
     core_env.idt_size       = IDT_SIZE;
-    core_env.page_dir       = entry_page_dir;
+    core_env.page_dir       = core_page_dir;
 
     memset((void *)core_env.core_space_start, 0,
            core_env.core_space_end - core_env.core_space_start);
@@ -77,24 +77,25 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     core_init_interrupt(&core_env);
     core_init_proc(&core_env);
 
-    init_proc(0, SysIdle, entry_page_dir);
-    /* init_proc(1, SysIdle, (u32)entry_page_dir); */
+    init_proc(0, SysIdle, core_page_dir);
+    /* init_proc(1, SysIdle, (u32)core_page_dir); */
     set_bit(core_env.proc_bitmap, 1); // leave pid 1 to init
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] < 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
-                      entry_page_dir);
+                      core_page_dir);
     for (uint i = 0; i < __MODULES_COUNT__; i++)
         if (modules_preferred_pid[i] >= 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
-                      entry_page_dir);
+                      core_page_dir);
 
+    kprintf("Jump to process.\n");
     move_to_proc();
     while (1)
         ;
 }
 
 // map 4MB
-__attribute__((__aligned__(PG_SIZE))) pde_t entry_page_dir[PDE_SIZE] = {
+__attribute__((__aligned__(PG_SIZE))) pde_t core_page_dir[PDE_SIZE] = {
     [0]               = (0) | PG_Present | PG_Writeable | PG_PS,
     [KERN_BASE >> 22] = (0) | PG_Present | PG_Writeable | PG_PS};

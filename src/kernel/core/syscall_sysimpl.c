@@ -1,3 +1,4 @@
+#include "core/paging.h"
 #include "core/process.h"
 #include "generic/asm.h"
 #include "generic/typedefs.h"
@@ -12,29 +13,40 @@ uint __get_beats(void) { return beats; }
 
 uint __add(void *caller, uint a, uint b, uint c) { return a + b + c; }
 
+/*
+ *  Notice Process passing to syscall's msg is vaddr
+ *  and proc's p_msg is also to be vaddr
+ *  Need do vir2phy twice
+ */
+
 uint __send_msg(process *sender, message *msg) {
+    message *msg_va = msg;
+    msg             = (message *)vir2phy(sender->page_dir, (char *)msg);
+    assert(msg != NULL);
     msg->sender       = sender->pid;
     process *receiver = &proc_table[msg->receiver];
+    message *recv_msg_pa =
+        (message *)vir2phy(receiver->page_dir, (char *)receiver->p_msg);
     // TODO: check deadlock
 
     assert(msg->receiver != msg->sender);
     if ((receiver->status & PROC_STATUS_RECEVING) &&
-        (receiver->p_msg->ready == 1) &&
-        ((receiver->p_msg->sender == PROC_ANY) ||
-         (receiver->p_msg->sender == sender->pid))) {
+        (recv_msg_pa->ready == 1) &&
+        ((recv_msg_pa->sender == PROC_ANY) ||
+         (recv_msg_pa->sender == sender->pid))) {
         // receiver is ready to receiver a msg from sender
-        memcpy(receiver->p_msg, msg, sizeof(message));
+        assert(recv_msg_pa != NULL);
+        memcpy(recv_msg_pa, msg, sizeof(message));
         receiver->status &= ~PROC_STATUS_RECEVING;
         receiver->status |= PROC_STATUS_NORMAL;
         receiver->status |= PROC_STATUS_RUNNING; // TODO: seperate RUNNING and
                                                  // READY in scheduler
-        receiver->p_msg->ready =
-            0; // process itself donot need check this value as if the proc is
-               // got its message and running
+        recv_msg_pa->ready = 0; // process itself donot need check this value as
+                                // if the proc is got its message and running
     } else {
         // receiver is not ready to receive so copy msg to sender and halt the
         // sender, then append to receiver's quene
-        sender->p_msg = msg;
+        sender->p_msg = msg_va;
         sender->status &= ~PROC_STATUS_NORMAL;
         sender->status |= PROC_STATUS_SENDING;
         process *p = receiver->quene_head_sending_to_this_process;
@@ -53,6 +65,9 @@ uint __send_msg(process *sender, message *msg) {
 }
 
 uint __recv_msg(process *receiver, message *msg, uint recv_from) {
+    message *msg_va = msg;
+    msg             = (message *)vir2phy(receiver->page_dir, (char *)msg);
+    assert(msg != NULL);
     msg->receiver = receiver->pid;
     assert(msg->receiver != recv_from);
     uint     has_received = FALSE;
@@ -70,7 +85,7 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
     if (recv_from == PROC_INTERRUPT) {
         msg->ready      = 1;
         msg->sender     = recv_from;
-        receiver->p_msg = msg;
+        receiver->p_msg = msg_va;
         receiver->status &= ~PROC_STATUS_RUNNING;
         receiver->status |= PROC_STATUS_RECEVING;
         extern void scheduler(void);
@@ -85,8 +100,11 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
         }
     } else {
         sender = &proc_table[recv_from];
-        if ((sender->status & PROC_STATUS_SENDING) &&
-            (sender->p_msg->receiver == receiver->pid)) {
+        message *send_msg_pa =
+            (message *)vir2phy(sender->page_dir, (char *)sender->p_msg);
+        /* message *send_msg_pa = sender->p_msg; */
+        if (send_msg_pa && (sender->status & PROC_STATUS_SENDING) &&
+            (send_msg_pa->receiver == receiver->pid)) {
             // remove sender from list
             process *p = receiver->quene_head_sending_to_this_process;
             if (p == sender) {
@@ -118,17 +136,20 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
     }
 
     if (sender) {
+        message *send_msg_pa =
+            (message *)vir2phy(sender->page_dir, (char *)sender->p_msg);
+        /* message *send_msg_pa = sender->p_msg; */
         assert(msg);
         assert(sender->status & PROC_STATUS_SENDING);
-        memcpy(msg, sender->p_msg, sizeof(message));
+        memcpy(msg, send_msg_pa, sizeof(message));
         sender->p_msg = NULL;
         sender->status &= ~PROC_STATUS_SENDING;
         sender->status |= PROC_STATUS_NORMAL;
         sender->status |= PROC_STATUS_RUNNING;
     } else {
-        receiver->p_msg         = msg;
-        receiver->p_msg->ready  = 1;
-        receiver->p_msg->sender = recv_from;
+        msg->ready      = 1;
+        msg->sender     = recv_from;
+        receiver->p_msg = msg_va;
         receiver->status &= ~PROC_STATUS_RUNNING;
         receiver->status |= PROC_STATUS_RECEVING;
         extern void scheduler(void);

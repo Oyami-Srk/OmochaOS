@@ -1,3 +1,5 @@
+#include "generic/asm.h"
+#include "lib/stdlib.h"
 #include "lib/syscall.h"
 #include "modules/memory.h"
 #include "modules/systask.h"
@@ -6,9 +8,8 @@
 // first actual process
 void init(void) {
     printf("Init Process Start.\n");
-    while (1)
-        ;
-    int ret = fork();
+    /* int ret = fork(); */
+    int ret = 0;
     if (ret)
         printf("I am parent, child is %d\n", ret);
     else

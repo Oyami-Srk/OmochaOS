@@ -13,7 +13,9 @@ void kprintf(const char *fmt, ...) {
     i           = vsprintf(buf, fmt, arg);
     buf[i]      = 0;
     disp_pos    = GRAPHIC_write_color_string_to_vm(
-        disp_pos, COLOR(BLACK, WHITE | BRIGHT), buf);
+        disp_pos, COLOR(GREEN, WHITE | BRIGHT), buf);
+    if (disp_pos >= 80 * 24)
+        disp_pos = 0;
 }
 
 uint GRAPHIC_write_color_string_to_vm(u32 offset, u16 color, const char *str) {

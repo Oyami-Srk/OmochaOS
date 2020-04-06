@@ -27,7 +27,7 @@ stack_top:
 [section .text]
 global _start
 extern core_main
-extern entry_page_dir
+extern core_page_dir
 
 
 
@@ -36,7 +36,7 @@ _start:
     or ecx, 0x10    ; extend page size to 4MByte
     mov cr4, ecx
 
-    mov ecx, entry_page_dir - KERNEL_BASE
+    mov ecx, core_page_dir - KERNEL_BASE
     mov cr3, ecx
     
     mov ecx, cr0
@@ -46,7 +46,7 @@ _start:
     mov ecx, .1
     jmp ecx ; directly jump to higher addr
 .1:
-    ; mov dword [entry_page_dir], 0   ; clear the 0-4M's map
+    ; mov dword [core_page_dir], 0   ; clear the 0-4M's map
     ; mov ecx, cr3
     ; mov cr3, ecx ; reload
 

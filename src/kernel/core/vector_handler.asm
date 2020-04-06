@@ -5,10 +5,11 @@
 [BITS 32]
 [SECTION .text]
 
-extern interrupt_handler    ; define in interrupt.c
-extern proc_running         ; define in process.c
-extern tss                  ; define in protect.c, is a pointer
-; extern interrupt_stack      ; define in interrupt.c
+extern interrupt_handler    ; defined in interrupt.c
+extern proc_running         ; defined in process.c
+extern tss                  ; defined in protect.c, is a pointer
+; extern core_page_dir        ; defined in core.c
+; extern interrupt_stack    ; defined in interrupt.c
 
 interrupt_count dd 1
 interrupt_stack resb 8196 ; 8KB Interrupt stack defined in .text
@@ -36,6 +37,12 @@ vector_handler:
 .non_zero:
     inc dword [interrupt_count]
     push dword ecx ; original stack top
+    ; mov ebx, core_page_dir
+    ; mov edx, cr3
+    ; cmp edx, ebx
+    ; je .same_page_dir
+; .same_page_dir:
+    ; ; mov cr3, ebx ; load global page dir for interrupt
     call interrupt_handler
     add esp, 4
    

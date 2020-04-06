@@ -22,4 +22,5 @@ static inline char *vir2phy(pde_t *pg_dir, char *va) {
     pte_t pte = ((pte_t *)(pde & ~0xFFF))[((unsigned int)va >> 12) & 0x3FF];
     return (char *)((pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
 }
+
 #endif // __PAGING_H__
