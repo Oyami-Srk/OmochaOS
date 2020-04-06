@@ -14,7 +14,7 @@ void kprintf(const char *fmt, ...) {
     buf[i]      = 0;
     disp_pos    = GRAPHIC_write_color_string_to_vm(
         disp_pos, COLOR(GREEN, WHITE | BRIGHT), buf);
-    if (disp_pos >= 80 * 24)
+    if (disp_pos >= 2 * SCREEN_WIDTH * SCREEN_HEIGHT)
         disp_pos = 0;
 }
 

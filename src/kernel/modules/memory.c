@@ -325,6 +325,7 @@ static uint fork_proc(pid_t pid) {
 
     parent_proc->status &= ~PROC_STATUS_STOP;
     child_proc->status = parent_proc->status;
+    kprintf("Proc status is %x\n", parent_proc->status);
     return child_proc->pid;
 }
 
@@ -435,12 +436,13 @@ void Task_Memory(void) {
                 send_msg(&msg); // send to parent proc
                 break;          // no child alloc proc failed
             }
+            kprintf("    Sending to parent%d:%d    \n", msg.receiver,
+                    msg.major);
             send_msg(&msg); // send to parent_proc
-            kprintf("    Sent to parent%d    \n", msg.receiver);
             msg.receiver = msg.major;
             msg.major    = 0;
+            kprintf("    Sending to child%d:%d    \n", msg.receiver, msg.major);
             send_msg(&msg); // send to child proc
-            kprintf("    Sent to child%d    \n", msg.receiver);
             break;
         default:
             break;
