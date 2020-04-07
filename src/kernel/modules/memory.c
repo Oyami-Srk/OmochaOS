@@ -314,6 +314,7 @@ static uint fork_proc(pid_t pid) {
            child_proc->pstack_size);
 
     parent_proc->status &= ~PROC_STATUS_STOP;
+    printf("ProcStatus: %x\n", parent_proc->status);
     child_proc->status = parent_proc->status;
 
     return child_proc->pid;

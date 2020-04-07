@@ -299,6 +299,7 @@ void SysTask() {
                 SEND_BACK(msg);
                 break;
             }
+            set_bit(core_env.proc_bitmap, pid);
             process *proc = &core_env.proc_table[pid];
             proc->status  = PROC_STATUS_STOP;
             if (core_env.proc_list) {
