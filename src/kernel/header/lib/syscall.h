@@ -6,6 +6,7 @@
 
 #define SYSCALL_INT   0xE9
 #define MSG_INTERRUPT 0x7FFFFFFF
+#define MSG_EXCEPTION 0x7EEEEEEE
 #ifndef PROC_ANY
 #define PROC_ANY 0xFFFFFFFE
 #endif

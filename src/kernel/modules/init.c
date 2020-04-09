@@ -7,22 +7,15 @@
 
 // first actual process
 void init(void) {
-    /* printf("Init Process Start.\n"); */
-    /* int ret = fork(); */
-    int ret = 0;
-    if (ret)
-        printf("I am parent, child is %d\n", ret);
-    else {
-        printf("I am child.\n");
-        /* int ret2 = fork(); */
-        int ret2 = 0;
-        if (ret2 == 0) {
-            printf("I am child's child.\n");
-        } else {
-            printf("I am still child, my child pid is %d\n", ret2);
-        }
+    delay_ms(2000);
+    printf("[INIT] Init Process Start.\n");
+    uint *x = (uint *)0x3123000;
+    printf("Access %x: ", x);
+    *x = 1234;
+    printf(" %d", *x);
+    while (1) {
+        uint s  = 0;
+        int  cp = wait(&s);
+        printf("[INIT] Child %d exited with status %d.\n", cp, s);
     }
-
-    while (1)
-        ;
 }

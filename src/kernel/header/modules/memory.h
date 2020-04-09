@@ -7,9 +7,11 @@
 #define PG_SIZE 0x1000
 #endif
 
-#define MEM_ALLOC_PAGES 1
-#define MEM_FREE_PAGES  2
-#define MEM_FORK_PROC   3
+#define MEM_ALLOC_PAGES  1
+#define MEM_FREE_PAGES   2
+#define MEM_FORK_PROC    3
+#define MEM_DESTROY_PROC 4
+#define MEM_WAIT_PROC    5
 
 static inline char *mem_alloc_pages(uint pages) {
     uint    task_mem = query_proc("TaskMM");
@@ -33,13 +35,8 @@ static inline void mem_free_pages(char *block, uint pages) {
     recv_msg(&msg, task_mem);
 }
 
-static inline uint fork() {
-    uint    task_mem = query_proc("TaskMM");
-    message msg;
-    msg.type     = MEM_FORK_PROC;
-    msg.receiver = task_mem;
-    send_msg(&msg);
-    recv_msg(&msg, task_mem);
-    return msg.major;
-}
+uint fork();
+int  wait(uint *);
+void exit(uint);
+
 #endif // __MODULE_MEMORY__

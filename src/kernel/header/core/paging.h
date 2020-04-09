@@ -8,6 +8,8 @@
 #define PG_User      0x04
 #define PG_PS        0x80
 
+#define PG_OS_SYS 0x200
+
 #define PG_SIZE     0x1000 // 4KB
 #define PDE_SIZE    0x1000
 #define PTE_PER_PDE 1024

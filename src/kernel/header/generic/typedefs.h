@@ -79,6 +79,7 @@ struct __process {
     char        name[16];
     char *      pstack;
     size_t      pstack_size;
+    uint        exit_status;
 
     message *p_msg;
     // quene is :

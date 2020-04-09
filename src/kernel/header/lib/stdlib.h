@@ -21,8 +21,10 @@ extern void panic_proto(const char *str, const char *s_fn, const char *b_fn,
 #define assert(exp)
 #endif
 
-#define MIN(a, b) ((a) > (b) ? (b) : (a))
-#define MAX(a, b) ((a) < (b) ? (b) : (a))
-#define NULL      0
+#define MIN(a, b)            ((a) > (b) ? (b) : (a))
+#define MAX(a, b)            ((a) < (b) ? (b) : (a))
+#define NULL                 0
+#define ROUNDUP_WITH(s, a)   (((a) + (s)-1) & ~((s)-1))
+#define ROUNDDOWN_WITH(s, a) (((a)) & ~((s)-1))
 
 #endif // __STDLIB_H__

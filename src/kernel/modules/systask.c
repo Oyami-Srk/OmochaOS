@@ -24,7 +24,7 @@ module:
 
 extern struct core_env core_env;
 
-static int __reg_proc(uint pid, char *name) {
+static int __reg_proc(pid_t pid, char *name) {
     for (uint i = 0; i < core_env.proc_count; i++)
         if (strcmp(name, core_env.proc_table[i].name) == 0 && i != pid)
             return -1;
@@ -33,13 +33,13 @@ static int __reg_proc(uint pid, char *name) {
     return 0;
 }
 
-static void __unreg_proc(uint pid) {
+static void __unreg_proc(pid_t pid) {
     memset(core_env.proc_table[pid].name, 0,
            sizeof(core_env.proc_table[pid].name));
 }
 
 static uint __query_proc(const char *name) {
-    uint pid = 0;
+    pid_t pid = 0;
     for (process *p = core_env.proc_list; p != NULL; p = p->next) {
         if (strcmp(name, p->name) == 0) {
             pid = p->pid;
@@ -140,6 +140,26 @@ void SysTask() {
             msg.major                               = 0;
             SEND_BACK(msg);
             break;
+        case REG_EXC_MSG:
+            if (msg.major >= EXCEPTION_COUNT)
+                panic("Cannot suscribe an exception bigger than 32");
+            if (core_env.exception_suscribed[msg.major] != 0)
+                panic("Someone has suscribed this exc");
+            core_env.exception_suscribed[msg.major] = msg.sender;
+            msg.major                               = 0;
+            SEND_BACK(msg);
+            break;
+        case UNREG_EXC_MSG:
+            if (msg.major >= EXCEPTION_COUNT)
+                panic("Cannot unsuscribe an exception bigger than 32");
+            if (core_env.exception_suscribed[msg.major] == 0)
+                panic("Cannot unsuscribe an unsuscribed exception");
+            if (core_env.exception_suscribed[msg.major] != msg.sender)
+                panic("Cannot unsuscribe exception not suscribe by you");
+            core_env.exception_suscribed[msg.major] = 0;
+            msg.major                               = 0;
+            SEND_BACK(msg);
+            break;
         case PEEK_MSG:
             if (core_env.proc_table[msg.sender]
                     .quene_head_sending_to_this_process != NULL)
@@ -217,32 +237,30 @@ void SysTask() {
             }
             break;
         case EXIT_PROC: {
-            __unreg_proc(msg.sender);
+            pid_t pid = msg.major;
+            // actually proc should exit after unreg everything itself
+            // just a insurance
+            __unreg_proc(pid);
             for (uint i = 0; i < HW_IRQ_COUNT; i++) {
                 // unreg and unsus int
-                if (core_env.interrupt_suscribed[i] == msg.sender)
+                if (core_env.interrupt_suscribed[i] == pid)
                     core_env.interrupt_suscribed[i] = 0;
-                if (core_env.interrupt_methods[i].pid == msg.sender) {
+                if (core_env.interrupt_methods[i].pid == pid) {
                     core_env.interrupt_methods[i].pid   = 0;
                     core_env.interrupt_methods[i].avail = FALSE;
                     core_env.interrupt_methods[i].func  = NULL;
                 }
             }
-            clear_bit(core_env.proc_bitmap, msg.sender);
-            uint proc_stack = (uint)core_env.proc_table[msg.sender].pstack;
-            if (proc_stack <
-                core_env.core_space_free_end) // core free stack is managed by
-                                              // memory.c
+            clear_bit(core_env.proc_bitmap, pid);
+            uint proc_stack = (uint)core_env.proc_table[pid].pstack;
+            if (proc_stack != NULL &&
+                proc_stack <
+                    core_env.core_space_free_end) // core free stack is managed
+                                                  // by memory.c
                 kfree((char *)proc_stack);
-            else {
-                ; // free stack by memory modules
-            }
-            // free page dir
-            pde_t *proc_pd = core_env.proc_table[msg.sender].page_dir;
-            // if proc_pd's reference is 1 free it
-            // call memory module to free page dir
+
             core_env.proc_count--;
-            process *target = &core_env.proc_table[msg.sender];
+            process *target = &core_env.proc_table[pid];
             process *p      = core_env.proc_list;
 
             if (target == p) {
@@ -261,39 +279,15 @@ void SysTask() {
                 ff->next = target->next;
             }
 
-            memset(&core_env.proc_table[msg.sender], 0, sizeof(process));
+            memset(&core_env.proc_table[pid], 0, sizeof(process));
             break;
-        }
-        case MODIFY_PROC: {
-            uint   KEY   = msg.major;
-            uint   major = msg.data.uint_arr.d1;
-            ubyte *buf =
-                (ubyte *)vir2phy(core_env.proc_table[msg.sender].page_dir,
-                                 (char *)msg.data.uint_arr.d2);
-            size_t buf_size = msg.data.uint_arr.d3;
-            uint   pid      = msg.data.uint_arr.d4;
-            // check sender's privilige
-            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
-                panic("NO Permission to modify proc.");
-            switch (KEY) {
-            case MOD_PROC_CR3: {
-                core_env.proc_table[pid].page_dir = (pte_t *)major;
-                msg.major                         = 0;
-                break;
-            }
-            default:
-                msg.major = 0xFFFFFFFF;
-                break;
-            }
-            break;
-            SEND_BACK(msg);
         }
         case ALLOC_PROC: {
             // check sender's privilige
             if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
                 panic("NO Permission to alloc proc.");
-            uint pid = find_first_unset_bit(core_env.proc_bitmap,
-                                            core_env.proc_bitmap_size);
+            pid_t pid = find_first_unset_bit(core_env.proc_bitmap,
+                                             core_env.proc_bitmap_size);
             if (pid == 0xFFFFFFFF) {
                 msg.major = NULL;
                 SEND_BACK(msg);
@@ -333,6 +327,14 @@ void SysTask() {
             char *paddr = vir2phy(core_env.proc_table[msg.major].page_dir,
                                   (char *)msg.data.uint_arr.d1);
             msg.major   = (uint)paddr;
+            SEND_BACK(msg);
+            break;
+        }
+        case GET_PROC_LIST_HEAD: {
+            // check sender's privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
+                panic("NO Permission to get proc list head.");
+            msg.major = (uint)&core_env.proc_list[0];
             SEND_BACK(msg);
             break;
         }

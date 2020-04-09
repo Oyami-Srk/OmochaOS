@@ -1,3 +1,4 @@
+#include "core/interrupt.h"
 #include "core/paging.h"
 #include "core/process.h"
 #include "generic/asm.h"
@@ -8,6 +9,11 @@
 
 extern uint     beats;
 extern process *proc_table; // TODO: not hardcode
+
+extern uint *                 exception_suscribed;
+extern struct interrupt_data *exception_suscribed_data;
+extern uint *                 interrupt_suscribed;
+extern struct interrupt_data *interrupt_suscribed_data;
 
 uint __get_beats(void) { return beats; }
 
@@ -75,10 +81,54 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
 
     if (receiver->status & PROC_STATUS_GOTINT &&
         (recv_from == PROC_INTERRUPT || recv_from == PROC_ANY)) {
+        pid_t pid        = receiver->pid;
+        uint  irq        = 0;
+        BOOL  has_second = FALSE;
+        for (uint i = 0; i < HW_IRQ_COUNT; i++) {
+            if (interrupt_suscribed_data[i].avail == TRUE) {
+                if (irq) {
+                    has_second = TRUE;
+                    break;
+                }
+                irq = i;
+            }
+        }
+        if (!irq)
+            panic("No interrupt with a interrupt status.");
         msg->type   = MSG_INTERRUPT;
-        msg->major  = MSG_INTERRUPT;
+        msg->major  = irq;
         msg->sender = PROC_INTERRUPT;
-        receiver->status &= ~PROC_STATUS_GOTINT;
+        if (!has_second)
+            receiver->status &= ~PROC_STATUS_GOTINT;
+        interrupt_suscribed_data[irq].avail = FALSE;
+        return 0;
+    }
+
+    if (receiver->status & PROC_STATUS_GOTEXC &&
+        (recv_from == PROC_INTERRUPT || recv_from == PROC_ANY)) {
+        pid_t pid        = receiver->pid;
+        uint  exc        = 0;
+        uint  data       = 0;
+        BOOL  has_second = FALSE;
+        for (uint i = 0; i < EXCEPTION_COUNT; i++) {
+            if (exception_suscribed_data[i].avail == TRUE) {
+                if (exc) {
+                    has_second = TRUE;
+                    break;
+                }
+                exc  = i;
+                data = exception_suscribed_data[i].data;
+            }
+        }
+        if (!exc)
+            panic("No interrupt with a interrupt status.");
+        msg->type             = MSG_EXCEPTION;
+        msg->major            = exc;
+        msg->data.uint_arr.d1 = data;
+        msg->sender           = PROC_INTERRUPT;
+        if (!has_second)
+            receiver->status &= ~PROC_STATUS_GOTEXC;
+        exception_suscribed_data[exc].avail = FALSE;
         return 0;
     }
 

@@ -28,6 +28,8 @@ unsigned int sys_mapping[][3] = {
 #define PAGE_TYPE_HARDWARE 0x08
 #define PAGE_TYPE_FREE     0x10
 #define PAGE_TYPE_INUSE    0x20
+#define PAGE_TYPE_PGTBL    0x40
+#define PAGE_TYPE_USER     0x80
 
 struct page {
     unsigned int type;
@@ -55,12 +57,13 @@ struct memory_info {
     struct page *pages_info;
 };
 
-#define GET_PAGE_BY_ID(mem, id) (((mem)->memory_start + ((id)*PG_SIZE)))
+#define GET_PAGE_BY_ID(mem, id)   (((mem)->memory_start + ((id)*PG_SIZE)))
+#define GET_ID_BY_PAGE(mem, page) ((page - ((mem)->memory_start)) / PG_SIZE)
 
 struct memory_info mem_info;
 // in pages, not in bytes
-#define page_alloc(pages)                                                      \
-    allocate_pages_of_power_2(&mem_info, round_up_power_2(pages))
+#define page_alloc(pages, attr)                                                \
+    allocate_pages_of_power_2(&mem_info, round_up_power_2(pages), attr)
 #define page_free(p, pages)                                                    \
     free_pages_of_power_2(&mem_info, (char *)p, round_up_power_2(pages))
 
@@ -125,32 +128,54 @@ static inline int xor_buddy_map(struct memory_info *mem, char *p, uint order) {
     return check_bit(mem->buddy_map[order], page_idx >> (order + 1));
 }
 
-static char *allocate_pages_of_power_2(struct memory_info *mem, uint order) {
+static void set_page_attr(struct memory_info *mem, char *page, size_t pg_count,
+                          uint attr) {
+    for (uint i = 0; i < pg_count; i++)
+        mem->pages_info[GET_ID_BY_PAGE(mem, ((uint)page + i * PG_SIZE))].type =
+            attr;
+}
+
+static void clear_page_info(struct memory_info *mem, char *page,
+                            size_t pg_count, uint attr) {
+    for (uint i = 0; i < pg_count; i++) {
+        struct page *p =
+            &mem->pages_info[GET_ID_BY_PAGE(mem, ((uint)page + i * PG_SIZE))];
+        p->type      = attr;
+        p->vaddr     = 0;
+        p->reference = 0;
+    }
+}
+
+static char *allocate_pages_of_power_2(struct memory_info *mem, uint order,
+                                       uint attr) {
     if (order >= MAX_ORDER)
         return NULL;
     char *block = NULL;
     if (mem->free_count[order] == 0) {
-        block = allocate_pages_of_power_2(mem, order + 1);
+        block = allocate_pages_of_power_2(mem, order + 1, 0);
+        if (block == NULL)
+            return NULL;
         attach_to_free_list(mem, (block_list *)block, order);
         mem->free_count[order]++;
-        // printf("= PUT %x into order %d free list =\n", block);
+        /* printf("= PUT %x into order %d free list =\n", block); */
         block += ((1 << order) * PG_SIZE);
         xor_buddy_map(mem, block, order); // higher half is returned
-        return block;
     } else {
         block =
             (char *)remove_from_free_list(mem, mem->free_list[order], order);
         mem->free_count[order]--;
         xor_buddy_map(mem, block, order);
-        return block;
     }
-    return NULL;
+    if (block != NULL)
+        set_page_attr(mem, block, 1 << order, attr);
+    return block;
 }
 
-static void free_pages_of_power_2(struct memory_info *mem, char *p,
-                                  uint order) {
+static int free_pages_of_power_2(struct memory_info *mem, char *p, uint order) {
     if (p == NULL)
-        return;
+        return 1; // free a NULL block
+    if (!((uint)p >= mem->memory_start && (uint)p <= mem->usable_end))
+        return 2; // free a block not managed by us
     uint buddy_bit = xor_buddy_map(mem, p, order);
     if (buddy_bit == 0 && order + 1 < MAX_ORDER) {
         char *buddy               = NULL;
@@ -169,8 +194,10 @@ static void free_pages_of_power_2(struct memory_info *mem, char *p,
             free_pages_of_power_2(mem, p, order + 1);
     } else {
         attach_to_free_list(mem, (block_list *)p, order);
+        clear_page_info(mem, p, 1 << order, PAGE_TYPE_USABLE | PAGE_TYPE_FREE);
         mem->free_count[order]++;
     }
+    return 0;
 }
 
 void print_free_info(struct memory_info *mem) {
@@ -180,6 +207,9 @@ void print_free_info(struct memory_info *mem) {
     printf("\n[MEM] ");
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%04d, ", mem->free_count[i]);
+    printf("\n[MEM ]");
+    for (uint i = 0; i < MAX_ORDER; i++)
+        printf("0x%x,", mem->free_list[i]);
     printf("\n");
 }
 
@@ -193,38 +223,89 @@ static pte_t *get_pte(pde_t *page_dir, void *va) {
     return &pg_tab[((uint)va >> 12) & 0x3FF];
 }
 
-static pte_t *create_page_table(pde_t *page_dir, void *va) {
+static pte_t *create_page_table(pde_t *page_dir, void *va, uint pde_attr) {
     pte_t *pte = get_pte(page_dir, va);
-    if (pte)
+    pde_t *pde = &page_dir[(uint)va >> 22];
+    if (pte) {
+        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)(*pde & ~0xFFF))]
+            .reference++;
         return pte;
-    pde_t *pde    = &page_dir[(uint)va >> 22];
-    pte_t *pg_tab = (pte_t *)page_alloc(1);
+    }
+    pte_t *pg_tab = (pte_t *)page_alloc(1, PAGE_TYPE_INUSE | PAGE_TYPE_PGTBL);
     if (pg_tab == NULL)
         return NULL;
+    // if reference not 1, it definitly wrong
+    mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pg_tab)].reference = 1;
     memset(pg_tab, 0, PG_SIZE);
     // memory proc cr3 is directly mapped, no need for V2P
-    *pde = (uint)pg_tab | PG_Present | PG_Writeable | PG_User;
+    *pde = (uint)pg_tab | PG_Present | pde_attr;
     return &pg_tab[((uint)va >> 12) & 0x3FF];
 }
 
 // size in bytes
 static int map_pages(pde_t *page_dir, void *va, void *pa, size_t size,
                      uint pte_attr) {
-    va         = (void *)PGROUNDDOWN((uint)va);
-    void * end = (void *)PGROUNDDOWN(((uint)va) + size - 1);
-    pte_t *pte = NULL;
+    va              = (void *)PGROUNDDOWN((uint)va);
+    void * end      = (void *)PGROUNDDOWN(((uint)va) + size - 1);
+    pte_t *pte      = NULL;
+    uint   pde_attr = PG_Present | PG_User | PG_Writeable;
+    if (pte_attr & PG_OS_SYS)
+        pde_attr = PG_Present | PG_OS_SYS;
+    /* printf("Map %x-%x to %x\n", va, end, pa); */
     for (; (uint)va <= (uint)end; va += PG_SIZE, pa += PG_SIZE) {
-        if ((pte = create_page_table(page_dir, va)) == NULL)
+        if ((pte = create_page_table(page_dir, va, pde_attr)) == NULL)
             return -1;
         if (*pte & PG_Present)
             panic("memory remap");
         *pte = (uint)pa | PG_Present | pte_attr;
+        if ((uint)pa < mem_info.memory_start || (uint)pa > mem_info.usable_end)
+            continue;
+        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].reference++;
+        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].vaddr = va;
     }
     return 0;
 }
 
+// size in bytes
+static int unmap_pages(pde_t *page_dir, void *va, size_t size) {
+    va                   = (void *)PGROUNDDOWN((uint)va);
+    void * end           = (void *)PGROUNDDOWN(((uint)va) + size - 1);
+    pte_t *pte           = NULL;
+    uint   contiunos_pte = 0;
+    for (; (uint)va <= (uint)end; va += PG_SIZE) {
+        mem_info
+            .pages_info[GET_ID_BY_PAGE(&mem_info,
+                                       (uint)(vir2phy(page_dir, va)))]
+            .reference--;
+        pte = get_pte(page_dir, va);
+        if (!(*pte & PG_Present))
+            panic("memory not map");
+        char *pa = (char *)((*pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
+        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].reference--;
+        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].vaddr = 0;
+
+        *pte = 0;
+        if (((uint)va & 0x3FF000) == 0)
+            contiunos_pte = 0;
+        contiunos_pte++;
+        if (contiunos_pte == PTE_PER_PDE) {
+            // free 1024 pte entities, then free the page dir
+            pde_t *pde = &page_dir[(uint)va >> 22];
+            if (!(*pde & PG_Present))
+                panic("page dir entity not mapped wtf?");
+            pte_t *pg_tab = (pte_t *)((*pde) & ~0xFFF);
+            if (--mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pg_tab)]
+                      .reference == 0)
+                page_free(pg_tab, 1);
+            contiunos_pte = 0;
+        }
+    }
+
+    return 0;
+}
+
 static pde_t *create_page_dir(void) {
-    pde_t *page_dir = (pde_t *)page_alloc(1);
+    pde_t *page_dir = (pde_t *)page_alloc(1, PAGE_TYPE_INUSE | PAGE_TYPE_PGTBL);
     if (page_dir == NULL)
         return NULL;
     memset(page_dir, 0, PG_SIZE);
@@ -232,7 +313,7 @@ static pde_t *create_page_dir(void) {
     for (uint i = 0; i < sys_map_size; i++)
         map_pages(page_dir, (void *)sys_mapping[i][1],
                   (void *)sys_mapping[i][0], sys_mapping[i][2],
-                  PG_Present | PG_Writeable);
+                  PG_Present | PG_OS_SYS);
     /* page_dir[KERN_BASE >> 22] = 0 | PG_Present | PG_PS; */
     return page_dir;
 }
@@ -250,14 +331,21 @@ void init_memory(struct memory_info *mem) {
     mem->page_count     = pg_count;
     uint buddy_total_bits =
         ((1 << (MAX_ORDER)) - 1) * pg_count / (1 << MAX_ORDER);
-    size_t buddy_bytes = buddy_total_bits / 8;
-    mem->usable_end = PGROUNDDOWN(mem->memory_end - buddy_bytes - pg_info_size);
-    mem->pages_info = (struct page *)(mem->usable_end);
+    size_t buddy_bytes    = buddy_total_bits / 8;
+    uint   max_block_size = (1 << (MAX_ORDER - 1)) * PG_SIZE;
+    mem->usable_end       = ROUNDDOWN_WITH(
+        max_block_size, (mem->memory_end - buddy_bytes - pg_info_size));
+    mem->pages_info    = (struct page *)(mem->usable_end);
     mem->buddy_map[0]  = (bitset *)(mem->memory_end - buddy_bytes);
     mem->free_list[0]  = (block_list *)NULL;
     mem->free_count[0] = 0;
-    printf("[MEM] Init buddy map on 0x%x, size %d bytes.\n", mem->usable_end,
-           mem->memory_end - mem->usable_end);
+    printf("[MEM] Init buddy map on 0x%x, size %d bytes.\n", mem->buddy_map,
+           buddy_bytes);
+    printf("[MEM] Init pages info on %x, size %d bytes.\n", mem->pages_info,
+           pg_info_size);
+    printf("[MEM] Total occupied mem size: %d bytes(%d megabytes).\n",
+           mem->memory_end - mem->usable_end,
+           (mem->memory_end - mem->usable_end) / 1024 / 1024);
     memset((void *)mem->usable_end, 0, mem->memory_end - mem->usable_end);
     for (uint i = 0; i < MAX_ORDER - 1; i++) {
         mem->buddy_map[i + 1] =
@@ -265,8 +353,7 @@ void init_memory(struct memory_info *mem) {
         mem->free_list[i + 1]  = (block_list *)NULL;
         mem->free_count[i + 1] = 0;
     }
-    uint  max_block_size = (1 << (MAX_ORDER - 1)) * PG_SIZE;
-    void *pg             = NULL;
+    void *pg = NULL;
     for (pg = (void *)mem->memory_start; pg < (void *)mem->usable_end;
          pg += max_block_size) {
         // free max block first
@@ -285,7 +372,7 @@ void init_memory(struct memory_info *mem) {
     }
     printf("[MEM] Initialized. Total %d pages. 4M Block Count: %d.\n", pg_count,
            mem->free_count[MAX_ORDER - 1]);
-    /* print_free_info(mem); */
+    print_free_info(mem);
     return;
 }
 
@@ -305,19 +392,108 @@ static uint fork_proc(pid_t pid) {
     // child_proc pmsg is pa of (va of(par pmsg))
     child_proc->p_msg    = parent_proc->p_msg;
     child_proc->page_dir = create_page_dir();
-
     map_pages(child_proc->page_dir, child_proc->pstack,
-              page_alloc(child_proc->pstack_size / PG_SIZE),
+              page_alloc(child_proc->pstack_size / PG_SIZE,
+                         PAGE_TYPE_INUSE | PAGE_TYPE_USER),
               child_proc->pstack_size, PG_Present | PG_Writeable | PG_User);
     memcpy(vir2phy(child_proc->page_dir, child_proc->pstack),
            vir2phy(parent_proc->page_dir, parent_proc->pstack),
            child_proc->pstack_size);
 
     parent_proc->status &= ~PROC_STATUS_STOP;
-    printf("ProcStatus: %x\n", parent_proc->status);
     child_proc->status = parent_proc->status;
 
     return child_proc->pid;
+}
+
+static process *set_proc_exit(pid_t pid, uint exit_status) {
+    process *proc     = get_proc(pid);
+    proc->exit_status = exit_status;
+    proc->status      = PROC_STATUS_HANGING | PROC_STATUS_STOP;
+    return proc;
+}
+
+static void send_exit_to_parent(process *proc) {
+    message msg;
+    msg.type             = 0x12344321;
+    msg.major            = proc->exit_status;
+    msg.data.uint_arr.d1 = proc->pid;
+    msg.receiver         = proc->parent_pid;
+    send_msg(&msg);
+    exit_proc(proc->pid);
+}
+
+static void free_proc(struct memory_info *mem, process *proc) {
+    char * pstack  = proc->pstack;
+    size_t ps_size = proc->pstack_size;
+    if ((uint)pstack >= mem->memory_start && (uint)pstack <= mem->usable_end) {
+        unmap_pages(proc->page_dir, pstack, ps_size);
+        page_free(pstack, ps_size / PG_SIZE);
+        proc->pstack = NULL;
+    }
+    // unmap others
+    for (uint i = 0; i < 1024; i++) {
+        if ((proc->page_dir[i] & PG_Present) &&
+            !(proc->page_dir[i] & PG_OS_SYS)) {
+            pte_t *ptes = (pte_t *)(proc->page_dir[i] & ~0xFFF);
+            for (uint j = 0; j < PTE_PER_PDE; j++) {
+                if (ptes[j] & PG_Present)
+                    unmap_pages(proc->page_dir, (void *)(ptes[j] & ~0xFFF),
+                                PG_SIZE);
+            }
+        }
+    }
+    // free others
+
+    if (proc->parent_pid == 0)
+        panic(" Init proc cannot exit. ");
+    process *parent_proc = get_proc(proc->parent_pid);
+    if (parent_proc->status & PROC_STATUS_WATING) {
+        parent_proc->status &= ~PROC_STATUS_WATING;
+        send_exit_to_parent(proc);
+    } else {
+        proc->status |= PROC_STATUS_HANGING;
+    }
+
+    process *p    = get_proc_list_head();
+    process *init = get_proc(1);
+    while (p) {
+        if (p->parent_pid == proc->pid) {
+            p->parent_pid = 1; // assign to init proc
+            if ((p->status & PROC_STATUS_HANGING) &&
+                (init->status & PROC_STATUS_WATING)) {
+                init->status &= ~PROC_STATUS_WATING;
+                send_exit_to_parent(p);
+            }
+        }
+        p = p->next;
+    }
+}
+
+void wait_proc(pid_t parent_pid) {
+    process *parent_proc = get_proc(parent_pid);
+    process *p           = get_proc_list_head();
+    uint     children    = 0;
+    while (p) {
+        if (p->parent_pid == parent_pid) {
+            children++;
+            if (p->status & PROC_STATUS_HANGING) {
+                send_exit_to_parent(p);
+                return;
+            }
+        }
+        p = p->next;
+    }
+
+    if (children)
+        parent_proc->status |= PROC_STATUS_WATING;
+    else {
+        message msg;
+        msg.type     = 0x43211234;
+        msg.major    = 1;
+        msg.receiver = parent_pid;
+        send_msg(&msg);
+    }
 }
 
 extern void init(void); // init.c
@@ -333,10 +509,15 @@ static void start_up_init() {
     init_proc->stack.gs = SEL_DATA_DPL1;
     init_proc->stack.ss = SEL_DATA_DPL1;
 
-    init_proc->stack.eip   = (u32)init;
-    init_proc->pstack      = page_alloc(2); // 8KB
+    init_proc->stack.eip = (u32)init;
+    init_proc->pstack = page_alloc(2, PAGE_TYPE_INUSE | PAGE_TYPE_USER); // 8KB
     init_proc->pstack_size = 2 * PG_SIZE;
     init_proc->stack.esp = (uint)init_proc->pstack + init_proc->pstack_size - 1;
+    if (init_proc->stack.esp >= mem_info.usable_end) {
+        printf("\n\n  Allocation overflow!  \n\n");
+        panic("Allocation overflow!");
+    }
+    printf("usable end is %x\n", mem_info.usable_end);
     init_proc->stack.eflags = 0x1202;
     init_proc->page_dir     = create_page_dir();
     map_pages((pde_t *)init_proc->page_dir, init_proc->pstack,
@@ -368,9 +549,20 @@ static void start_up_init() {
     printf("Allocated proc is %d\n", init_proc->pid);
 }
 
+void do_page_fault(stack_frame *intf) {
+    uint va = intf->trap_no;
+    kprintf("Proc %d triggered PageFault with cr2 as %x.\n",
+            ((process *)intf)->pid, va);
+    map_pages(((process *)intf)->page_dir, (char *)va,
+              page_alloc(1, PG_User | PG_Writeable | PG_Present), PG_SIZE,
+              PG_User | PG_Writeable | PG_Present);
+    ((process *)intf)->status &= ~PROC_STATUS_ERROR;
+}
+
 void Task_Memory(void) {
     if (reg_proc("TaskMM") != 0)
         printf("[MEM] Cannot register as TaskMM\n");
+    reg_exc_msg(EXCEPTION_PF);
     struct core_env_memory_zone zone[10];
     size_t                   zone_count = query_env(ENV_KEY_MMAP, (ubyte *)zone,
                                   sizeof(struct core_env_memory_zone) * 10);
@@ -401,15 +593,23 @@ void Task_Memory(void) {
     // 系统映射在0x80000000之后的4MB内，这是全局的映射，用户进程有此map但是不能访问（权限过低）
 
     start_up_init(); // system startup
+    /* printf("Sizeof proc is %d bytes\n", sizeof(process)); */
+    extern struct core_env core_env;
+    printf("Process total: %d\n", core_env.proc_max);
 
     message msg;
     while (1) {
         recv_msg(&msg, PROC_ANY);
         switch (msg.type) {
+        case MSG_EXCEPTION:
+            if (msg.major == 14)
+                do_page_fault((stack_frame *)msg.data.uint_arr.d1);
+            break;
         case MEM_ALLOC_PAGES:
             // TODO: alloc and map pages, use proc's cr3 V2P
             msg.major = (uint)allocate_pages_of_power_2(
-                &mem_info, round_up_power_2(msg.major));
+                &mem_info, round_up_power_2(msg.major),
+                PAGE_TYPE_INUSE | PAGE_TYPE_USER);
             SEND_BACK(msg);
             break;
         case MEM_FREE_PAGES:
@@ -432,6 +632,15 @@ void Task_Memory(void) {
             msg.major    = 0;
             send_msg(&msg); // send to child proc
             break;
+        case MEM_DESTROY_PROC: {
+            pid_t proc = msg.sender;
+            free_proc(&mem_info, set_proc_exit(msg.sender, msg.major));
+            break;
+        }
+        case MEM_WAIT_PROC: {
+            wait_proc(msg.sender);
+            break;
+        }
         default:
             break;
         }

@@ -91,7 +91,8 @@ uint init_proc(uint pid, void *entry, pde_t *page_dir) {
 
 #define UNRUNABLE                                                              \
     (PROC_STATUS_RECEVING | PROC_STATUS_SENDING | PROC_STATUS_SUSPEND |        \
-     PROC_STATUS_STOP | PROC_STATUS_ERROR)
+     PROC_STATUS_STOP | PROC_STATUS_ERROR | PROC_STATUS_WATING |               \
+     PROC_STATUS_HANGING)
 
 void scheduler(void) {
     if (!proc_running)

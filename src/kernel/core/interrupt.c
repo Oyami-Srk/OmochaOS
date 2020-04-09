@@ -29,21 +29,22 @@ const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#MF: x87 Floating-Point Exception",
                                    "#AC: Alignment Check",
                                    "#MC: Machine Check",
-                                   "#XF: SIMD Floating-Point Exception"
-
-};
+                                   "#XF: SIMD Floating-Point Exception"};
 
 extern uint              vector_table[];
 extern void *            syscall_table[];
 struct interrupt_method *interrupt_methods;
+uint *                   exception_suscribed;
+struct interrupt_data *  exception_suscribed_data;
 uint *                   interrupt_suscribed;
+struct interrupt_data *  interrupt_suscribed_data;
 uint *                   beats;
 extern pde_t             core_page_dir[PDE_SIZE];
 
 static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
 static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
-void send_interrupt_msg(uint irq, uint pid) {
+void send_interrupt_msg(uint irq, pid_t pid) {
     extern size_t proc_count;
     assert(pid < proc_count);
     extern process *proc_table;
@@ -59,6 +60,29 @@ void send_interrupt_msg(uint irq, uint pid) {
         }
     }
     p->status |= PROC_STATUS_GOTINT;
+    interrupt_suscribed_data[irq].avail = TRUE;
+    interrupt_suscribed_data[irq].data  = irq;
+}
+
+void send_exception_msg(uint exception, uint data, pid_t pid) {
+    extern size_t proc_count;
+    assert(pid < proc_count);
+    extern process *proc_table;
+    process *       p   = &proc_table[pid];
+    message *       msg = (message *)vir2phy(p->page_dir, (char *)p->p_msg);
+    if (p->status & PROC_STATUS_RECEVING) {
+        if (msg->sender == PROC_ANY || msg->sender == PROC_INTERRUPT) {
+            msg->sender           = PROC_INTERRUPT;
+            msg->type             = MSG_EXCEPTION;
+            msg->major            = exception;
+            msg->data.uint_arr.d1 = data;
+            p->status &= ~PROC_STATUS_RECEVING;
+            return;
+        }
+    }
+    p->status |= PROC_STATUS_GOTEXC;
+    exception_suscribed_data[exception].avail = TRUE;
+    exception_suscribed_data[exception].data  = data;
 }
 
 void init_8259A() {
@@ -110,9 +134,12 @@ void core_init_interrupt(struct core_env *env) {
     /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
     /* memset(interrupt_methods, 0, */
     /* sizeof(struct interrupt_method) * HW_IRQ_COUNT); */
-    interrupt_suscribed = env->interrupt_suscribed;
-    interrupt_methods   = env->interrupt_methods;
-    beats               = &env->beats; // TODO: not use pointer anyway
+    interrupt_suscribed      = env->interrupt_suscribed;
+    interrupt_methods        = env->interrupt_methods;
+    exception_suscribed      = env->exception_suscribed;
+    exception_suscribed_data = env->exception_suscribed_data;
+    interrupt_suscribed_data = env->interrupt_suscribed_data;
+    beats                    = &env->beats; // TODO: not use pointer anyway
     asm("sti");
 }
 
@@ -120,7 +147,26 @@ extern void     scheduler();
 extern process *proc_running;
 
 void interrupt_handler(stack_frame *intf) {
-    if (intf->trap_no <= 19) {
+    pde_t *original_pg_dir = NULL;
+    asm volatile("movl %%cr3, %0" : "=r"(original_pg_dir));
+    if (original_pg_dir != KV2P(core_page_dir)) {
+        asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
+    }
+
+    if (intf->trap_no < EXCEPTION_COUNT) {
+        if (exception_suscribed[intf->trap_no]) {
+            ((process *)intf)->status &= PROC_STATUS_ERROR;
+            uint trap_no = intf->trap_no;
+            switch (trap_no) {
+            case EXCEPTION_PF:
+                asm volatile("movl %%cr2, %0\n\t" : "=r"(intf->trap_no));
+                break;
+            }
+            send_exception_msg(trap_no, (uint)intf,
+                               exception_suscribed[trap_no]);
+            scheduler();
+            return;
+        }
         cli();
         GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
                                          "                    "
@@ -128,8 +174,13 @@ void interrupt_handler(stack_frame *intf) {
                                          "                    "
                                          "                   ");
         char buf[128];
-        sprintf(buf, "Exception %s in proc %d",
-                exception_message[intf->trap_no], proc_running->pid);
+        sprintf(buf,
+                "Exception %s with err_code %d in proc %d\n"
+                "Proc esp: 0x%x, eip: 0x%x (va)\n"
+                "Proc status: 0x%x\n",
+                exception_message[intf->trap_no], intf->err_code,
+                proc_running->pid, proc_running->stack.esp,
+                proc_running->stack.eip, proc_running->status);
         GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, RED), buf);
         magic_break();
         while (1)
@@ -152,6 +203,7 @@ void interrupt_handler(stack_frame *intf) {
             EOI_M();
             EOI_S();
         }
+        return;
     }
     switch (intf->trap_no) {
     case IRQ_TIMER:
@@ -160,13 +212,6 @@ void interrupt_handler(stack_frame *intf) {
         EOI_M();
         break;
     case SYSCALL_INT: {
-        pde_t *original_pg_dir = NULL;
-        BOOL   cr3changed      = FALSE;
-        asm volatile("movl %%cr3, %0" : "=r"(original_pg_dir));
-        if (original_pg_dir != KV2P(core_page_dir)) {
-            asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
-            cr3changed = TRUE;
-        }
         volatile int retval = 0;
         asm volatile("push %%edx\n\t"
                      "push %%ebx\n\t"
@@ -179,8 +224,6 @@ void interrupt_handler(stack_frame *intf) {
                      : "r"(syscall_table[intf->eax]), "c"(intf->ecx),
                        "b"(intf->ebx), "d"(intf->edx), "a"(intf)
                      : "memory");
-        if (cr3changed)
-            asm volatile("movl %0, %%cr3" ::"r"(original_pg_dir));
         break;
     }
     default:

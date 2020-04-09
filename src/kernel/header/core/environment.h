@@ -59,6 +59,9 @@ struct core_env {
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
     uint                    interrupt_suscribed[HW_IRQ_COUNT];
+    uint                    exception_suscribed[EXCEPTION_COUNT];
+    struct interrupt_data   interrupt_suscribed_data[HW_IRQ_COUNT];
+    struct interrupt_data   exception_suscribed_data[EXCEPTION_COUNT];
 
     struct core_env_memory_zone memory_zone[MEMORY_ZONE_MAX];
     uint                        memory_zone_count;

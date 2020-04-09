@@ -1,5 +1,6 @@
 #include "driver/misc.h"
 #include "lib/stdlib.h"
+#include "modules/memory.h"
 #include "modules/systask.h"
 
 uint query_proc(const char *name) {
@@ -40,4 +41,35 @@ int printf(const char *fmt, ...) {
     send_msg(&msg);
     recv_msg(&msg, task_tty);
     return strlen(buf);
+}
+
+uint fork() {
+    uint    task_mem = query_proc("TaskMM");
+    message msg;
+    msg.type     = MEM_FORK_PROC;
+    msg.receiver = task_mem;
+    send_msg(&msg);
+    recv_msg(&msg, task_mem);
+    return msg.major;
+}
+
+void exit(uint status) {
+    uint    task_mem = query_proc("TaskMM");
+    message msg;
+    msg.type     = MEM_DESTROY_PROC;
+    msg.major    = status;
+    msg.receiver = task_mem;
+    send_msg(&msg);
+    recv_msg(&msg, task_mem); // halt process
+}
+
+int wait(uint *status) {
+    uint    task_mem = query_proc("TaskMM");
+    message msg;
+    msg.type     = MEM_WAIT_PROC;
+    msg.receiver = task_mem;
+    send_msg(&msg);
+    recv_msg(&msg, task_mem);
+    *status = msg.major;
+    return msg.type == 0x12344321 ? msg.data.uint_arr.d1 : -1;
 }

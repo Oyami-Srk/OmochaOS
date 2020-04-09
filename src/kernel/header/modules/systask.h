@@ -8,21 +8,23 @@
 
 #define QUERY_PROC_TIMEOUT 5000 // in ms
 
-#define GET_TICKS      1
-#define REG_PROC       2
-#define UNREG_PROC     3
-#define QUERY_PROC     4
-#define REG_INT_FUNC   5
-#define UNREG_INT_FUNC 6
-#define REG_INT_MSG    7
-#define UNREG_INT_MSG  8
-#define PEEK_MSG       9
-#define QUERY_ENV      10
-#define EXIT_PROC      11
-#define MODIFY_PROC    12
-#define ALLOC_PROC     13
-#define GET_PROC       14
-#define PROC_VIR2PHY   15
+#define GET_TICKS          1
+#define REG_PROC           2
+#define UNREG_PROC         3
+#define QUERY_PROC         4
+#define REG_INT_FUNC       5
+#define UNREG_INT_FUNC     6
+#define REG_INT_MSG        7
+#define UNREG_INT_MSG      8
+#define PEEK_MSG           9
+#define QUERY_ENV          10
+#define EXIT_PROC          11
+#define GET_PROC_LIST_HEAD 12
+#define ALLOC_PROC         13
+#define GET_PROC           14
+#define PROC_VIR2PHY       15
+#define REG_EXC_MSG        16
+#define UNREG_EXC_MSG      17
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -97,10 +99,30 @@ static inline uint reg_int_msg(uint irq) {
     return msg.major;
 }
 
-static inline uint unreg_int_msg() {
+static inline uint unreg_int_msg(uint irq) {
     message msg;
     msg.type     = UNREG_INT_MSG;
+    msg.major    = irq;
     msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return msg.major;
+}
+static inline uint reg_exc_msg(uint exc) {
+    message msg;
+    msg.type     = REG_EXC_MSG;
+    msg.receiver = SYSTASK_PID;
+    msg.major    = exc;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return msg.major;
+}
+
+static inline uint unreg_exc_msg(uint exc) {
+    message msg;
+    msg.type     = UNREG_EXC_MSG;
+    msg.receiver = SYSTASK_PID;
+    msg.major    = exc;
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return msg.major;
@@ -133,29 +155,13 @@ static inline uint query_env(unsigned int KEY, ubyte *buf, size_t buf_size) {
     return msg.major;
 }
 
-static inline uint exit_proc() {
+static inline uint exit_proc(pid_t pid) {
     message msg;
     msg.type     = EXIT_PROC;
+    msg.major    = pid;
     msg.receiver = SYSTASK_PID;
     send_msg(&msg);
-    return 0; // actually you cannot run into this line
-}
-
-#define MOD_PROC_CR3 1
-
-static inline uint modify_proc(uint pid, uint KEY, uint major, ubyte *buf,
-                               size_t buf_size) {
-    message msg;
-    msg.type             = MODIFY_PROC;
-    msg.receiver         = SYSTASK_PID;
-    msg.major            = KEY;
-    msg.data.uint_arr.d1 = (uint)major;
-    msg.data.uint_arr.d2 = (uint)buf;
-    msg.data.uint_arr.d3 = (uint)buf_size;
-    msg.data.uint_arr.d4 = (uint)pid;
-    send_msg(&msg);
-    recv_msg(&msg, SYSTASK_PID);
-    return msg.major;
+    return 0;
 }
 
 // return a free proc slot with pid set
@@ -168,7 +174,7 @@ static inline process *alloc_proc() {
     return (process *)msg.major;
 }
 
-static inline process *get_proc(uint pid) {
+static inline process *get_proc(pid_t pid) {
     message msg;
     msg.type     = GET_PROC;
     msg.major    = pid;
@@ -187,6 +193,15 @@ static inline char *proc_vir2phy(pid_t pid, char *va) {
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return (char *)msg.major;
+}
+
+static inline process *get_proc_list_head() {
+    message msg;
+    msg.type     = GET_PROC_LIST_HEAD;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+    return (process *)msg.major;
 }
 
 #endif // __MODULE_SYSTASK_H__
