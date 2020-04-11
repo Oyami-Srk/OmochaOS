@@ -19,6 +19,8 @@
 #define PROC_ANY       0xFFFFFFFE
 #define PROC_INTERRUPT 0xFFFFFFFF
 
+#define PROC_STACK_SIZE (8192) // 8KB
+
 static inline void move_to_proc() {
     extern process *proc_running;
     extern void     vector_handler_ret(void);

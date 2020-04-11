@@ -1,11 +1,3 @@
-/*
-module:
-  name: TTY
-  author: Shiroko
-  summary: TTY process
-  entry: Task_TTY
-*/
-
 #include "core/process.h"
 #include "driver/graphic.h"
 #include "kbd.h"

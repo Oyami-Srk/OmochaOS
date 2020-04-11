@@ -1,12 +1,3 @@
-/*
-module:
-  name: SysTask
-  author: Shiroko
-  summary: System Task's process
-  entry: SysTask
-  preferred_pid: 2
-*/
-
 #include "modules/systask.h"
 #include "core/environment.h"
 #include "core/interrupt.h"

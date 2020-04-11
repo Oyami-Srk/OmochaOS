@@ -13,11 +13,16 @@ all: pre-build kernel
 create_dirs:
 	@$(MKDIR) -p $(KERNEL_BUILD)
 	@$(MKDIR) -p $(foreach n, $(SRC_DIRS), $(KERNEL_BUILD)/$(n))
+	@$(MKDIR) -p $(foreach n, $(MODULES_DIRS), $(KERNEL_BUILD)/$(n))
 
 .PHONY: pre-build
 pre-build: create_dirs generate_sources
 
 OBJS = $(foreach n, $(SRC_DIRS), $(patsubst %, $(KERNEL_BUILD)/$(n)/%.o, $(basename $(notdir $(wildcard $(n)/*.c) $(wildcard $(n)/*.asm)))))
+MODULES_DIRS = $(sort $(dir $(wildcard modules/*/)))
+MODULES_SRCS = $(foreach n, $(MODULES_DIRS), $(wildcard $(n)*.c))
+MODULES_OBJS = $(foreach n, $(MODULES_SRCS), $(patsubst %, $(KERNEL_BUILD)/%.o, $(basename $(n))))
+OBJS += $(MODULES_OBJS)
 
 $(KERNEL_BUILD)/%.o: %.c
 	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
@@ -34,7 +39,7 @@ $(KERNEL_BUILD)/%.d: %.c
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
 	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS)
 
-LIBOS_OBJS = lib/string lib/rbtree lib/stdlib modules/libos
+LIBOS_OBJS = lib/string lib/rbtree lib/stdlib lib/libos
 LIBOS_OBJS := $(foreach o,$(LIBOS_OBJS),$(KERNEL_BUILD)/$(o).o)
 
 $(BUILD)/libos.a: $(LIBOS_OBJS)

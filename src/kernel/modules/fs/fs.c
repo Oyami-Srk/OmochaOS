@@ -1,11 +1,3 @@
-/*
-module:
-  name: FS
-  author: Shiroko
-  summary: FS Process
-  entry: Task_FS
-*/
-
 #include "modules/fs.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"

@@ -1,10 +1,3 @@
-/*
-module:
-  name: HD
-  author: Shiroko
-  summary: HD Process
-  entry: Task_HD
-*/
 #include "modules/hd.h"
 #include "core/interrupt.h"
 #include "core/process.h"

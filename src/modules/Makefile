@@ -34,7 +34,7 @@ $(MODULES_BUILD)/%.d: %.c
 #	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS)
 
 $(MODULES_BUILD)/%.out: $(MODULES_BUILD)/%/*.o
-	$(LD) -m elf_i386 -Ttext 0x100000 -o $@ $^ $(LIBOS) $(LIBCRT0)
+	$(LD) -m elf_i386 -Ttext 0x0 -o $@ $^ $(LIBOS) $(LIBCRT0)
 	$(CP) $@ $(ROOT_DIR)/$*.out
 
 modules: $(LIBCRT0) $(OBJS) $(MODS_OUT)

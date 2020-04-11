@@ -8,11 +8,20 @@
 // first actual process
 void init(void) {
     delay_ms(2000);
+    process *p;
     printf("[INIT] Init Process Start.\n");
-    uint *x = (uint *)0x3123000;
-    printf("Access %x: ", x);
-    *x = 1234;
-    printf(" %d", *x);
+
+    int ret = fork();
+    if (ret) {
+        printf("I am parent, child pid is %d\n", ret);
+    } else {
+        printf("I am child.\n");
+        magic_break();
+    }
+    printf("....%d\n", ret);
+
+    while (1)
+        ;
     while (1) {
         uint s  = 0;
         int  cp = wait(&s);

@@ -40,6 +40,7 @@ static inline uint send_msg(message *msg) {
 }
 
 static inline uint recv_msg(message *msg, uint recv_from) {
+    msg->major = 0;
     volatile uint rv;
     asm volatile("movl %%ecx, %%ecx\n\t" ::"c"(msg));
     asm volatile("movl %%ebx, %%ebx\n\t" ::"b"(recv_from));

@@ -1,0 +1,5 @@
+module:
+  name: HD
+  author: Shiroko
+  summary: HD Process
+  entry: Task_HD

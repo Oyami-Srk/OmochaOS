@@ -1,10 +1,3 @@
-/*
-module:
-  name: Memory
-  author: Shiroko
-  summary: Memory Process
-  entry: Task_Memory
-*/
 #include "core/memory.h"
 #include "core/environment.h"
 #include "core/paging.h"
@@ -17,6 +10,7 @@ module:
 #include "modules/systask.h"
 #include "modules/tty.h"
 
+// sys_mapping pa should not contained in free memory
 unsigned int sys_mapping[][3] = {
     // paddr, vaddr, page size
     /* {0, 0, PG_SIZE * 1024}, */
@@ -34,8 +28,6 @@ unsigned int sys_mapping[][3] = {
 struct page {
     unsigned int type;
     int          reference;
-    void *       vaddr;
-    int          reserv;
 };
 
 struct _block_list {
@@ -141,7 +133,6 @@ static void clear_page_info(struct memory_info *mem, char *page,
         struct page *p =
             &mem->pages_info[GET_ID_BY_PAGE(mem, ((uint)page + i * PG_SIZE))];
         p->type      = attr;
-        p->vaddr     = 0;
         p->reference = 0;
     }
 }
@@ -259,9 +250,8 @@ static int map_pages(pde_t *page_dir, void *va, void *pa, size_t size,
             panic("memory remap");
         *pte = (uint)pa | PG_Present | pte_attr;
         if ((uint)pa < mem_info.memory_start || (uint)pa > mem_info.usable_end)
-            continue;
+            continue; // not set page info for memory not managed by us
         mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].reference++;
-        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].vaddr = va;
     }
     return 0;
 }
@@ -273,16 +263,18 @@ static int unmap_pages(pde_t *page_dir, void *va, size_t size) {
     pte_t *pte           = NULL;
     uint   contiunos_pte = 0;
     for (; (uint)va <= (uint)end; va += PG_SIZE) {
-        mem_info
-            .pages_info[GET_ID_BY_PAGE(&mem_info,
-                                       (uint)(vir2phy(page_dir, va)))]
-            .reference--;
         pte = get_pte(page_dir, va);
-        if (!(*pte & PG_Present))
+        if (!(*pte & PG_Present)) {
             panic("memory not map");
-        char *pa = (char *)((*pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
-        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].reference--;
-        mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)].vaddr = 0;
+            return 1;
+        }
+        char *pa  = (char *)((*pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
+        uint  ref = mem_info.pages_info[GET_ID_BY_PAGE(&mem_info, (uint)pa)]
+                       .reference--;
+        if (ref == 1) {
+            free_pages_of_power_2(&mem_info, pa, 0);
+            kprintf("Free.");
+        }
 
         *pte = 0;
         if (((uint)va & 0x3FF000) == 0)
@@ -310,11 +302,43 @@ static pde_t *create_page_dir(void) {
         return NULL;
     memset(page_dir, 0, PG_SIZE);
     size_t sys_map_size = sizeof(sys_mapping) / sizeof(sys_mapping[0]);
-    for (uint i = 0; i < sys_map_size; i++)
-        map_pages(page_dir, (void *)sys_mapping[i][1],
-                  (void *)sys_mapping[i][0], sys_mapping[i][2],
-                  PG_Present | PG_OS_SYS);
+    // sysmap is not writeable for users
+    for (uint i = 0; i < sys_map_size; i++) {
+        char * va   = (char *)sys_mapping[i][1];
+        char * pa   = (char *)sys_mapping[i][0];
+        size_t size = sys_mapping[i][2];
+        if ((((uint)va & 0x3FFFFF) == 0) &&
+            size % (PG_SIZE * PTE_PER_PDE) == 0) {
+            // could use extened page size
+            char *end = va + size;
+            for (; va < end;
+                 va += PG_SIZE * PTE_PER_PDE, pa += PG_SIZE * PTE_PER_PDE)
+                page_dir[(uint)va >> 22] =
+                    ((uint)pa) | PG_Present | PG_OS_SYS | PG_PS;
+
+        } else {
+            map_pages(page_dir, va, pa, size, PG_Present | PG_OS_SYS);
+        }
+    }
     /* page_dir[KERN_BASE >> 22] = 0 | PG_Present | PG_PS; */
+    return page_dir;
+}
+
+static pde_t *copy_page_dir(pde_t *parent) {
+    uint start_pde_i =
+        ROUNDDOWN_WITH(PG_SIZE * PTE_PER_PDE, mem_info.memory_start) >> 22;
+    uint end_pde_i =
+        ROUNDDOWN_WITH(PG_SIZE * PTE_PER_PDE, mem_info.usable_end) >> 22;
+    for (uint i = start_pde_i; i <= end_pde_i; i++) {
+        if (parent[i] & PG_Present)
+            parent[i] &= ~PG_Writeable; // clear writeable for dir ent
+    }
+
+    pde_t *page_dir = (pde_t *)page_alloc(1, PAGE_TYPE_INUSE | PAGE_TYPE_PGTBL);
+    if (page_dir == NULL)
+        return NULL;
+    memcpy(page_dir, parent, PG_SIZE);
+    kprintf("Page dir copied.\n");
     return page_dir;
 }
 
@@ -368,7 +392,6 @@ void init_memory(struct memory_info *mem) {
             mem->pages_info[i].type = PAGE_TYPE_FREE | PAGE_TYPE_USABLE;
         else
             mem->pages_info[i].type = PAGE_TYPE_INUSE | PAGE_TYPE_SYSTEM;
-        mem->pages_info[i].vaddr = (void *)0xFFFFFFFF;
     }
     printf("[MEM] Initialized. Total %d pages. 4M Block Count: %d.\n", pg_count,
            mem->free_count[MAX_ORDER - 1]);
@@ -390,15 +413,26 @@ static uint fork_proc(pid_t pid) {
     child_proc->quene_body                         = NULL;
     child_proc->quene_head_sending_to_this_process = NULL;
     // child_proc pmsg is pa of (va of(par pmsg))
-    child_proc->p_msg    = parent_proc->p_msg;
-    child_proc->page_dir = create_page_dir();
+    child_proc->p_msg = parent_proc->p_msg;
+    /* child_proc->page_dir = create_page_dir(); */
+    child_proc->page_dir = copy_page_dir(parent_proc->page_dir);
     map_pages(child_proc->page_dir, child_proc->pstack,
-              page_alloc(child_proc->pstack_size / PG_SIZE,
-                         PAGE_TYPE_INUSE | PAGE_TYPE_USER),
+              /*
+                page_alloc(child_proc->pstack_size / PG_SIZE,
+                           PAGE_TYPE_INUSE | PAGE_TYPE_USER),
+                           */
+              vir2phy(parent_proc->page_dir, parent_proc->pstack),
               child_proc->pstack_size, PG_Present | PG_Writeable | PG_User);
+    message *msg = parent_proc->p_msg;
+    if (msg) { // parpare for child if msg is set
+        char *msg_start_pg = (char *)PGROUNDDOWN((uint)msg);
+        char *msg_end_pg   = (char *)PGROUNDUP((uint)msg);
+    }
+    /*
     memcpy(vir2phy(child_proc->page_dir, child_proc->pstack),
            vir2phy(parent_proc->page_dir, parent_proc->pstack),
            child_proc->pstack_size);
+           */
 
     parent_proc->status &= ~PROC_STATUS_STOP;
     child_proc->status = parent_proc->status;
@@ -428,7 +462,8 @@ static void free_proc(struct memory_info *mem, process *proc) {
     size_t ps_size = proc->pstack_size;
     if ((uint)pstack >= mem->memory_start && (uint)pstack <= mem->usable_end) {
         unmap_pages(proc->page_dir, pstack, ps_size);
-        page_free(pstack, ps_size / PG_SIZE);
+        /* page_free(pstack, ps_size / PG_SIZE); */ // page free if unmap
+                                                    // reference is 0
         proc->pstack = NULL;
     }
     // unmap others
@@ -499,8 +534,10 @@ void wait_proc(pid_t parent_pid) {
 extern void init(void); // init.c
 
 static void start_up_init() {
-    process *init_proc = get_proc(1);
-    init_proc->status  = PROC_STATUS_STOP;
+    char *   pstack_top    = (char *)KERN_BASE;
+    char *   pstack_bottom = (char *)(KERN_BASE - PROC_STACK_SIZE);
+    process *init_proc     = get_proc(1);
+    init_proc->status      = PROC_STATUS_STOP;
 
     init_proc->stack.cs = SEL_CODE_DPL1;
     init_proc->stack.ds = SEL_DATA_DPL1;
@@ -509,25 +546,16 @@ static void start_up_init() {
     init_proc->stack.gs = SEL_DATA_DPL1;
     init_proc->stack.ss = SEL_DATA_DPL1;
 
-    init_proc->stack.eip = (u32)init;
-    init_proc->pstack = page_alloc(2, PAGE_TYPE_INUSE | PAGE_TYPE_USER); // 8KB
-    init_proc->pstack_size = 2 * PG_SIZE;
-    init_proc->stack.esp = (uint)init_proc->pstack + init_proc->pstack_size - 1;
-    if (init_proc->stack.esp >= mem_info.usable_end) {
-        printf("\n\n  Allocation overflow!  \n\n");
-        panic("Allocation overflow!");
-    }
-    printf("usable end is %x\n", mem_info.usable_end);
+    init_proc->stack.eip    = (u32)init;
+    init_proc->pstack       = pstack_bottom;
+    char *stack             = page_alloc(PROC_STACK_SIZE / PG_SIZE,
+                             PAGE_TYPE_INUSE | PAGE_TYPE_USER); // 8KB
+    init_proc->pstack_size  = PROC_STACK_SIZE;
+    init_proc->stack.esp    = (uint)pstack_top;
     init_proc->stack.eflags = 0x1202;
     init_proc->page_dir     = create_page_dir();
-    map_pages((pde_t *)init_proc->page_dir, init_proc->pstack,
-              init_proc->pstack, init_proc->pstack_size,
-              PG_Present | PG_Writeable | PG_User);
-    printf("Init Init proc with pd: %x\n", init_proc->page_dir);
-    printf("esp is %x, mapped to %x\n", init_proc->stack.esp,
-           vir2phy(init_proc->page_dir, (char *)init_proc->stack.esp));
-    printf("Entry is %x\n",
-           vir2phy(init_proc->page_dir, (char *)init_proc->stack.eip));
+    map_pages((pde_t *)init_proc->page_dir, init_proc->pstack, stack,
+              init_proc->pstack_size, PG_Present | PG_Writeable | PG_User);
 
     init_proc->pid        = 1;
     init_proc->parent_pid = 0;
@@ -545,17 +573,19 @@ static void start_up_init() {
     f->next         = init_proc;
     (*proc_count)++;
     init_proc->status = PROC_STATUS_RUNNING | PROC_STATUS_NORMAL;
-
-    printf("Allocated proc is %d\n", init_proc->pid);
 }
 
 void do_page_fault(stack_frame *intf) {
     uint va = intf->trap_no;
     kprintf("Proc %d triggered PageFault with cr2 as %x.\n",
             ((process *)intf)->pid, va);
+
+    magic_break();
+    // test
     map_pages(((process *)intf)->page_dir, (char *)va,
               page_alloc(1, PG_User | PG_Writeable | PG_Present), PG_SIZE,
               PG_User | PG_Writeable | PG_Present);
+
     ((process *)intf)->status &= ~PROC_STATUS_ERROR;
 }
 

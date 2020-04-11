@@ -22,6 +22,11 @@ def parse_c_file(fn: str) -> dict:
     return yaml.load(yaml_str, Loader=yaml.FullLoader)
 
 
+def read_yaml(fn: str) -> dict:
+    with open(fn, "r") as f:
+        return yaml.load(f.read(), Loader=yaml.FullLoader)
+
+
 def generate_from_yaml(obj: dict) -> str:
     if ("module" not in obj.keys()):
         return ""
@@ -34,11 +39,14 @@ def iter_c_files_in_dir(dir: str):
     files = os.listdir(dir)
     modules = []
     for f in files:
-        if not os.path.isdir(f):
-            if os.path.splitext(f)[-1] == ".c":
+        if os.path.isdir(f):
+            if os.path.exists(f + "/module.yaml"):
                 try:
                     modules.append(
-                        generate_from_yaml(parse_c_file(dir + '/' + f)))
+                        generate_from_yaml(
+                            read_yaml(f+"/module.yaml")
+                        )
+                    )
                 except Exception as e:
                     import sys
                     print(e, file=sys.stderr)
@@ -99,8 +107,7 @@ def generate_header_file(fn: str, modules: list, dryrun: bool):
 if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser(
-        description=
-        "Automaticly generate function protos from .c files's definitions")
+        description="Automaticly generate function protos from .c files's definitions")
     parser.add_argument('-m',
                         '--modules',
                         dest='MODS',
