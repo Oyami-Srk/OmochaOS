@@ -248,7 +248,7 @@ void SysTask() {
                 proc_stack <
                     core_env.core_space_free_end) // core free stack is managed
                                                   // by memory.c
-                kfree((char *)proc_stack);
+                kfree_pages((char *)proc_stack);
 
             core_env.proc_count--;
             process *target = &core_env.proc_table[pid];

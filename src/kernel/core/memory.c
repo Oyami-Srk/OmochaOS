@@ -10,7 +10,7 @@
 list *freemem;
 
 // free pages
-void kfree(char *p) {
+void kfree_pages(char *p) {
     list *current;
     // only free page higher then Kernel's end and lower than 0xE00000 in phy.
     // and p must be start of a page.
@@ -29,7 +29,7 @@ void kfree(char *p) {
 }
 
 // allocate pages
-char *kalloc(size_t pages) {
+char *kalloc_pages(size_t pages) {
     list *current;
     current = freemem;
     if (current)
@@ -88,5 +88,5 @@ void core_init_memory(struct core_env *env) {
     // align to higher addr than vstart
     void *p = (void *)((uint)(vstart + PG_SIZE - 1) & ~(PG_SIZE - 1));
     for (; p + PG_SIZE <= vend; p += PG_SIZE)
-        kfree(p);
+        kfree_pages(p);
 }

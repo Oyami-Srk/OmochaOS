@@ -16,7 +16,7 @@
 extern volatile char _KERN_VEND[];
 #define KERN_VEND (((void *)(_KERN_VEND)))
 
-void  kfree(char *p);
-char *kalloc(size_t pages);
+void  kfree_pages(char *p);
+char *kalloc_pages(size_t pages);
 
 #endif // __MEMORY_H__

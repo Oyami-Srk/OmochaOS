@@ -18,4 +18,10 @@ struct _rb_tree {
 typedef struct _rb_node rb_node;
 typedef struct _rb_tree rb_tree;
 
+rb_node *rb_search(rb_node *x, uint key);
+int      rb_insert(rb_tree *t, rb_node *n);
+void     rb_remove(rb_tree *t, rb_node *n);
+rb_node *rb_succ(rb_node *n);
+rb_node *rb_pred(rb_node *n);
+
 #endif // __RBTREE_H__

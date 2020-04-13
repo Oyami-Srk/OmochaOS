@@ -127,7 +127,7 @@ void rb_insert_fixup(rb_tree *t, rb_node *n) {
     }
 }
 
-void rb_insert(rb_tree *t, rb_node *n) {
+int rb_insert(rb_tree *t, rb_node *n) {
     SET_COLOR(n, RB_RED);
     /* insert like BST */
     rb_node *x = t->root;
@@ -136,7 +136,7 @@ void rb_insert(rb_tree *t, rb_node *n) {
     else
         while (x != NULL) {
             if (x->key == n->key)
-                return; // update value
+                return 1; // key already exists
             else if (x->key > n->key) {
                 if (x->L == NULL) {
                     x->L = n;
@@ -155,6 +155,7 @@ void rb_insert(rb_tree *t, rb_node *n) {
     /* END insert like BST */
     rb_insert_fixup(t, n);
     SET_COLOR(t->root, RB_BLACK); // root is always black
+    return 0;
 }
 
 rb_node *rb_succ(rb_node *n) {

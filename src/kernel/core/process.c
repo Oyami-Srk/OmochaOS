@@ -53,7 +53,7 @@ uint init_proc(uint pid, void *entry, pde_t *page_dir) {
     set_bit(proc_bitmap, pid);
     (*proc_count)++;
 
-    proc->pstack      = (char *)kalloc(0);
+    proc->pstack      = (char *)kalloc_pages(0);
     proc->pstack_size = PG_SIZE;
 
     proc->stack.cs = SEL_CODE_DPL1;
