@@ -71,7 +71,27 @@ kmem_pool *insert_to_pool(kmem_pool *pool, char *p, size_t size) {
 // remove a existing node and put it successor
 // trust p as a valid node in pool's tree
 // so we can just save O(log2(n)) for this func
-kmem_pool *remove_from_pool(kmem_pool *pool, rb_node *p, size_t size) {
+kmem_pool *remove_from_pool(kmem_pool *pool, rb_node *p) {
+    struct kmem_block *next_block = (struct kmem_block *)(p + sizeof(rb_node));
+    rb_remove(&pool->free_tree, p);
+    if (next_block->cookie == COOKIE_MEM_NEXT_BLOCK) {
+        struct kmem_block *mb = next_block->mem.next_free;
+        if (mb->cookie != COOKIE_MEM_FREE_BLOCK) {
+            panic("mem cookie not match to free block");
+            magic_break();
+        }
+        struct kmem_block *mb_next = mb->mem.next_free;
+        memset(mb, 0, sizeof(struct kmem_block));
+        ((rb_node *)mb)->key = mb->size + kmem_block_head_size;
+        rb_insert(&pool->free_tree, (rb_node *)mb);
+        struct kmem_block *mb_n = (struct kmem_block *)(mb + sizeof(rb_node));
+        memset(mb_n, 0, sizeof(struct kmem_block));
+
+        if (mb_next) {
+            mb_n->cookie        = COOKIE_MEM_NEXT_BLOCK;
+            mb_n->mem.next_free = mb_next;
+        }
+    }
     return pool;
 }
 
@@ -102,9 +122,59 @@ void init_memory_pool(struct memory_info *mem, size_t pool_size) {
     memory_pool = pools;
 }
 
+rb_node *rb_search_upper(rb_node *x, uint key) {
+    rb_node *closet = NULL;
+    while (x != NULL) {
+        if (x->key == key)
+            break;
+        if (x->key > key) {
+            if (!closet)
+                closet = x;
+            else if (closet->key > x->key)
+                closet = x;
+            x = x->L;
+        } else
+            x = x->R;
+    }
+    if (x->key == key)
+        return x;
+    else
+        return closet;
+}
+
 char *kmalloc(size_t size) {
-    ;
-    return NULL;
+    size += kmem_block_head_size;
+    size                 = ROUNDUP_WITH(16, size); // 16 byte aligned
+    size_t     used_size = size;
+    kmem_pool *pool      = memory_pool;
+    rb_node *  node      = NULL;
+    while (pool) {
+        node = rb_search_upper(pool->free_tree.root, size);
+        if (node == NULL)
+            pool = pool->next_pool;
+    }
+    if (node == NULL)
+        return NULL;
+    remove_from_pool(memory_pool, node);
+
+    size_t remaining_size = 0;
+    if (node->key - size < 16)
+        used_size = node->key;
+    else
+        remaining_size = node->key - size;
+
+    if (remaining_size) {
+        insert_to_pool(pool, (char *)(node + size), remaining_size);
+    }
+
+    struct kmem_block *mb = (struct kmem_block *)node;
+    memset(mb, 0, sizeof(struct kmem_block));
+    mb->pool   = pool;
+    mb->size   = used_size;
+    mb->cookie = COOKIE_MEM_INUSE_BLOCK;
+    // return (char *)(node + kmem_block_head_size); // this code should be
+    // equal to below one
+    return (char *)(&mb->mem.mem);
 }
 
 void kfree(char *p) {
