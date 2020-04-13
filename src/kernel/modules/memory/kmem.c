@@ -36,7 +36,7 @@ const size_t max_block_size = (1 << (MAX_ORDER - 1)) * PG_SIZE;
 
 kmem_pool *memory_pool;
 
-kmem_pool *insert_to_pool(kmem_pool *pool, char *p, size_t size) {
+static kmem_pool *insert_to_pool(kmem_pool *pool, char *p, size_t size) {
     ((rb_node *)p)->key = size;
     int is_key_exists   = rb_insert(&pool->free_tree, (rb_node *)p);
     if (is_key_exists) {
@@ -71,7 +71,7 @@ kmem_pool *insert_to_pool(kmem_pool *pool, char *p, size_t size) {
 // remove a existing node and put it successor
 // trust p as a valid node in pool's tree
 // so we can just save O(log2(n)) for this func
-kmem_pool *remove_from_pool(kmem_pool *pool, rb_node *p) {
+static kmem_pool *remove_from_pool(kmem_pool *pool, rb_node *p) {
     struct kmem_block *next_block = (struct kmem_block *)(p + sizeof(rb_node));
     rb_remove(&pool->free_tree, p);
     if (next_block->cookie == COOKIE_MEM_NEXT_BLOCK) {
@@ -119,10 +119,10 @@ void init_memory_pool(struct memory_info *mem, size_t pool_size) {
             pools = create_a_mem_pool(mem, p2pg);
         pages -= p2pg;
     }
-    memory_pool = pools;
+    memory_pool = pools; // set global varible
 }
 
-rb_node *rb_search_upper(rb_node *x, uint key) {
+static rb_node *rb_search_upper(rb_node *x, uint key) {
     rb_node *closet = NULL;
     while (x != NULL) {
         if (x->key == key)
@@ -142,13 +142,16 @@ rb_node *rb_search_upper(rb_node *x, uint key) {
         return closet;
 }
 
+#include "modules/tty.h"
+
 char *kmalloc(size_t size) {
+    printf("KMalloc called\n");
     size += kmem_block_head_size;
     size                 = ROUNDUP_WITH(16, size); // 16 byte aligned
     size_t     used_size = size;
     kmem_pool *pool      = memory_pool;
     rb_node *  node      = NULL;
-    while (pool) {
+    while (pool && !node) {
         node = rb_search_upper(pool->free_tree.root, size);
         if (node == NULL)
             pool = pool->next_pool;

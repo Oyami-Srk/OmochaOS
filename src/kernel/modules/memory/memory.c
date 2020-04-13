@@ -31,6 +31,7 @@ void Task_Memory(void) {
     mem_info.memory_end   = core_usage.memory_end;
 
     init_memory(&mem_info);
+    init_memory_pool(&mem_info, PG_SIZE * 1024);
     /*
     for (uint i = 0; i < MAX_ORDER; i++)
         printf("%x, ", mem_info.free_list[i]);
@@ -52,8 +53,8 @@ void Task_Memory(void) {
     /* printf("Sizeof proc is %d bytes\n", sizeof(process)); */
     extern struct core_env core_env;
     printf("Process total: %d\n", core_env.proc_max);
-
     message msg;
+
     while (1) {
         recv_msg(&msg, PROC_ANY);
         switch (msg.type) {
