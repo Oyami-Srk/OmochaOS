@@ -16,7 +16,6 @@ void init(void) {
         printf("I am parent, child pid is %d\n", ret);
     } else {
         printf("I am child.\n");
-        magic_break();
     }
     printf("....%d\n", ret);
 

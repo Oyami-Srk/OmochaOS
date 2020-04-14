@@ -13,6 +13,9 @@ void do_page_fault(struct memory_info *mem, stack_frame *intf) {
             ((process *)intf)->pid, va);
 
     magic_break();
+    // when used then impl the rest, basicly code is fork.c:copy_parent:set
+    // msg's page writable
+
     // test
     // map_pages(mem, ((process *)intf)->page_dir, (char *)va,
     //           page_alloc(mem, 1, PG_User | PG_Writeable | PG_Present),

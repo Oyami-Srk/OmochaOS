@@ -3,10 +3,10 @@
 
 #include "generic/typedefs.h"
 
-#define PG_Present   0x01
-#define PG_Writeable 0x02
-#define PG_User      0x04
-#define PG_PS        0x80
+#define PG_Present  0x01
+#define PG_Writable 0x02
+#define PG_User     0x04
+#define PG_PS       0x80
 
 #define PG_OS_SYS 0x200
 

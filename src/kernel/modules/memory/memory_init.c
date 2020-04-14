@@ -33,7 +33,7 @@ void start_up_init(struct memory_info *mem) {
     init_proc->stack.eflags = 0x1202;
     init_proc->page_dir     = create_page_dir(mem);
     map_pages(mem, (pde_t *)init_proc->page_dir, init_proc->pstack, stack,
-              init_proc->pstack_size, PG_Present | PG_Writeable | PG_User);
+              init_proc->pstack_size, PG_Present | PG_Writable | PG_User);
 
     init_proc->pid        = 1;
     init_proc->parent_pid = 0;

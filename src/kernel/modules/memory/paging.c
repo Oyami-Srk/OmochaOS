@@ -13,22 +13,13 @@ unsigned int sys_mapping[][3] = {
     /* {0, 0, PG_SIZE * 1024}, */
     {0, KERN_BASE, PG_SIZE * 1024}};
 
-// return NULL if cannot find.
-static pte_t *get_pte(pde_t *page_dir, void *va) {
-    pte_t *pg_tab = NULL;
-    pde_t  pde    = page_dir[(uint)va >> 22];
-    if (!(pde & PG_Present))
-        return NULL;
-    pg_tab = (pte_t *)(pde & ~0xFFF);
-    return &pg_tab[((uint)va >> 12) & 0x3FF];
-}
-
-static pte_t *create_page_table(struct memory_info *mem, pde_t *page_dir,
-                                void *va, uint pde_attr) {
+pte_t *create_page_table(struct memory_info *mem, pde_t *page_dir, void *va,
+                         uint pde_attr) {
     pte_t *pte = get_pte(page_dir, va);
     pde_t *pde = &page_dir[(uint)va >> 22];
     if (pte) {
-        mem->pages_info[GET_ID_BY_PAGE(mem, (uint)(*pde & ~0xFFF))].reference++;
+        // mem->pages_info[GET_ID_BY_PAGE(mem, (uint)(*pde &
+        // ~0xFFF))].reference++;
         return pte;
     }
     pte_t *pg_tab =
@@ -36,7 +27,7 @@ static pte_t *create_page_table(struct memory_info *mem, pde_t *page_dir,
     if (pg_tab == NULL)
         return NULL;
     // if reference not 1, it definitly wrong
-    mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pg_tab)].reference = 1;
+    // mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pg_tab)].reference = 1;
     memset(pg_tab, 0, PG_SIZE);
     // memory proc cr3 is directly mapped, no need for V2P
     *pde = (uint)pg_tab | PG_Present | pde_attr;
@@ -49,7 +40,7 @@ int map_pages(struct memory_info *mem, pde_t *page_dir, void *va, void *pa,
     va              = (void *)PGROUNDDOWN((uint)va);
     void * end      = (void *)PGROUNDDOWN(((uint)va) + size - 1);
     pte_t *pte      = NULL;
-    uint   pde_attr = PG_Present | PG_User | PG_Writeable;
+    uint   pde_attr = PG_Present | PG_User | PG_Writable;
     if (pte_attr & PG_OS_SYS)
         pde_attr = PG_Present | PG_OS_SYS;
     /* printf("Map %x-%x to %x\n", va, end, pa); */
@@ -60,8 +51,8 @@ int map_pages(struct memory_info *mem, pde_t *page_dir, void *va, void *pa,
             *pte = (uint)pa | PG_Present | pte_attr;
             if ((uint)pa < mem->memory_start || (uint)pa > mem->usable_end)
                 continue; // not set page info for memory not managed by us
-            mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pa)].reference++;
         }
+        // mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pa)].reference++;
     }
     return 0;
 }
@@ -79,14 +70,16 @@ int unmap_pages(struct memory_info *mem, pde_t *page_dir, void *va,
             panic("memory not map");
             return 1;
         }
+
         char *pa  = (char *)((*pte & ~0xFFF) + ((unsigned int)va & 0xFFF));
         uint  ref = mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pa)].reference--;
         if (ref == 1) {
             page_free(mem, pa, 1);
-            kprintf("Free.");
+            kprintf("Free 1 page.");
         }
 
         *pte = 0;
+        /* // unmap does need to free pagetab
         if (((uint)va & 0x3FF000) == 0)
             contiunos_pte = 0;
         contiunos_pte++;
@@ -101,6 +94,7 @@ int unmap_pages(struct memory_info *mem, pde_t *page_dir, void *va,
                 page_free(mem, (char *)pg_tab, 1);
             contiunos_pte = 0;
         }
+        */
     }
 
     return 0;
@@ -132,24 +126,5 @@ pde_t *create_page_dir(struct memory_info *mem) {
         }
     }
     /* page_dir[KERN_BASE >> 22] = 0 | PG_Present | PG_PS; */
-    return page_dir;
-}
-
-pde_t *copy_page_dir(struct memory_info *mem, pde_t *parent) {
-    uint start_pde_i =
-        ROUNDDOWN_WITH(PG_SIZE * PTE_PER_PDE, mem->memory_start) >> 22;
-    uint end_pde_i =
-        ROUNDDOWN_WITH(PG_SIZE * PTE_PER_PDE, mem->usable_end) >> 22;
-    for (uint i = start_pde_i; i <= end_pde_i; i++) {
-        if (parent[i] & PG_Present)
-            parent[i] &= ~PG_Writeable; // clear writeable for dir ent
-    }
-
-    pde_t *page_dir =
-        (pde_t *)page_alloc(mem, 1, PAGE_TYPE_INUSE | PAGE_TYPE_PGTBL);
-    if (page_dir == NULL)
-        return NULL;
-    memcpy(page_dir, parent, PG_SIZE);
-    kprintf("Page dir copied.\n");
     return page_dir;
 }

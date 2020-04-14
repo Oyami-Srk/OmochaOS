@@ -46,7 +46,7 @@ unsigned int *core_map_memory(unsigned int *page_dir, unsigned int *page_table,
     unsigned int *p = page_table;
     unsigned int *d = &page_dir[(uint)vaddr >> 22];
     for (; p < page_table + pages; p++)
-        *p = ((uint)paddr & 0xFFFFF000) | PG_Present | PG_User | PG_Writeable;
+        *p = ((uint)paddr & 0xFFFFF000) | PG_Present | PG_User | PG_Writable;
     return page_table;
 }
 
@@ -79,7 +79,7 @@ void core_init_memory(struct core_env *env) {
     size_t        pg_count = (uint)top_memory / PAGE_SIZE_EXTEND;
     void *        pa       = 0;
     for (; pde_i <= env->page_dir + pg_count; pde_i++) {
-        *pde_i = (uint)pa | PG_PS | PG_Present | PG_Writeable;
+        *pde_i = (uint)pa | PG_PS | PG_Present | PG_Writable;
         pa += PAGE_SIZE_EXTEND;
     }
 

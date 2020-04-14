@@ -39,8 +39,10 @@ struct memory_info {
     struct page *pages_info;
 };
 
-#define GET_PAGE_BY_ID(mem, id)   (((mem)->memory_start + ((id)*PG_SIZE)))
-#define GET_ID_BY_PAGE(mem, page) ((page - ((mem)->memory_start)) / PG_SIZE)
+#define GET_PAGE_BY_ID(mem, id)                                                \
+    ((char *)(((mem)->memory_start + ((id)*PG_SIZE))))
+#define GET_ID_BY_PAGE(mem, page)                                              \
+    (((uint)page - ((mem)->memory_start)) / PG_SIZE)
 
 uint     fork_proc(struct memory_info *mem, pid_t pid);         // fork.c
 void     wait_proc(pid_t parent_pid);                           // exit.c

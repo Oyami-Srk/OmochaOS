@@ -97,5 +97,5 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
 // map 4MB
 __attribute__((__aligned__(PG_SIZE))) pde_t core_page_dir[PDE_SIZE] = {
-    [0]               = (0) | PG_Present | PG_Writeable | PG_PS,
-    [KERN_BASE >> 22] = (0) | PG_Present | PG_Writeable | PG_PS};
+    [0]               = (0) | PG_Present | PG_Writable | PG_PS,
+    [KERN_BASE >> 22] = (0) | PG_Present | PG_Writable | PG_PS};
