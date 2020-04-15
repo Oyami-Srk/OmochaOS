@@ -1,3 +1,4 @@
+#include "buddy.h"
 #include "core/memory.h"
 #include "core/paging.h"
 #include "core/process.h"
@@ -5,6 +6,8 @@
 #include "memory.h"
 #include "modules/systask.h"
 #include "paging.h"
+
+#include "driver/graphic.h"
 
 process *set_proc_exit(pid_t pid, uint exit_status) {
     process *proc     = get_proc(pid);
@@ -24,27 +27,28 @@ static void send_exit_to_parent(process *proc) {
 }
 
 void free_proc(struct memory_info *mem, process *proc) {
-    char * pstack  = proc->pstack;
-    size_t ps_size = proc->pstack_size;
-    if ((uint)pstack >= mem->memory_start && (uint)pstack <= mem->usable_end) {
-        unmap_pages(mem, proc->page_dir, pstack, ps_size);
-        /* page_free(pstack, ps_size / PG_SIZE); */ // page free if unmap
-                                                    // reference is 0
-        proc->pstack = NULL;
-    }
-    // unmap others
-    for (uint i = 0; i < 1024; i++) {
-        if ((proc->page_dir[i] & PG_Present) &&
-            !(proc->page_dir[i] & PG_OS_SYS)) {
-            pte_t *ptes = (pte_t *)(proc->page_dir[i] & ~0xFFF);
-            for (uint j = 0; j < PTE_PER_PDE; j++) {
-                if (ptes[j] & PG_Present)
-                    unmap_pages(mem, proc->page_dir, (void *)(ptes[j] & ~0xFFF),
-                                PG_SIZE);
-            }
+    // free stack
+    char *stack_va_start = proc->pstack;
+    char *stack_va_end   = proc->pstack + proc->pstack_size;
+    for (char *va = (char *)PGROUNDDOWN((uint)stack_va_start);
+         va < (char *)PGROUNDUP((uint)stack_va_end); va += PG_SIZE) {
+        char *pa   = vir2phy(proc->page_dir, va);
+        int   refs = decrease_page_ref(mem, pa);
+        if (refs == 0) {
+            page_free(mem, pa, 1);
         }
     }
-    // free others
+    for (uint i = ((uint)stack_va_start >> 22); i < ((uint)stack_va_end >> 22);
+         i++) {
+        int refs = decrease_page_ref(mem, (void *)(proc->page_dir[i] & ~0xFFF));
+        if (refs == 0) {
+            page_free(mem, (char *)(proc->page_dir[i] & ~0xFFF), 1);
+        }
+        proc->page_dir[i] = 0;
+    }
+
+    proc->pstack_size = NULL;
+    proc->pstack      = NULL;
 
     if (proc->parent_pid == 0)
         panic(" Init proc cannot exit. ");

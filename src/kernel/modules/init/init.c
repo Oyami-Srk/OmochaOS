@@ -16,11 +16,10 @@ void init(void) {
         printf("I am parent, child pid is %d\n", ret);
     } else {
         printf("I am child.\n");
+        exit(10);
     }
     printf("....%d\n", ret);
 
-    while (1)
-        ;
     while (1) {
         uint s  = 0;
         int  cp = wait(&s);

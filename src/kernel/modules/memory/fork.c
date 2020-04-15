@@ -22,7 +22,8 @@ static pde_t *copy_parent(struct memory_info *mem, process *parent) {
             mem,
             (void *)(pg_dir[i] & ~0xFFF)); // increase page table's reference
     }
-    for (char *va = stack_va_start; va < stack_va_end; va += PG_SIZE) {
+    for (char *va = (char *)PGROUNDDOWN((uint)stack_va_start);
+         va < (char *)PGROUNDUP((uint)stack_va_end); va += PG_SIZE) {
         char *pa = vir2phy(pg_dir, va);
         *get_pte(pg_dir, va) &= ~PG_Writable; // clear every page's write bit
         increase_page_ref(mem, pa);
