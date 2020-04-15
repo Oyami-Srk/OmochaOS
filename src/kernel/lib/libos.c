@@ -56,7 +56,7 @@ uint fork() {
 void exit(uint status) {
     uint    task_mem = query_proc("TaskMM");
     message msg;
-    msg.type     = MEM_DESTROY_PROC;
+    msg.type     = MEM_EXIT_PROC;
     msg.major    = status;
     msg.receiver = task_mem;
     send_msg(&msg);

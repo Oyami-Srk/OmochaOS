@@ -47,13 +47,14 @@ struct memory_info {
 uint     fork_proc(struct memory_info *mem, pid_t pid);         // fork.c
 void     wait_proc(pid_t parent_pid);                           // exit.c
 process *set_proc_exit(pid_t pid, uint exit_status);            // exit.c
-void     free_proc(struct memory_info *mem, process *proc);     // exit.c
+process *free_proc(struct memory_info *mem, process *proc);     // exit.c
+void     mem_exit_proc(process *proc);                          // exit.c
 void     start_up_init(struct memory_info *mem);                // memory_init.c
 void     init_memory(struct memory_info *mem);                  // memory_init.c
 void do_page_fault(struct memory_info *mem, stack_frame *intf); // pagefault.c
 
-void  kfree(char *p);                                              // kmem.c
-char *kmalloc(size_t size);                                        // kmem.c
+void  mem_kfree(char *p);                                          // kmem.c
+char *mem_kmalloc(size_t size);                                    // kmem.c
 void  init_memory_pool(struct memory_info *mem, size_t pool_size); // kmem.c
 
 #endif // __MODULE_MEMORY_MEMORY_INC__

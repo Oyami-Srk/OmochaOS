@@ -89,13 +89,40 @@ void Task_Memory(void) {
             msg.major    = 0;
             send_msg(&msg); // send to child proc
             break;
-        case MEM_DESTROY_PROC: {
+        case MEM_EXIT_PROC: {
             pid_t proc = msg.sender;
-            free_proc(&mem_info, set_proc_exit(msg.sender, msg.major));
+            mem_exit_proc(
+                free_proc(&mem_info, set_proc_exit(msg.sender, msg.major)));
             break;
         }
         case MEM_WAIT_PROC: {
             wait_proc(msg.sender);
+            break;
+        }
+        case MEM_FREE_PROC:
+            free_proc(&mem_info, (process *)(msg.major));
+            msg.major = 0;
+            SEND_BACK(msg);
+            break;
+        case MEM_MEMALLOC: {
+            char *mem = mem_kmalloc(msg.major);
+            // assume caller has the same address space as memory_proc did
+            if (vir2phy(get_proc(msg.sender)->page_dir, mem) != mem) {
+                mem_kfree(mem);
+                msg.major = NULL;
+            } else
+                msg.major = (uint)mem;
+            SEND_BACK(msg);
+            break;
+        }
+        case MEM_MEMFREE: {
+            char *mem = (char *)msg.major;
+            if (vir2phy(get_proc(msg.sender)->page_dir, mem) != mem) {
+                panic("Free error.");
+                magic_break();
+                break;
+            }
+            mem_kfree(mem);
             break;
         }
         default:

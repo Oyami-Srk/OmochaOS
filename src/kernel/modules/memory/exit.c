@@ -26,7 +26,7 @@ static void send_exit_to_parent(process *proc) {
     exit_proc(proc->pid);
 }
 
-void free_proc(struct memory_info *mem, process *proc) {
+process *free_proc(struct memory_info *mem, process *proc) {
     // free stack
     char *stack_va_start = proc->pstack;
     char *stack_va_end   = proc->pstack + proc->pstack_size;
@@ -50,6 +50,34 @@ void free_proc(struct memory_info *mem, process *proc) {
     proc->pstack_size = NULL;
     proc->pstack      = NULL;
 
+    // free program
+    if (proc->prog_info) {
+        char *pg_start = proc->prog_info->text_start;
+        char *pg_end   = proc->prog_info->program_break;
+        for (char *va = (char *)PGROUNDDOWN((uint)pg_start);
+             va < (char *)PGROUNDUP((uint)pg_end); va += PG_SIZE) {
+            char *pa   = vir2phy(proc->page_dir, va);
+            int   refs = decrease_page_ref(mem, pa);
+            if (refs == 0) {
+                page_free(mem, pa, 1);
+            }
+        }
+        for (uint i = ((uint)pg_start >> 22); i < ((uint)pg_end >> 22); i++) {
+            int refs =
+                decrease_page_ref(mem, (void *)(proc->page_dir[i] & ~0xFFF));
+            if (refs == 0) {
+                page_free(mem, (char *)(proc->page_dir[i] & ~0xFFF), 1);
+            }
+            proc->page_dir[i] = 0;
+        }
+    }
+
+    mem_kfree((char *)proc->prog_info);
+    proc->prog_info = NULL;
+    return proc;
+}
+
+void mem_exit_proc(process *proc) {
     if (proc->parent_pid == 0)
         panic(" Init proc cannot exit. ");
     process *parent_proc = get_proc(proc->parent_pid);

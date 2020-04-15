@@ -144,7 +144,7 @@ static rb_node *rb_search_upper(rb_node *x, uint key) {
 
 #include "modules/tty.h"
 
-char *kmalloc(size_t size) {
+char *mem_kmalloc(size_t size) {
     printf("KMalloc called\n");
     size += kmem_block_head_size;
     size                 = ROUNDUP_WITH(16, size); // 16 byte aligned
@@ -180,7 +180,7 @@ char *kmalloc(size_t size) {
     return (char *)(&mb->mem.mem);
 }
 
-void kfree(char *p) {
+void mem_kfree(char *p) {
     struct kmem_block *mb = (struct kmem_block *)(p - kmem_block_head_size);
     if (mb->cookie != COOKIE_MEM_INUSE_BLOCK) {
         panic("Kmem block cookie not match");

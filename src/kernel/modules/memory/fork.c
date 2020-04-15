@@ -28,7 +28,21 @@ static pde_t *copy_parent(struct memory_info *mem, process *parent) {
         *get_pte(pg_dir, va) &= ~PG_Writable; // clear every page's write bit
         increase_page_ref(mem, pa);
     }
-    // copy data ( no data frame yet )
+    // copy program
+    if (parent->prog_info) {
+        char *pg_start = parent->prog_info->text_start;
+        char *pg_end   = parent->prog_info->program_break;
+        for (uint i = ((uint)pg_start >> 22); i < ((uint)pg_end >> 22); i++) {
+            pg_dir[i] = parent->page_dir[i];
+            increase_page_ref(mem, (void *)(pg_dir[i] & ~0xFFF));
+        }
+        for (char *va = (char *)PGROUNDDOWN((uint)pg_start);
+             va < (char *)PGROUNDUP((uint)pg_end); va += PG_SIZE) {
+            char *pa = vir2phy(pg_dir, va);
+            *get_pte(pg_dir, va) &= ~PG_Writable;
+            increase_page_ref(mem, pa);
+        }
+    }
 
     // set msg's page wrtable
     char *msg_va = (char *)parent->p_msg;
@@ -80,6 +94,10 @@ uint fork_proc(struct memory_info *mem, pid_t pid) {
     /* child_proc->page_dir = create_page_dir(); */
     // child_proc->page_dir = copy_page_dir(mem, parent_proc->page_dir);
     child_proc->page_dir = copy_parent(mem, parent_proc);
+    child_proc->prog_info =
+        (struct prog_info *)mem_kmalloc(sizeof(struct prog_info));
+    memcpy(child_proc->prog_info, parent_proc->prog_info,
+           sizeof(struct prog_info));
 
     message *msg = parent_proc->p_msg;
     if (msg) { // parpare for child if msg is set

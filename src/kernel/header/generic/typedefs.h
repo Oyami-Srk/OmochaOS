@@ -70,6 +70,13 @@ typedef unsigned int pte_t; // page table entity
 typedef unsigned int pde_t; // page dir entity
 typedef unsigned int pid_t;
 
+struct prog_info {
+    uint  program_size; // from text to program break
+    char *text_start;
+    char *text_end;
+    char *program_break;
+};
+
 struct __process {
     stack_frame stack;
     pde_t *     page_dir;
@@ -87,6 +94,7 @@ struct __process {
     struct __process *quene_head_sending_to_this_process;
     struct __process *quene_body;
     struct __process *next;
+    struct prog_info *prog_info;
 } __attribute__((aligned(32)));
 
 typedef struct __process process;
