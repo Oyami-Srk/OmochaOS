@@ -442,6 +442,7 @@ void Task_FS() {
                 (ubyte *)proc_vir2phy(msg.sender, (char *)msg.data.uint_arr.d2);
             size_t buf_size = (size_t)msg.data.uint_arr.d3;
             uint   offset   = msg.major;
+            msg.major       = read_file(&fs, fileinfo, offset, buf, buf_size);
             SEND_BACK(msg);
             break;
         }

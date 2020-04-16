@@ -125,6 +125,12 @@ void Task_Memory(void) {
             mem_kfree(mem);
             break;
         }
+        case MEM_EXECVE: {
+            mem_execve(&mem_info, get_proc(msg.sender), (const char *)msg.major,
+                       (const char **)msg.data.uint_arr.d1,
+                       (const char **)msg.data.uint_arr.d2);
+            break;
+        }
         default:
             break;
         }

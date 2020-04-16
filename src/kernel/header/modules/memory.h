@@ -15,6 +15,7 @@
 #define MEM_FREE_PROC   6
 #define MEM_MEMALLOC    7
 #define MEM_MEMFREE     8
+#define MEM_EXECVE      9
 
 static inline char *mem_alloc_pages(uint pages) {
     uint    task_mem = query_proc("TaskMM");
@@ -72,5 +73,6 @@ static inline int mem_free_proc(process *proc) {
 uint fork();
 int  wait(uint *);
 void exit(uint);
+void execve(const char *fn, const char *argv[], const char *env[]);
 
 #endif // __MODULE_MEMORY__

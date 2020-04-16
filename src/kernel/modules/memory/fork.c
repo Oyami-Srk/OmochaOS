@@ -30,7 +30,7 @@ static pde_t *copy_parent(struct memory_info *mem, process *parent) {
     }
     // copy program
     if (parent->prog_info) {
-        char *pg_start = parent->prog_info->text_start;
+        char *pg_start = parent->prog_info->image_start;
         char *pg_end   = parent->prog_info->program_break;
         for (uint i = ((uint)pg_start >> 22); i < ((uint)pg_end >> 22); i++) {
             pg_dir[i] = parent->page_dir[i];

@@ -73,3 +73,15 @@ int wait(uint *status) {
     *status = msg.major;
     return msg.type == 0x12344321 ? msg.data.uint_arr.d1 : -1;
 }
+
+void execve(const char *fn, const char *argv[], const char *env[]) {
+    uint    task_mem = query_proc("TaskMM");
+    message msg;
+    msg.type             = MEM_EXECVE;
+    msg.major            = (uint)fn;
+    msg.data.uint_arr.d1 = (uint)argv;
+    msg.data.uint_arr.d2 = (uint)env;
+    msg.receiver         = task_mem;
+    send_msg(&msg);
+    recv_msg(&msg, task_mem); // halt the process
+}

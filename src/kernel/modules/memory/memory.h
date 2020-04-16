@@ -53,8 +53,11 @@ void     start_up_init(struct memory_info *mem);                // memory_init.c
 void     init_memory(struct memory_info *mem);                  // memory_init.c
 void do_page_fault(struct memory_info *mem, stack_frame *intf); // pagefault.c
 
-void  mem_kfree(char *p);                                          // kmem.c
+void  mem_kfree(void *p);                                          // kmem.c
 char *mem_kmalloc(size_t size);                                    // kmem.c
 void  init_memory_pool(struct memory_info *mem, size_t pool_size); // kmem.c
+
+void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
+                const char *argv[], const char *env[]); // execve.c
 
 #endif // __MODULE_MEMORY_MEMORY_INC__

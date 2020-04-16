@@ -14,7 +14,7 @@ struct fs_file_info {
 
 // offset in bytes
 static inline uint FS_read_file(struct fs_file_info *fileinfo, uint offset,
-                                ubyte *buf, size_t buf_size) {
+                                void *buf, size_t buf_size) {
     uint    task_fs = query_proc("TaskFS");
     message msg;
     msg.type             = FS_READ_FILE;

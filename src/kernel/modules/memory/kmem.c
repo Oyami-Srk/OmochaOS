@@ -37,6 +37,7 @@ const size_t max_block_size = (1 << (MAX_ORDER - 1)) * PG_SIZE;
 kmem_pool *memory_pool;
 
 static kmem_pool *insert_to_pool(kmem_pool *pool, char *p, size_t size) {
+    memset(p, 0, sizeof(rb_node));
     ((rb_node *)p)->key = size;
     int is_key_exists   = rb_insert(&pool->free_tree, (rb_node *)p);
     if (is_key_exists) {
@@ -145,7 +146,6 @@ static rb_node *rb_search_upper(rb_node *x, uint key) {
 #include "modules/tty.h"
 
 char *mem_kmalloc(size_t size) {
-    printf("KMalloc called\n");
     size += kmem_block_head_size;
     size                 = ROUNDUP_WITH(16, size); // 16 byte aligned
     size_t     used_size = size;
@@ -180,7 +180,9 @@ char *mem_kmalloc(size_t size) {
     return (char *)(&mb->mem.mem);
 }
 
-void mem_kfree(char *p) {
+#include "driver/graphic.h"
+
+void mem_kfree(void *p) {
     struct kmem_block *mb = (struct kmem_block *)(p - kmem_block_head_size);
     if (mb->cookie != COOKIE_MEM_INUSE_BLOCK) {
         panic("Kmem block cookie not match");
@@ -188,6 +190,7 @@ void mem_kfree(char *p) {
         return;
     }
 
+    kprintf("free size: %d\n", mb->size + kmem_block_head_size);
     // found if this block is next to a free block
     char * next_block      = p + mb->size;
     BOOL   next_is_free    = FALSE;
@@ -210,6 +213,6 @@ void mem_kfree(char *p) {
         insert_to_pool(mb->pool, (char *)mb, mb->size + kmem_block_head_size);
     } else {
         mb->size += next_block_size;
-        kfree(p);
+        mem_kfree(p);
     }
 }

@@ -60,4 +60,48 @@ enum Elf_Type {
 #define EM_386     (3) // x86 Machine Type
 #define EV_CURRENT (1) // ELF Current Version
 
+typedef struct {
+    Elf32_Word p_type;
+    Elf32_Off  p_offset;
+    Elf32_Addr p_vaddr;
+    Elf32_Addr p_paddr; // nouse
+    Elf32_Word p_filesz;
+    Elf32_Word p_memsz;
+    Elf32_Word p_flags;
+    Elf32_Word p_align;
+} __attribute__((packed)) Elf32_Phdr;
+
+enum Elf_PType {
+    PT_NULL    = 0,
+    PT_LOAD    = 1,
+    PT_DYNAMIC = 2,
+    PT_INTERP  = 3,
+    PT_NOTE    = 4,
+    PT_SHLIB   = 5,
+    PT_PHDR    = 6,
+    PT_LOPROC  = 0x70000000,
+    PT_HIPROC  = 0x7FFFFFFF
+};
+
+enum Elf_PFlay {
+    PF_X        = 1,
+    PF_W        = 2,
+    PF_R        = 4,
+    PF_MASKOS   = 0x0FF00000,
+    PF_MASKPROC = 0xF0000000,
+};
+
+typedef struct {
+    Elf32_Word sh_name;
+    Elf32_Word sh_type;
+    Elf32_Word sh_flags;
+    Elf32_Addr sh_addr;
+    Elf32_Off  sh_offset;
+    Elf32_Word sh_size;
+    Elf32_Word sh_link;
+    Elf32_Word sh_info;
+    Elf32_Word sh_addralign;
+    Elf32_Word sh_entsize;
+} __attribute__((packed)) Elf32_Shdr;
+
 #endif // __OS_ELF32_H__

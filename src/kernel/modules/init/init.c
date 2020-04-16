@@ -16,6 +16,9 @@ void init(void) {
         printf("I am parent, child pid is %d\n", ret);
     } else {
         printf("I am child.\n");
+        const char *argv[] = {"arg1", "world", "hello", "arg4", NULL};
+        const char *env[]  = {"env1", "env2", NULL};
+        execve("/test.out", argv, env);
         exit(10);
     }
     printf("....%d\n", ret);

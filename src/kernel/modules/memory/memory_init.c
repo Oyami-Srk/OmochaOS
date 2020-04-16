@@ -105,7 +105,7 @@ void init_memory(struct memory_info *mem) {
     printf("[MEM] pages info size: %d KB\n",
            pg_count * sizeof(struct page) / 1024);
     for (uint i = 0; i < pg_count; i++) {
-        if (GET_PAGE_BY_ID(mem, i) < mem->usable_end)
+        if ((char *)GET_PAGE_BY_ID(mem, i) < (char *)mem->usable_end)
             mem->pages_info[i].type = PAGE_TYPE_FREE | PAGE_TYPE_USABLE;
         else
             mem->pages_info[i].type = PAGE_TYPE_INUSE | PAGE_TYPE_SYSTEM;

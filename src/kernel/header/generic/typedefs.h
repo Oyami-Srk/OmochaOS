@@ -71,10 +71,9 @@ typedef unsigned int pde_t; // page dir entity
 typedef unsigned int pid_t;
 
 struct prog_info {
-    uint  program_size; // from text to program break
-    char *text_start;
-    char *text_end;
-    char *program_break;
+    uint  program_size;  // from text to program break
+    char *program_break; // virtual addr
+    char *image_start;   // virtual addr
 };
 
 struct __process {

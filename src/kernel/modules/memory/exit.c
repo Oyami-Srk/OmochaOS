@@ -52,7 +52,7 @@ process *free_proc(struct memory_info *mem, process *proc) {
 
     // free program
     if (proc->prog_info) {
-        char *pg_start = proc->prog_info->text_start;
+        char *pg_start = proc->prog_info->image_start;
         char *pg_end   = proc->prog_info->program_break;
         for (char *va = (char *)PGROUNDDOWN((uint)pg_start);
              va < (char *)PGROUNDUP((uint)pg_end); va += PG_SIZE) {
@@ -74,6 +74,7 @@ process *free_proc(struct memory_info *mem, process *proc) {
 
     mem_kfree((char *)proc->prog_info);
     proc->prog_info = NULL;
+    page_free(mem, (char *)proc->page_dir, 1);
     return proc;
 }
 
