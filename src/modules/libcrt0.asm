@@ -6,7 +6,7 @@ extern exit
 global _start
 
 _start:
-    push eax
+    push ebx
     push ecx
     call main
     push eax

@@ -180,8 +180,6 @@ char *mem_kmalloc(size_t size) {
     return (char *)(&mb->mem.mem);
 }
 
-#include "driver/graphic.h"
-
 void mem_kfree(void *p) {
     struct kmem_block *mb = (struct kmem_block *)(p - kmem_block_head_size);
     if (mb->cookie != COOKIE_MEM_INUSE_BLOCK) {
@@ -190,7 +188,6 @@ void mem_kfree(void *p) {
         return;
     }
 
-    kprintf("free size: %d\n", mb->size + kmem_block_head_size);
     // found if this block is next to a free block
     char * next_block      = p + mb->size;
     BOOL   next_is_free    = FALSE;

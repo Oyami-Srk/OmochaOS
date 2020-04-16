@@ -2,7 +2,10 @@
 
 int main(int argc, char **argv) {
     printf("Hi, this is your first app!\n");
-    while (1)
-        ;
-    return 0;
+    printf("Argc: %d, argv(%x): ", argc, argv);
+    for (int i = 0; i < argc; i++) {
+        printf("%s, ", argv[i]);
+    }
+    printf("\n");
+    return 233;
 }
