@@ -2,7 +2,7 @@
 # src
 
 # max optimaze level is 2
-CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g
+CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib
 HEADER = $(shell pwd)/header
 
 ifeq ($(BUILD_TYPE), debug)

@@ -16,6 +16,7 @@
 #define MEM_MEMALLOC    7
 #define MEM_MEMFREE     8
 #define MEM_EXECVE      9
+#define MEM_SBRK        10
 
 static inline char *mem_alloc_pages(uint pages) {
     uint    task_mem = query_proc("TaskMM");
@@ -68,6 +69,17 @@ static inline int mem_free_proc(process *proc) {
     send_msg(&msg);
     recv_msg(&msg, task_mem);
     return msg.major;
+}
+
+static inline void *sbrk(int increasement) {
+    uint    task_mem = query_proc("TaskMM");
+    message msg;
+    msg.type     = MEM_SBRK;
+    msg.major    = increasement;
+    msg.receiver = task_mem;
+    send_msg(&msg);
+    recv_msg(&msg, task_mem);
+    return (void *)msg.major;
 }
 
 uint fork();

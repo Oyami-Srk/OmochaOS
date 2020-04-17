@@ -147,12 +147,8 @@ extern void     scheduler();
 extern process *proc_running;
 
 void interrupt_handler(stack_frame *intf) {
-    pde_t *original_pg_dir = NULL;
-    asm volatile("movl %%cr3, %0" : "=r"(original_pg_dir));
-    if (original_pg_dir != KV2P(core_page_dir)) {
-        asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
-    }
-
+    // asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
+    // switch page dir each interrupt is not good
     if (intf->trap_no < EXCEPTION_COUNT) {
         if (exception_suscribed[intf->trap_no]) {
             ((process *)intf)->status &= PROC_STATUS_ERROR;
@@ -212,6 +208,7 @@ void interrupt_handler(stack_frame *intf) {
         EOI_M();
         break;
     case SYSCALL_INT: {
+        asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
         volatile int retval = 0;
         asm volatile("push %%edx\n\t"
                      "push %%ebx\n\t"

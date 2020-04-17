@@ -75,7 +75,7 @@ int unmap_pages(struct memory_info *mem, pde_t *page_dir, void *va,
         uint  ref = mem->pages_info[GET_ID_BY_PAGE(mem, (uint)pa)].reference--;
         if (ref == 1) {
             page_free(mem, pa, 1);
-            kprintf("Free 1 page.");
+            // kprintf("Free 1 page.");
         }
 
         *pte = 0;

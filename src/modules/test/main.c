@@ -1,4 +1,5 @@
 #include "modules/tty.h"
+int vaddr;
 
 int main(int argc, char **argv) {
     printf("Hi, this is your first app!\n");
@@ -7,5 +8,7 @@ int main(int argc, char **argv) {
         printf("%s, ", argv[i]);
     }
     printf("\n");
+    vaddr = 124195;
+    printf("v: %d\n", vaddr);
     return 233;
 }

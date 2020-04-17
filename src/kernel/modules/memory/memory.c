@@ -131,6 +131,12 @@ void Task_Memory(void) {
                        (const char **)msg.data.uint_arr.d2);
             break;
         }
+        case MEM_SBRK: {
+            msg.major =
+                (uint)mem_sbrk(&mem_info, get_proc(msg.sender), (int)msg.major);
+            SEND_BACK(msg);
+            break;
+        }
         default:
             break;
         }

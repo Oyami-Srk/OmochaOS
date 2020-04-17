@@ -217,7 +217,9 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
     struct prog_info *pgi = caller->prog_info =
         (struct prog_info *)mem_kmalloc(sizeof(struct prog_info));
 
-    caller->prog_info->image_start = (char *)0xFFFFFFFF;
+    caller->prog_info->image_start   = (char *)0xFFFFFFFF;
+    caller->prog_info->program_break = 0;
+    caller->prog_info->program_size  = 0;
 
     // load prog header
     assert(sizeof(Elf32_Phdr) == elf_header.e_phentsize);
@@ -231,7 +233,11 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
             if ((uint)pgi->image_start > prog_header[i].p_vaddr) {
                 pgi->image_start = (char *)prog_header[i].p_vaddr;
             }
-            pgi->program_size += prog_header[i].p_memsz;
+            if ((uint)pgi->program_break <
+                prog_header[i].p_vaddr + prog_header[i].p_memsz) {
+                pgi->program_break =
+                    (char *)(prog_header[i].p_vaddr + prog_header[i].p_memsz);
+            }
             size_t memsz = prog_header[i].p_memsz;
             memsz        = PGROUNDUP(memsz);
 
@@ -242,6 +248,7 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
 
             FS_read_file(&file_info, prog_header[i].p_offset, pa + va_offset,
                          prog_header[i].p_filesz);
+
             if (va_offset)
                 memset(pa, 0, va_offset);
             if (prog_header[i].p_filesz != prog_header[i].p_memsz) {
@@ -261,8 +268,8 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
         }
     }
 
-    pgi->program_break = pgi->image_start + pgi->program_size;
-    caller->stack.eip  = elf_header.e_entry;
+    pgi->program_size = pgi->program_break - pgi->image_start;
+    caller->stack.eip = elf_header.e_entry;
     mem_kfree(prog_header);
 
     caller->p_msg  = NULL;

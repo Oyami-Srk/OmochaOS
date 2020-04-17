@@ -74,6 +74,7 @@ struct prog_info {
     uint  program_size;  // from text to program break
     char *program_break; // virtual addr
     char *image_start;   // virtual addr
+    char *break_page_end;
 };
 
 struct __process {
