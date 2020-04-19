@@ -36,16 +36,26 @@ $(KERNEL_BUILD)/%.d: %.c
 	$(RM) -f $@.$$$$
 
 
-$(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld
-	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS)
+$(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld $(KERNEL_BUILD)/init.out.o
+	$(LD) $(KERNEL_LD_FLAGS) -T kernel.ld -o $@ $(OBJS) $(KERNEL_BUILD)/init.out.o
 
 LIBOS_OBJS = lib/string lib/rbtree lib/stdlib lib/libos
 LIBOS_OBJS := $(foreach o,$(LIBOS_OBJS),$(KERNEL_BUILD)/$(o).o)
+LIBOS = $(BUILD)/libos.a
 
-$(BUILD)/libos.a: $(LIBOS_OBJS)
+$(LIBOS): $(LIBOS_OBJS)
 	$(AR) -rcs $@ $(LIBOS_OBJS)
 
-kernel: $(KERNEL_BUILD)/kernel.out $(BUILD)/libos.a
+$(KERNEL_BUILD)/init.o: init/init.c
+	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
+
+$(KERNEL_BUILD)/init.out: $(KERNEL_BUILD)/init.o $(LIBOS)
+	$(LD) -m elf_i386 -e init -Ttext 0x0 -o $@ $^
+
+$(KERNEL_BUILD)/init.out.o: $(KERNEL_BUILD)/init.out init/package.S
+	$(CC) -m32 -D__BIN_PATH__='"$(KERNEL_BUILD)/init.out"' init/package.S -c -o $@
+
+kernel: $(KERNEL_BUILD)/kernel.out
 	@echo Kernel is built.
 
 ifneq ($(filter pre-build,$(MAKECMDGOALS)),pre-build)

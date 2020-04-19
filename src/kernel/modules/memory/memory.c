@@ -15,6 +15,9 @@
 struct memory_info mem_info;
 // in pages, not in bytes
 
+extern char _init_elf_start_[];
+extern char _init_elf_end_[];
+
 void Task_Memory(void) {
     if (reg_proc("TaskMM") != 0)
         printf("[MEM] Cannot register as TaskMM\n");
@@ -49,7 +52,7 @@ void Task_Memory(void) {
     // 每一个进程都有自己的普通栈，大小应为4MB。系统初期的进程只有4KB（一页大小）
     // 系统映射在0x80000000之后的4MB内，这是全局的映射，用户进程有此map但是不能访问（权限过低）
 
-    start_up_init(&mem_info); // system startup
+    start_up_init(&mem_info, (ubyte *)_init_elf_start_); // system startup
     /* printf("Sizeof proc is %d bytes\n", sizeof(process)); */
     extern struct core_env core_env;
     printf("Process total: %d\n", core_env.proc_max);
@@ -76,19 +79,26 @@ void Task_Memory(void) {
             msg.major = 0;
             SEND_BACK(msg);
             break;
-        case MEM_FORK_PROC:
-            msg.major    = fork_proc(&mem_info, msg.sender);
+        case MEM_FORK_PROC: {
+            process *child_proc;
+            process *parent_proc;
+            msg.major =
+                fork_proc(&mem_info, msg.sender, &parent_proc, &child_proc);
             msg.receiver = msg.sender;
             if (msg.major == 0) {
                 msg.major = -1;
                 send_msg(&msg); // send to parent proc
                 break;          // no child alloc proc failed
             }
+            // magic_break();
             send_msg(&msg); // send to parent_proc
             msg.receiver = msg.major;
             msg.major    = 0;
             send_msg(&msg); // send to child proc
+            parent_proc->status &= ~PROC_STATUS_STOP;
+            child_proc->status &= ~PROC_STATUS_STOP;
             break;
+        }
         case MEM_EXIT_PROC: {
             pid_t proc = msg.sender;
             mem_exit_proc(

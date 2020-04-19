@@ -61,8 +61,12 @@ static char *allocate_pages_of_power_2(struct memory_info *mem, uint order,
         xor_buddy_map(mem, block, order);
     }
     if (block != NULL) {
-        set_page_attr(mem, block, 1 << order, attr);
-        mem->pages_info[GET_ID_BY_PAGE(mem, block)].reference = 1;
+        for (uint i = 0; i < (1 << order); i++) {
+            struct page *pg = &mem->pages_info[GET_ID_BY_PAGE(
+                mem, ((uint)block + i * PG_SIZE))];
+            pg->type        = attr;
+            pg->reference   = 1;
+        }
     }
     return block;
 }

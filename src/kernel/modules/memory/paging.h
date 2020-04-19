@@ -63,7 +63,7 @@ int unmap_pages(struct memory_info *mem, pde_t *page_dir, void *va,
                 size_t size);
 
 // create from sysmap
-pde_t *create_page_dir(struct memory_info *mem);
+pde_t *create_page_dir(struct memory_info *mem, uint sys_attr);
 pte_t *create_page_table(struct memory_info *mem, pde_t *page_dir, void *va,
                          uint pde_attr);
 

@@ -7,14 +7,13 @@
 
 // first actual process
 void init(void) {
-    delay_ms(1000);
-    process *p;
     printf("[INIT] Init Process Start.\n");
 
     int ret = fork();
     if (ret) {
-        // printf("I am parent, child pid is %d\n", ret);
+        printf("I am parent, child pid is %d\n", ret);
     } else {
+        printf("I am child, going to exec test.out\n");
         const char *argv[] = {"arg1", "pworld", "helloi", "arg4", NULL};
         const char *env[]  = {"env1", "env2", NULL};
         execve("/test.out", argv, env);

@@ -44,13 +44,14 @@ struct memory_info {
 #define GET_ID_BY_PAGE(mem, page)                                              \
     (((uint)page - ((mem)->memory_start)) / PG_SIZE)
 
-uint     fork_proc(struct memory_info *mem, pid_t pid);         // fork.c
+uint     fork_proc(struct memory_info *mem, pid_t pid, process **par,
+                   process **chi);                              // fork.c
 void     wait_proc(pid_t parent_pid);                           // exit.c
 process *set_proc_exit(pid_t pid, uint exit_status);            // exit.c
 process *free_proc(struct memory_info *mem, process *proc);     // exit.c
 void     mem_exit_proc(process *proc);                          // exit.c
-void     start_up_init(struct memory_info *mem);                // memory_init.c
 void     init_memory(struct memory_info *mem);                  // memory_init.c
+void start_up_init(struct memory_info *mem, ubyte *init_elf);   // memory_init.c
 void do_page_fault(struct memory_info *mem, stack_frame *intf); // pagefault.c
 
 void  mem_kfree(void *p);                                          // kmem.c

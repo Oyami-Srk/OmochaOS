@@ -100,7 +100,7 @@ int unmap_pages(struct memory_info *mem, pde_t *page_dir, void *va,
     return 0;
 }
 
-pde_t *create_page_dir(struct memory_info *mem) {
+pde_t *create_page_dir(struct memory_info *mem, uint sys_attr) {
     pde_t *page_dir =
         (pde_t *)page_alloc(mem, 1, PAGE_TYPE_INUSE | PAGE_TYPE_PGTBL);
     if (page_dir == NULL)
@@ -119,10 +119,11 @@ pde_t *create_page_dir(struct memory_info *mem) {
             for (; va < end;
                  va += PG_SIZE * PTE_PER_PDE, pa += PG_SIZE * PTE_PER_PDE)
                 page_dir[(uint)va >> 22] =
-                    ((uint)pa) | PG_Present | PG_OS_SYS | PG_PS;
+                    ((uint)pa) | PG_Present | PG_OS_SYS | PG_PS | sys_attr;
 
         } else {
-            map_pages(mem, page_dir, va, pa, size, PG_Present | PG_OS_SYS);
+            map_pages(mem, page_dir, va, pa, size,
+                      PG_Present | PG_OS_SYS | sys_attr);
         }
     }
     /* page_dir[KERN_BASE >> 22] = 0 | PG_Present | PG_PS; */

@@ -19,7 +19,7 @@ SECTIONS {
     }
 
     .rodata ALIGN(0x1000) : AT(ADDR(.rodata) - _KERN_BASE) {
-        *(.rodata .rodata.* .gnu.linkonce.r.*)
+        *(.rodata .rodata.* .gnu.linkonce.r.* .init_code)
     }
 
     .stab : { /* debug infomation */

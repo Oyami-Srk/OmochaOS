@@ -40,6 +40,7 @@ _start:
     mov cr3, ecx
     
     mov ecx, cr0
+    ; or ecx, 0x80010000
     or ecx, 0x80000000
     mov cr0, ecx
 

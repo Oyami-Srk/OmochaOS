@@ -92,17 +92,15 @@ static inline Gate *make_gate(Gate *pGate, u16 Selector, u32 Offset, uint DPL,
 // Config for protect-mode
 
 static uint KERN_GDT[][3] = {
-    {0, 0, 0},                               // dummy null descriptor
-    {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_C},   // Code descriptor
-    {0, 0xFFFFFFFF, DA_32 | DA_4K | DA_DRW}, // Data descriptor
-    {0x0, 0x0, DA_386TSS},                   // TSS descriptor
-    {0, 0xFFFFFFFF,
-     DA_32 | DA_4K | DA_C | DA_DPL1}, // Code descriptor with DPL 1
-    {0, 0xFFFFFFFF,
-     DA_32 | DA_4K | DA_DRW | DA_DPL1}, // Data descriptor with DPL 1
-    {0, 0xFFFFFFFF,
-     DA_32 | DA_4K | DA_C | DA_DPL3}, // Code descriptor with DPL 3
-    {0, 0xFFFFFFFF,
+    {0, 0, 0},                                    // dummy null descriptor
+    {0, 0xFFFFF, DA_32 | DA_4K | DA_C},           // Code descriptor
+    {0, 0xFFFFF, DA_32 | DA_4K | DA_DRW},         // Data descriptor
+    {0x0, 0x0, DA_386TSS},                        // TSS descriptor
+    {0, 0xFFFFF, DA_32 | DA_4K | DA_C | DA_DPL1}, // Code descriptor with DPL 1
+    {0, 0xFFFFF,
+     DA_32 | DA_4K | DA_DRW | DA_DPL1},           // Data descriptor with DPL 1
+    {0, 0x7FFFF, DA_32 | DA_4K | DA_C | DA_DPL3}, // Code descriptor with DPL 3
+    {0, 0x7FFFF,
      DA_32 | DA_4K | DA_DRW | DA_DPL3}, // Data descriptor with DPL 3
     {0x0, 0x0, DA_LDT}                  // LDT descriptor
                        // Cannot define more descriptors below ldt
@@ -113,6 +111,6 @@ static uint KERN_GDT[][3] = {
 #define SEL_CODE_DPL1 ((4 << 3) | SA_RPL1)
 #define SEL_DATA_DPL1 ((5 << 3) | SA_RPL1)
 #define SEL_CODE_DPL3 ((6 << 3) | SA_RPL3)
-#define SEL_DATA_DPL4 ((7 << 3) | SA_RPL3)
+#define SEL_DATA_DPL3 ((7 << 3) | SA_RPL3)
 
 #endif // __PROTECT_H__

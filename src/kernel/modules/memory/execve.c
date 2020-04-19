@@ -153,7 +153,7 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
 
     caller->status = PROC_STATUS_STOP;
     free_proc(mem, caller);
-    caller->page_dir    = create_page_dir(mem);
+    caller->page_dir    = create_page_dir(mem, 0);
     caller->pstack      = pstack_bottom;
     caller->pstack_size = PROC_STACK_SIZE;
     map_pages(mem, caller->page_dir, caller->pstack, stack, caller->pstack_size,
@@ -205,8 +205,8 @@ void mem_execve(struct memory_info *mem, process *caller, const char *exec_fn,
     FS_read_file(&file_info, 0, &elf_header, sizeof(Elf32_Ehdr));
     // printf("Load file as proc[%s] : %s, size: %d bytes\n", proc_name,
     //    file_info.filename, file_info.size);
-    BOOL is_vailed = elf_check_supported(&elf_header);
-    if (!is_vailed) {
+    BOOL is_valid = elf_check_supported(&elf_header);
+    if (!is_valid) {
     // kill proc
     kill:
         caller->exit_status = 255;

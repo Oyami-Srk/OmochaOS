@@ -147,8 +147,19 @@ extern void     scheduler();
 extern process *proc_running;
 
 void interrupt_handler(stack_frame *intf) {
-    // asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
-    // switch page dir each interrupt is not good
+    if (intf->trap_no == IRQ_TIMER) {
+        (*beats)++;
+        scheduler();
+        EOI_M();
+        return;
+    }
+
+    asm volatile("movl %%cr3, %%ebx\n\t"
+                 "cmp %%ebx, %0\n\t"
+                 "je .done\n\t"
+                 "movl %0, %%cr3\n\t"
+                 ".done:\n\t" ::"r"(KV2P(core_page_dir))
+                 : "memory", "%ebx");
     if (intf->trap_no < EXCEPTION_COUNT) {
         if (exception_suscribed[intf->trap_no]) {
             ((process *)intf)->status &= PROC_STATUS_ERROR;
@@ -161,6 +172,16 @@ void interrupt_handler(stack_frame *intf) {
             send_exception_msg(trap_no, (uint)intf,
                                exception_suscribed[trap_no]);
             scheduler();
+            /*
+            kprintf("Exception %s with err_code %d in proc %d\n"
+                    "Proc esp: 0x%x, eip: 0x%x (va)\n"
+                    "Proc status: 0x%x  cr2: %x\n",
+                    exception_message[trap_no], intf->err_code,
+                    proc_running->pid, proc_running->stack.esp,
+                    proc_running->stack.eip, proc_running->status,
+                    intf->trap_no);
+            magic_break();
+            */
             return;
         }
         cli();
@@ -202,13 +223,15 @@ void interrupt_handler(stack_frame *intf) {
         return;
     }
     switch (intf->trap_no) {
-    case IRQ_TIMER:
-        (*beats)++;
-        scheduler();
-        EOI_M();
-        break;
     case SYSCALL_INT: {
-        asm volatile("movl %0, %%cr3\n\t" ::"r"(KV2P(core_page_dir)));
+        /*
+        asm volatile("movl %%cr3, %%ebx\n\t"
+                     "cmp %%ebx, %0\n\t"
+                     "je .done\n\t"
+                     "movl %0, %%cr3\n\t"
+                     ".done:\n\t" ::"r"(KV2P(core_page_dir))
+                     : "memory", "%ebx");
+                     */
         volatile int retval = 0;
         asm volatile("push %%edx\n\t"
                      "push %%ebx\n\t"
