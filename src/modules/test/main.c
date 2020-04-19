@@ -1,3 +1,4 @@
+#include "modules/systask.h"
 #include "modules/tty.h"
 
 int main(int argc, char **argv) {
@@ -7,9 +8,5 @@ int main(int argc, char **argv) {
         printf("%s, ", argv[i]);
     }
     printf("\n");
-    char *vaddr = (char *)0x80101234;
-    printf("v: %d\n", *vaddr);
-    *vaddr = 12;
-    printf("v: %d\n", *vaddr);
     return 233;
 }

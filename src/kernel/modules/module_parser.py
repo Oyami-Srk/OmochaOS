@@ -39,12 +39,12 @@ def iter_c_files_in_dir(dir: str):
     files = os.listdir(dir)
     modules = []
     for f in files:
-        if os.path.isdir(f):
-            if os.path.exists(f + "/module.yaml"):
+        if os.path.isdir(dir + '/' + f):
+            if os.path.exists(dir + '/' + f + "/module.yaml"):
                 try:
                     modules.append(
                         generate_from_yaml(
-                            read_yaml(f+"/module.yaml")
+                            read_yaml(dir + '/' + f+"/module.yaml")
                         )
                     )
                 except Exception as e:

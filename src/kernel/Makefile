@@ -69,6 +69,6 @@ $(KERNEL_BUILD)/multiboot.i: header/core/multiboot.h
 	@echo "; auto generated code, DO NOT MODIFIY." > $@
 	$(CC) -E -dM -I$(KERNEL_HEADER) $(CC_FLAGS) $^ | $(AWK) -F' ' 'substr($$2,0,1)!="_" {gsub(/#/,"%"); print}' >> $@
 
-header/modules/modules.h: $(wildcard modules/*/*.yaml)
+header/modules/modules.h: $(wildcard modules/*/*.yaml) modules/module_parser.py
 	$(PY3) modules/module_parser.py -m modules -a $@ --dryrun
 	$(PY3) modules/module_parser.py -m modules -a $@

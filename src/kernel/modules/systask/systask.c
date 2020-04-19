@@ -330,6 +330,33 @@ void SysTask() {
             SEND_BACK(msg);
             break;
         }
+        case SWITCHPRIVRING3: {
+            // check sender's privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 1)
+                panic("Not in ring1");
+            core_env.proc_table[msg.sender].stack.cs = SEL_CODE_DPL3;
+            core_env.proc_table[msg.sender].stack.es = SEL_DATA_DPL3;
+            core_env.proc_table[msg.sender].stack.fs = SEL_DATA_DPL3;
+            core_env.proc_table[msg.sender].stack.ds = SEL_DATA_DPL3;
+            core_env.proc_table[msg.sender].stack.ss = SEL_DATA_DPL3;
+            core_env.proc_table[msg.sender].stack.gs = SEL_DATA_DPL3;
+            SEND_BACK(msg);
+            break;
+        }
+        case SWITCHPRIVRING1: {
+            // check process is in whitelist
+            // check privilige
+            if ((core_env.proc_table[msg.sender].stack.cs & 0x3) != 3)
+                panic("Not in ring3");
+            core_env.proc_table[msg.sender].stack.cs = SEL_CODE_DPL1;
+            core_env.proc_table[msg.sender].stack.es = SEL_DATA_DPL1;
+            core_env.proc_table[msg.sender].stack.fs = SEL_DATA_DPL1;
+            core_env.proc_table[msg.sender].stack.ds = SEL_DATA_DPL1;
+            core_env.proc_table[msg.sender].stack.ss = SEL_DATA_DPL1;
+            core_env.proc_table[msg.sender].stack.gs = SEL_DATA_DPL1;
+            SEND_BACK(msg);
+            break;
+        }
         default:
             break;
         }

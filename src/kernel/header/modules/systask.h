@@ -25,6 +25,8 @@
 #define PROC_VIR2PHY       15
 #define REG_EXC_MSG        16
 #define UNREG_EXC_MSG      17
+#define SWITCHPRIVRING1    18
+#define SWITCHPRIVRING3    19
 
 static inline uint get_ticks_msg() {
     message msg;
@@ -202,6 +204,22 @@ static inline process *get_proc_list_head() {
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return (process *)msg.major;
+}
+
+static inline void switch_to_ring1() {
+    message msg;
+    msg.type     = SWITCHPRIVRING1;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
+}
+
+static inline void switch_to_ring3() {
+    message msg;
+    msg.type     = SWITCHPRIVRING3;
+    msg.receiver = SYSTASK_PID;
+    send_msg(&msg);
+    recv_msg(&msg, SYSTASK_PID);
 }
 
 #endif // __MODULE_SYSTASK_H__
