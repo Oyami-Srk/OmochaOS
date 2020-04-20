@@ -62,8 +62,12 @@ void kputc_color(char c, uint fg, uint bg) {
         put_bitmap(fb_addr + disp_offset, disp_pitch, font[c - FONT_OFFSET],
                    FONT_WIDTH, FONT_HEIGHT, fg, bg);
     }
-    if (FONT_GAP_X) {
-        *(fb_addr + disp_offset + FONT_WIDTH + FONT_GAP_X) = bg;
+    if (bg && FONT_GAP_X) {
+        for (uint i = 0; i < FONT_HEIGHT; i++) {
+            for (uint j = 0; j < FONT_GAP_X; j++) {
+                *(fb_addr + disp_offset + disp_width * i + FONT_WIDTH + j) = bg;
+            }
+        }
     }
     disp_offset += FONT_WIDTH + FONT_GAP_X;
 }
@@ -106,19 +110,21 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
     // TODO: set panic int to receive panic from user processes
     if ((uint)(cs & 3) != 0) { // you cannot panic in ring1-3, please use panic
                                // int pass message to kernel
-#ifdef __DEBUG
+#ifdef __DEBUG__
         ;
 #else
         return;
 #endif
+    } else {
+        asm volatile("cli"); // close interrupt for ring 0 panic
     }
-    asm volatile("cli"); // close interrupt
 
     kprintfc(WHITE, BLUE, "[PANIC] %s in line %d of %s based on %s.\n", str, ln,
              s_fn, b_fn);
     magic_break();
-    while (1)
-        ;
+    if ((uint)(cs & 3) == 0)
+        while (1)
+            ;
 }
 
 void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {

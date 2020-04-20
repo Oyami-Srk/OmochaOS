@@ -20,12 +20,6 @@ void Task_TTY() {
     uint key = 0;
     init_kbd();
     init_monitor();
-    for (uint i = 0; i < max_con; i++)
-        init_console(&con[i], i);
-    write_console(&con[0], "Monitor Initialized!\nConsole #1> ");
-    write_console(&con[1], "Console #2> ");
-    write_console(&con[2], "Console #3> ");
-    write_console(&con[3], "Console #4> ");
 
     while (1) {
         if (peek_msg()) {

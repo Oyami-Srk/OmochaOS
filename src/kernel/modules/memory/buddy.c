@@ -25,8 +25,6 @@ static block_list *remove_from_free_list(struct memory_info *mem, block_list *p,
 static block_list *attach_to_free_list(struct memory_info *mem, block_list *p,
                                        uint order) {
     // must attach a single node
-    assert(p->prev == NULL);
-    assert(p->next == NULL);
     p->next               = mem->free_list[order];
     p->next->prev         = p;
     p->prev               = NULL;
