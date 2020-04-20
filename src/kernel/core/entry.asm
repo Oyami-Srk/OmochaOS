@@ -22,8 +22,8 @@ align 4
     dd 0
     dd 0
     dd 0 ; mode_type
-    dd 1440 ; width
-    dd 900 ; height
+    dd 1024 ; width
+    dd 768 ; height
     dd 32 ; depth
 
 ;; bss section
