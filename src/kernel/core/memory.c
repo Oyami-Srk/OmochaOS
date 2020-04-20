@@ -83,6 +83,22 @@ void core_init_memory(struct core_env *env) {
         pa += PAGE_SIZE_EXTEND;
     }
 
+    void *fb_start = (void *)env->boot_info.framebuffer_addr;
+    void *fb_end   = fb_start + env->boot_info.framebuffer_height *
+                                  env->boot_info.framebuffer_pitch;
+    size_t fb_pg_count =
+        ((uint)(fb_end - fb_start) + PAGE_SIZE_EXTEND - 1) / PAGE_SIZE_EXTEND;
+    pde_i = &env->page_dir[(uint)fb_start >> 22];
+    for (uint i = 0; i < fb_pg_count; pde_i++, i++) {
+        *pde_i = (uint)fb_start | PG_Present | PG_Writable | PG_PS;
+        fb_start += PAGE_SIZE_EXTEND;
+    }
+
+    // reload cr3
+    asm volatile("movl %%cr3, %%eax\n\t"
+                 "movl %%eax, %%cr3\n\t" ::
+                     : "eax", "memory");
+
     void *vstart = (void *)env->core_space_free_start;
     void *vend   = (void *)env->core_space_free_end;
     // align to higher addr than vstart

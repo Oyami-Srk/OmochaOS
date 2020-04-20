@@ -53,6 +53,20 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
            core_env.core_space_end - core_env.core_space_start);
 
     core_init_memory(&core_env);
+    int *addr = (int *)multiboot_header->framebuffer_addr;
+
+    /*
+        for (uint i = 0; i < 1440 * 20; i++) {
+            *((char *)addr + 0) = (char)0x00;
+            *((char *)addr + 1) = (char)0x00;
+            *((char *)addr + 2) = (char)0xff;
+            *((char *)addr + 3) = (char)0x00;
+            addr += 1;
+        }
+        */
+    GRAPHIC_init((uint *)addr, multiboot_header->framebuffer_width,
+                 multiboot_header->framebuffer_height,
+                 multiboot_header->framebuffer_pitch);
 
     core_env.proc_table = (process *)core_env.core_space_free_end;
     size_t ideal_proc_max =
@@ -68,10 +82,12 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     // someof last pid cannot be used
     core_env.proc_bitmap_size = ((core_env.proc_max / 8) / sizeof(bitset));
 
+    /*
     kprintf("\n\nproc_max: %d\nbitmap_size: %d\n", core_env.proc_max,
             core_env.proc_bitmap_size);
     kprintf("Proc table start: 0x%x\n", core_env.proc_table);
     kprintf("Bitmap start: 0x%x\n", core_env.proc_bitmap);
+    */
 
     core_init_gdt(&core_env);
     core_init_interrupt(&core_env);
@@ -88,8 +104,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         if (modules_preferred_pid[i] >= 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
                       core_page_dir);
-
-    kprintf("Jump to process.\n");
+    kprintfc(YELLOW, BLACK, "Jump to process.\n");
     move_to_proc();
     while (1)
         ;

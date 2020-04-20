@@ -23,7 +23,8 @@
 #ifndef MULTIBOOT_HEADER
 #define MULTIBOOT_HEADER 1
 
-#define MULTIBOOT_FLAG MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO
+#define MULTIBOOT_FLAG                                                         \
+    MULTIBOOT_PAGE_ALIGN | MULTIBOOT_MEMORY_INFO | MULTIBOOT_VIDEO_MODE
 
 /* How many bytes from the start of the file we search for the header. */
 #define MULTIBOOT_SEARCH       8192

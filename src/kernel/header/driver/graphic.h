@@ -3,24 +3,25 @@
 
 #include "generic/typedefs.h"
 
-#define SCREEN_WIDTH  80
-#define SCREEN_HEIGHT 25
-#define SCREEN_SIZE   (SCREEN_WIDTH * SCREEN_HEIGHT)
+#define WHITE  0x00ffffff //白
+#define BLACK  0x00000000 //黑
+#define RED    0x00ff0000 //红
+#define ORANGE 0x00ff8000 //橙
+#define YELLOW 0x00ffff00 //黄
+#define GREEN  0x0000ff00 //绿
+#define BLUE   0x000000ff //蓝
+#define INDIGO 0x0000ffff //靛
+#define PURPLE 0x008000ff //紫
 
-#define BLACK  0x0
-#define BLUE   0x1
-#define GREEN  0x2
-#define RED    0x4
-#define WHITE  0x7
-#define BRIGHT 0x8
-#define FLASH  0x80
-
-#define COLOR(bg, fg) ((bg << 4) | fg)
+#define DEFAULT_FG WHITE
+#define DEFAULT_BG BLACK
 
 void kprintf(const char *fmt, ...);
-uint GRAPHIC_write_color_string_to_vm(u32 offset, u16 color, const char *str);
-void GRAPHIC_set_vm_display_addr(uint offset);
-void GRAPHIC_set_cursor_addr(uint offset);
-void GRAPHIC_init(void);
+void kprintfc(uint fg, uint bg, const char *fmt, ...);
+void GRAPHIC_init(uint *fb, int width, int height, uint pitch);
+void put_bitmap(uint *addr, size_t width_pitch, const unsigned char *bitmap,
+                uint bitmap_X, uint bitmap_Y, uint Front_Color,
+                uint Background_Color);
+void kputc_color(char c, uint fg, uint bg);
 
 #endif // __GRAPHIC_H__

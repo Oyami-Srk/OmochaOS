@@ -19,6 +19,7 @@ void Task_TTY() {
         kprintf("Cannot register as TaskTTY!\n");
     uint key = 0;
     init_kbd();
+    init_monitor();
     for (uint i = 0; i < max_con; i++)
         init_console(&con[i], i);
     write_console(&con[0], "Monitor Initialized!\nConsole #1> ");
@@ -47,31 +48,6 @@ void Task_TTY() {
                 break;
             case BACKSPACE:
                 write_console(&con[cur_con], "\b");
-                break;
-            case F1:
-                cur_con = 0;
-                flush_console(&con[0]);
-                break;
-            case F2:
-                cur_con = 1;
-                flush_console(&con[1]);
-                break;
-            case F3:
-                cur_con = 2;
-                flush_console(&con[2]);
-                break;
-            case F4:
-                cur_con = 3;
-                flush_console(&con[3]);
-                break;
-            case F12:
-                if (con[cur_con].disp_start_offset !=
-                    con[cur_con].origin_offset)
-                    con[cur_con].disp_start_offset = con[cur_con].origin_offset;
-                else
-                    con[cur_con].disp_start_offset =
-                        con[cur_con].origin_offset + SCREEN_SIZE * 2;
-                flush_console(&con[cur_con]);
                 break;
             }
         }

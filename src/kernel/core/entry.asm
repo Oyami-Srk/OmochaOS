@@ -7,7 +7,7 @@ MB_MAGIC    equ 0x1BADB002
 MB_FLAGS    equ MULTIBOOT_FLAG
 MB_CHECKSUM equ -(MB_MAGIC + MB_FLAGS)
 KERNEL_BASE equ 0x80000000
-STACKSIZE   equ 0x2000  ; 8 Kib
+STACKSIZE   equ 0x4000  ; 16 Kib
 
 ;; multiboot header
 
@@ -16,6 +16,15 @@ align 4
     dd MB_MAGIC
     dd MB_FLAGS
     dd MB_CHECKSUM
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+    dd 0
+    dd 0 ; mode_type
+    dd 1440 ; width
+    dd 900 ; height
+    dd 32 ; depth
 
 ;; bss section
 [section .bss]

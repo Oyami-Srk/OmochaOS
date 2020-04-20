@@ -185,20 +185,13 @@ void interrupt_handler(stack_frame *intf) {
             return;
         }
         cli();
-        GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, BLACK),
-                                         "                    "
-                                         "                    "
-                                         "                    "
-                                         "                   ");
-        char buf[128];
-        sprintf(buf,
-                "Exception %s with err_code %d in proc %d\n"
-                "Proc esp: 0x%x, eip: 0x%x (va)\n"
-                "Proc status: 0x%x\n",
-                exception_message[intf->trap_no], intf->err_code,
-                proc_running->pid, proc_running->stack.esp,
-                proc_running->stack.eip, proc_running->status);
-        GRAPHIC_write_color_string_to_vm(0, COLOR(BLUE, RED), buf);
+        kprintfc(RED, BLUE,
+                 "Exception %s with err_code %d in proc %d\n"
+                 "Proc esp: 0x%x, eip: 0x%x (va)\n"
+                 "Proc status: 0x%x\n",
+                 exception_message[intf->trap_no], intf->err_code,
+                 proc_running->pid, proc_running->stack.esp,
+                 proc_running->stack.eip, proc_running->status);
         magic_break();
         while (1)
             ;

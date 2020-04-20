@@ -15,5 +15,6 @@ void switch_console(struct console *con);
 void write_console(struct console *con, const char *str);
 void clear_console(struct console *con, uint offset, size_t len);
 void init_console(struct console *con, int vm_nr);
+void init_monitor();
 
 #endif // __MODULE_MONITOR_H__
