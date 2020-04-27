@@ -10,6 +10,10 @@ const volatile char *vm_start = (volatile char *)0x800B8000;
 uint                 disp_pos = 0;
 
 uint  disp_offset = 0; // in pixel
+uint  char_width;
+uint  char_height;
+int   char_x; // point to next char space
+int   char_y;
 uint  disp_width  = 0;
 uint  disp_height = 0;
 uint  disp_pitch  = 0;
@@ -36,40 +40,69 @@ void put_bitmap(uint *addr, size_t width_pitch, const unsigned char *bitmap,
     }
 }
 
+void kputc_color_xy(int x, int y, char c, uint fg, uint bg) {
+    if (c - FONT_OFFSET > sizeof(font) / FONT_HEIGHT) {
+        put_bitmap(fb_addr + (x * (FONT_WIDTH + FONT_GAP_X)) +
+                       (y * FONT_HEIGHT * disp_width),
+                   disp_pitch, font_block, FONT_WIDTH, FONT_HEIGHT, fg, bg);
+    } else {
+        put_bitmap(fb_addr + (x * (FONT_WIDTH + FONT_GAP_X)) +
+                       (y * FONT_HEIGHT * disp_width),
+                   disp_pitch, font[c - FONT_OFFSET], FONT_WIDTH, FONT_HEIGHT,
+                   fg, bg);
+    }
+}
+
 void kputc_color(char c, uint fg, uint bg) {
     if (c == '\n') {
-        disp_offset += disp_width - disp_offset % disp_width;
-        disp_offset += (FONT_HEIGHT - 1) * disp_width;
+        char_y++;
+        char_x = 0;
         return;
     }
     if (c == '\b') {
-        disp_offset -= FONT_WIDTH + FONT_GAP_X;
-        kputc_color(' ', 0x0, 0x0);
-        disp_offset -= FONT_WIDTH + FONT_GAP_X;
+        // disp_offset -= FONT_WIDTH + FONT_GAP_X;
+        // disp_offset -= FONT_WIDTH + FONT_GAP_X;
+        if (char_x == 0) {
+            char_x = char_width - 1;
+            if (char_y != 0)
+                char_y--;
+        } else
+            char_x--;
+        put_bitmap(fb_addr + (char_x * (FONT_WIDTH + FONT_GAP_X)) +
+                       (char_y * FONT_HEIGHT * disp_width),
+                   disp_pitch, font[' ' - FONT_OFFSET], FONT_WIDTH, FONT_HEIGHT,
+                   fg, bg);
         return;
     }
 
-    if ((disp_offset % disp_width) + FONT_WIDTH > disp_width)
-        kputc_color('\n', fg, bg);
-
-    if (disp_offset > (disp_height - FONT_HEIGHT) * disp_width)
-        disp_offset = 0;
-
     if (c - FONT_OFFSET > sizeof(font) / FONT_HEIGHT) {
-        put_bitmap(fb_addr + disp_offset, disp_pitch, font_block, FONT_WIDTH,
-                   FONT_HEIGHT, fg, bg);
+        put_bitmap(fb_addr + (char_x * (FONT_WIDTH + FONT_GAP_X)) +
+                       (char_y * FONT_HEIGHT * disp_width),
+                   disp_pitch, font_block, FONT_WIDTH, FONT_HEIGHT, fg, bg);
     } else {
-        put_bitmap(fb_addr + disp_offset, disp_pitch, font[c - FONT_OFFSET],
-                   FONT_WIDTH, FONT_HEIGHT, fg, bg);
+        put_bitmap(fb_addr + (char_x * (FONT_WIDTH + FONT_GAP_X)) +
+                       (char_y * FONT_HEIGHT * disp_width),
+                   disp_pitch, font[c - FONT_OFFSET], FONT_WIDTH, FONT_HEIGHT,
+                   fg, bg);
     }
+
     if (bg && FONT_GAP_X) {
         for (uint i = 0; i < FONT_HEIGHT; i++) {
             for (uint j = 0; j < FONT_GAP_X; j++) {
-                *(fb_addr + disp_offset + disp_width * i + FONT_WIDTH + j) = bg;
+                *(fb_addr +
+                  ((char_x * (FONT_WIDTH + FONT_GAP_X)) +
+                   (char_y * FONT_HEIGHT * disp_width)) +
+                  disp_width * i + FONT_WIDTH + j) = bg;
             }
         }
     }
-    disp_offset += FONT_WIDTH + FONT_GAP_X;
+
+    if (++char_x >= char_width) {
+        char_x = 0;
+        if (++char_y >= char_height)
+            char_y = 0;
+        return;
+    }
 }
 
 void kprintfc(uint fg, uint bg, const char *fmt, ...) {
@@ -132,8 +165,15 @@ void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     disp_width  = width;
     disp_height = height;
     disp_pitch  = pitch;
+
+    char_width  = disp_width / (FONT_WIDTH + FONT_GAP_X);
+    char_height = disp_height / FONT_HEIGHT;
+    char_x      = 0;
+    char_y      = 0;
+
     for (uint y = 0; y < LOGO_Y; y++) {
         memcpy(fb_addr + y * disp_width, logo[y], sizeof(uint) * LOGO_X);
     }
     disp_offset = disp_width * (LOGO_Y + 5);
+    char_y += (LOGO_Y + 2 + FONT_HEIGHT) / FONT_HEIGHT;
 }

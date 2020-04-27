@@ -79,6 +79,10 @@ uint __recv_msg(process *receiver, message *msg, uint recv_from) {
     uint     has_received = FALSE;
     process *sender       = NULL;
 
+    if (recv_from == 0) { // 0 is reflect msg
+        return 0;
+    }
+
     if (receiver->status & PROC_STATUS_GOTINT &&
         (recv_from == PROC_INTERRUPT || recv_from == PROC_ANY)) {
         pid_t pid        = receiver->pid;

@@ -23,5 +23,6 @@ void put_bitmap(uint *addr, size_t width_pitch, const unsigned char *bitmap,
                 uint bitmap_X, uint bitmap_Y, uint Front_Color,
                 uint Background_Color);
 void kputc_color(char c, uint fg, uint bg);
+void kputc_color_xy(int x, int y, char c, uint fg, uint bg);
 
 #endif // __GRAPHIC_H__

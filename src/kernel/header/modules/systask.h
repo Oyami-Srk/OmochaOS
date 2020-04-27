@@ -39,8 +39,6 @@ static inline uint get_ticks_msg() {
 
 static inline uint get_pid() {
     message msg;
-    msg.receiver = 0;
-    send_msg(&msg);
     recv_msg(&msg, 0);
     return msg.receiver;
 }
@@ -68,7 +66,7 @@ static inline uint unreg_proc() {
 
 uint query_proc(const char *name);
 
-static inline uint reg_int_func(uint irq, void *func) {
+static inline uint reg_int_func(uint irq, void *func, void *data) {
     message msg;
     msg.type     = REG_INT_FUNC;
     msg.receiver = SYSTASK_PID;
@@ -76,6 +74,7 @@ static inline uint reg_int_func(uint irq, void *func) {
         return 1;
     msg.major            = irq;
     msg.data.uint_arr.d1 = (uint)func;
+    msg.data.uint_arr.d2 = (uint)data;
     send_msg(&msg);
     recv_msg(&msg, SYSTASK_PID);
     return msg.major;

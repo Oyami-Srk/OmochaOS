@@ -52,6 +52,7 @@ void disable_irq(uint irq);
 struct interrupt_method {
     pid_t pid;
     void *func;
+    void *data; // provided to func
     uint  avail;
 } __attribute__((packed));
 

@@ -146,11 +146,21 @@ void core_init_interrupt(struct core_env *env) {
 extern void     scheduler();
 extern process *proc_running;
 
+static char timer_str[] = {'/', '|', '\\', '-'};
+int         timer_str_n = 0;
+
+#define PRINT_CLOCK FALSE
+
 void interrupt_handler(stack_frame *intf) {
     if (intf->trap_no == IRQ_TIMER) {
         (*beats)++;
-        scheduler();
+#if PRINT_CLOCK
+        kputc_color_xy(0, 0, timer_str[timer_str_n++], RED, BLACK);
+        if (timer_str_n >= sizeof(timer_str))
+            timer_str_n = 0;
+#endif
         EOI_M();
+        scheduler();
         return;
     }
 
@@ -201,8 +211,8 @@ void interrupt_handler(stack_frame *intf) {
         if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE) {
             disable_irq(intf->trap_no - IRQ0);
             void *       func = interrupt_methods[intf->trap_no - IRQ0].func;
-            typedef void fp_v_v(void);
-            ((fp_v_v *)func)();
+            typedef void fp_v_v(void *);
+            ((fp_v_v *)func)(interrupt_methods[intf->trap_no - IRQ0].data);
         }
         if (interrupt_suscribed[intf->trap_no - IRQ0])
             send_interrupt_msg(intf->trap_no - IRQ0,

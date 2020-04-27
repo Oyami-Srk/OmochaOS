@@ -10,7 +10,7 @@ uint shift_l, shift_r, alt_l, alt_r, ctrl_l, ctrl_r, caps_lock, num_lock,
     scr_lock;
 uint E0, col;
 
-#define CIRCULAR_BUFFER_SIZE 128
+#define CIRCULAR_BUFFER_SIZE 256
 
 typedef struct {
     uchar *head;
@@ -21,12 +21,13 @@ typedef struct {
 
 static inline uchar read_circular_buffer(Circular_Buffer *b) {
     uchar data;
-    /*
     while (b->count <= 0) {
-      asm("nop");
-    }*/
+        asm("nop");
+    }
+    /*
     if (b->count <= 0)
         return 0;
+        */
     data = *(b->tail);
     b->tail++;
     if (b->tail == b->buf + CIRCULAR_BUFFER_SIZE)
@@ -195,14 +196,18 @@ void init_kbd() {
     // set leds
     set_leds();
     // reg interrupt func
-    reg_int_func(HW_IRQ_KBD, interrupt_kbd);
+    reg_int_func(HW_IRQ_KBD, interrupt_kbd, (void *)&kbd_buffer);
+    while (inb(0x64) & 0x01) {
+        inb(0x60);
+    }
     enable_irq(HW_IRQ_KBD);
 }
 
 /* Ring 0 */
 
 extern void EOI_M();
-void        interrupt_kbd() {
-    write_circular_buffer(&kbd_buffer, inb(0x60));
+void        interrupt_kbd(void *data) {
+    Circular_Buffer *kb = (Circular_Buffer *)data;
+    write_circular_buffer(kb, inb(0x60));
     enable_irq(HW_IRQ_KBD);
 };

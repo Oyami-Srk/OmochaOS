@@ -45,7 +45,6 @@ void SysTask() {
     msg.receiver = 0;
     // send msg to proc 0 (System reflect idle)
     // to check our pid is 1
-    send_msg(&msg);
     recv_msg(&msg, 0);
     if (msg.receiver != SYSTASK_PID)
         panic("Systask pid is not 1");
@@ -88,7 +87,9 @@ void SysTask() {
             core_env.interrupt_methods[msg.major].func =
                 (void *)vir2phy(core_env.proc_table[msg.sender].page_dir,
                                 (char *)msg.data.uint_arr.d1);
-
+            core_env.interrupt_methods[msg.major].data =
+                (void *)vir2phy(core_env.proc_table[msg.sender].page_dir,
+                                (char *)msg.data.uint_arr.d2);
             msg.major = 0;
             SEND_BACK(msg);
             break;
@@ -104,6 +105,7 @@ void SysTask() {
             core_env.interrupt_methods[msg.major].avail = FALSE;
             core_env.interrupt_methods[msg.major].pid   = 0;
             core_env.interrupt_methods[msg.major].func  = NULL;
+            core_env.interrupt_methods[msg.major].data  = NULL;
             msg.major                                   = 0;
             SEND_BACK(msg);
             break;
