@@ -1,6 +1,7 @@
 #include "core/interrupt.h"
 #include "core/paging.h"
 #include "core/process.h"
+#include "driver/graphic.h"
 #include "generic/asm.h"
 #include "generic/typedefs.h"
 #include "lib/stdlib.h"
@@ -25,6 +26,34 @@ uint __add(void *caller, uint a, uint b, uint c) { return a + b + c; }
  *  Need do vir2phy twice
  */
 
+static BOOL __is_dead_lock(pid_t src, pid_t dest) {
+    process *p = &proc_table[dest];
+    while (TRUE) {
+        if (p->status & PROC_STATUS_SENDING) {
+            pid_t to =
+                ((message *)(vir2phy(p->page_dir, (void *)p->p_msg)))->receiver;
+            if (to == src) {
+                // print send chain
+                p = &proc_table[dest];
+                kprintfc(RED, BLUE, "===DEADLOCK=== %s", p->name);
+                do {
+                    pid_t to1 =
+                        ((message *)(vir2phy(p->page_dir, (void *)p->p_msg)))
+                            ->receiver;
+                    p = &proc_table[to1];
+                    kprintfc(RED, BLUE, "->%s", p->name);
+                } while (p->pid != src);
+                kprintfc(RED, BLUE, "===DEADLOCK===\n");
+                return TRUE;
+            }
+            p = &proc_table[to];
+        } else {
+            break;
+        }
+    }
+    return FALSE;
+}
+
 uint __send_msg(process *sender, message *msg) {
     message *msg_va = msg;
     msg             = (message *)vir2phy(sender->page_dir, (char *)msg);
@@ -34,6 +63,9 @@ uint __send_msg(process *sender, message *msg) {
     message *recv_msg_pa =
         (message *)vir2phy(receiver->page_dir, (char *)receiver->p_msg);
     // TODO: check deadlock
+    if (__is_dead_lock(sender->pid, msg->receiver) == TRUE) {
+        panic(DEADLOCK);
+    }
 
     assert(msg->receiver != msg->sender);
     if ((receiver->status & PROC_STATUS_RECEVING) &&

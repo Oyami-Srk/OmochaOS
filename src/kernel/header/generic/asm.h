@@ -29,6 +29,22 @@ static inline unsigned char inb(unsigned short port) {
     return r;
 }
 
+#if USE_JMP_IOWAIT
+static inline void io_wait(void) {
+    asm volatile("jmp 1f\n\t"
+                 "1:jmp 2f\n\t"
+                 "2:");
+}
+#else
+static inline void io_wait(void) {
+    /* Port 0x80 is used for 'checkpoints' during POST. */
+    /* The Linux kernel seems to think it is free for use :-/ */
+    asm volatile("outb %%al, $0x80" : : "a"(0));
+    /* %%al instead of %0 makes no difference.  TODO: does the register need to
+     * be zeroed? */
+}
+#endif
+
 static inline void sti() { asm volatile("sti"); }
 
 static inline void cli() { asm volatile("cli"); }

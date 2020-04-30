@@ -19,6 +19,13 @@
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
 
+void restart() {
+    u8 good = 0x02;
+    while (good & 0x02)
+        good = inb(0x64);
+    outb(0x64, 0xFE);
+}
+
 void SysIdle() {
     // reflect msg to sender
     message msg;

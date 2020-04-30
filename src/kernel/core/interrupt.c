@@ -86,15 +86,23 @@ void send_exception_msg(uint exception, uint data, pid_t pid) {
 }
 
 void init_8259A() {
-    outb(IO_PIC_M, 0x11);     // ICW 1
-    outb(IO_PIC_S, 0x11);     // ICW 1
+    outb(IO_PIC_M, 0x11); // ICW 1
+    io_wait();
+    outb(IO_PIC_S, 0x11); // ICW 1
+    io_wait();
     outb(IO_PIC_M + 1, 0x20); // 0x20 -> Master first
+    io_wait();
     outb(IO_PIC_S + 1, 0x28); // 0x28 -> Salve first
+    io_wait();
 
     outb(IO_PIC_M + 1, 0x4); // ICW 3
+    io_wait();
     outb(IO_PIC_S + 1, 0x2); // ICW 3
+    io_wait();
     outb(IO_PIC_M + 1, 0x1);
+    io_wait();
     outb(IO_PIC_S + 1, 0x1);
+    io_wait();
 
     outb(IO_PIC_M + 1, 0xFE);
     outb(IO_PIC_S + 1, 0xFF);
@@ -149,17 +157,20 @@ extern process *proc_running;
 static char timer_str[] = {'/', '|', '\\', '-'};
 int         timer_str_n = 0;
 
-#define PRINT_CLOCK FALSE
+#define PRINT_CLOCK TRUE
+
+extern uint *fb_addr;
 
 void interrupt_handler(stack_frame *intf) {
     if (intf->trap_no == IRQ_TIMER) {
         (*beats)++;
-#if PRINT_CLOCK
-        kputc_color_xy(0, 0, timer_str[timer_str_n++], RED, BLACK);
-        if (timer_str_n >= sizeof(timer_str))
-            timer_str_n = 0;
-#endif
         EOI_M();
+#if PRINT_CLOCK
+        // kputc_color_xy(0, 0, timer_str[timer_str_n++], RED, BLACK);
+        // if (timer_str_n >= sizeof(timer_str))
+        // timer_str_n = 0;
+        // *fb_addr = *fb_addr == RED ? WHITE : RED;
+#endif
         scheduler();
         return;
     }
