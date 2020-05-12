@@ -1,6 +1,8 @@
 # VenlafaxOS
 VenlafaxOS is my personal studying project. Some code and lower design is inherited from my old project [OmochaOS](https://github.com/Oyami-Srk/OmochaOS). Why am I interseted in OS-Developing is under the readme of that project.
 
+#### Now preparing for College Entrance Examination
+
 # Build
 Run `make` in project root dir.
 * #### dependencies
