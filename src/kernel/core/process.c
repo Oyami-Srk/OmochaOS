@@ -42,7 +42,6 @@ void core_init_proc(struct core_env *env) {
 
 // proc initialized here is running under ring1
 uint init_proc(uint pid, void *entry, pde_t *page_dir) {
-    kprintf("UNRUNABLE is %x\n", UNRUNABLE);
     if ((pid == PROC_INTERRUPT) || (pid == PROC_ANY) ||
         check_bit(proc_bitmap, pid))
         pid = find_first_unset_bit(proc_bitmap, proc_bitmap_size);
@@ -90,6 +89,11 @@ uint init_proc(uint pid, void *entry, pde_t *page_dir) {
     return proc->pid;
 }
 
+#define UNRUNABLE                                                              \
+    (PROC_STATUS_RECEVING | PROC_STATUS_SENDING | PROC_STATUS_SUSPEND |        \
+     PROC_STATUS_STOP | PROC_STATUS_ERROR | PROC_STATUS_WATING |               \
+     PROC_STATUS_HANGING)
+
 void scheduler(void) {
     if (!proc_running)
         return;
@@ -98,6 +102,5 @@ void scheduler(void) {
             proc_running = *proc_list;
         else
             proc_running = proc_running->next;
-    } while ((proc_running->status) & UNRUNABLE);
-    return;
+    } while ((proc_running->status & 0xFF) & UNRUNABLE);
 }
