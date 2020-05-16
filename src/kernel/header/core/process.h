@@ -16,11 +16,6 @@
 #define PROC_STATUS_WATING   0x100
 #define PROC_STATUS_HANGING  0x200
 
-#define UNRUNABLE                                                              \
-    (PROC_STATUS_RECEVING | PROC_STATUS_SENDING | PROC_STATUS_SUSPEND |        \
-     PROC_STATUS_STOP | PROC_STATUS_ERROR | PROC_STATUS_WATING |               \
-     PROC_STATUS_HANGING)
-
 #define PROC_ANY       0xFFFFFFFE
 #define PROC_INTERRUPT 0xFFFFFFFF
 

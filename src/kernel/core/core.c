@@ -30,8 +30,11 @@ void SysIdle() {
     // reflect msg to sender
     message msg;
     while (1) {
+        /*
         recv_msg(&msg, PROC_ANY);
         SEND_BACK(msg);
+        */
+        asm("nop\n\t");
     }
 }
 
