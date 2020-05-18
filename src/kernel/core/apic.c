@@ -1,3 +1,4 @@
+#if USE_APIC
 #include "core/apic.h"
 #include "core/cpuid.h"
 #include "core/environment.h"
@@ -99,3 +100,4 @@ void init_apic(struct core_env *env) {
     outb(IO_PIC_M + 1, 0xFF);
     outb(IO_PIC_S + 1, 0xFF);
 }
+#endif

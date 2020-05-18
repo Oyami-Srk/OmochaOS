@@ -97,10 +97,13 @@ uint init_proc(uint pid, void *entry, pde_t *page_dir) {
 void scheduler(void) {
     if (!proc_running)
         return;
+    process *cur = proc_running;
     do {
         if (proc_running->next == NULL)
             proc_running = *proc_list;
         else
             proc_running = proc_running->next;
+        if (proc_running == cur)
+            asm volatile("sti\n\thlt\n\t");
     } while ((proc_running->status & 0xFF) & UNRUNABLE);
 }

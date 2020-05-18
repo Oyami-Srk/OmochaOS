@@ -35,8 +35,9 @@ vector_handler:
     jne .non_zero
     mov esp, interrupt_stack_bottom
 .non_zero:
-    inc dword [interrupt_count]
     push dword ecx ; original stack top
+    push dword [interrupt_count]
+    inc dword [interrupt_count]
     ; mov ebx, core_page_dir
     ; mov edx, cr3
     ; cmp edx, ebx
@@ -44,7 +45,7 @@ vector_handler:
 ; .same_page_dir:
     ; ; mov cr3, ebx ; load global page dir for interrupt
     call interrupt_handler
-    add esp, 4
+    add esp, 8
    
 global vector_handler_ret
 vector_handler_ret:

@@ -115,17 +115,23 @@ void init_8259A() {
 }
 
 void enable_irq(uint irq) {
+#if USE_APIC
+#else
     if (irq < 8)
         outb(IO_PIC_M + 1, inb(IO_PIC_M) & ~(1 << irq));
     else
         outb(IO_PIC_S + 1, inb(IO_PIC_S) & ~(1 << irq));
+#endif
 }
 
 void disable_irq(uint irq) {
+#if USE_APIC
+#else
     if (irq < 8)
         outb(IO_PIC_M + 1, inb(IO_PIC_M) | (1 << irq));
     else
         outb(IO_PIC_S + 1, inb(IO_PIC_S) | (1 << irq));
+#endif
 }
 
 void core_init_interrupt(struct core_env *env) {
@@ -166,9 +172,9 @@ extern process *proc_running;
 static char timer_str[] = {'/', '|', '\\', '-'};
 int         timer_str_n = 0;
 
-#define PRINT_CLOCK FALSE
+#define PRINT_CLOCK TRUE
 
-void interrupt_handler(stack_frame *intf) {
+void interrupt_handler(int interrupt_count, stack_frame *intf) {
     if (intf->trap_no == IRQ_TIMER) {
         (*beats)++;
 #if PRINT_CLOCK
@@ -177,7 +183,8 @@ void interrupt_handler(stack_frame *intf) {
             timer_str_n = 0;
 #endif
         EOI_M();
-        scheduler();
+        if (interrupt_count == 0)
+            scheduler();
         return;
     }
 
