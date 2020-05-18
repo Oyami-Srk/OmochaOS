@@ -1,4 +1,6 @@
 #include "core/interrupt.h"
+#include "core/config.h"
+#include "core/cpuid.h"
 #include "core/environment.h"
 #include "core/memory.h"
 #include "core/paging.h"
@@ -7,6 +9,10 @@
 #include "lib/stdlib.h"
 #include "lib/string.h"
 #include "lib/syscall.h"
+
+#ifdef USE_APIC
+#include "core/apic.h"
+#endif
 
 /* void *interrupt_stack; */
 
@@ -86,18 +92,26 @@ void send_exception_msg(uint exception, uint data, pid_t pid) {
 }
 
 void init_8259A() {
-    outb(IO_PIC_M, 0x11);     // ICW 1
-    outb(IO_PIC_S, 0x11);     // ICW 1
+    outb(IO_PIC_M, 0x11); // ICW 1
+    io_wait();
+    outb(IO_PIC_S, 0x11); // ICW 1
+    io_wait();
     outb(IO_PIC_M + 1, 0x20); // 0x20 -> Master first
+    io_wait();
     outb(IO_PIC_S + 1, 0x28); // 0x28 -> Salve first
+    io_wait();
 
     outb(IO_PIC_M + 1, 0x4); // ICW 3
+    io_wait();
     outb(IO_PIC_S + 1, 0x2); // ICW 3
+    io_wait();
     outb(IO_PIC_M + 1, 0x1);
+    io_wait();
     outb(IO_PIC_S + 1, 0x1);
+    io_wait();
 
-    outb(IO_PIC_M + 1, 0xFE);
-    outb(IO_PIC_S + 1, 0xFF);
+    outb(IO_PIC_M + 1, 0x00);
+    outb(IO_PIC_S + 1, 0x00);
 }
 
 void enable_irq(uint irq) {
@@ -130,6 +144,9 @@ void core_init_interrupt(struct core_env *env) {
     *idt_base       = (u32)(env->idt);
     asm volatile("lidt (%0)" ::"r"(idt_ptr));
     init_8259A();
+#if USE_APIC
+    init_apic(env);
+#endif
     /* interrupt_stack = kalloc(0); // notice here allocate */
     /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
     /* memset(interrupt_methods, 0, */

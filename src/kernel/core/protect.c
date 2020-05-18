@@ -39,7 +39,8 @@ void __lgdt__(BOOL has_tss, u16 selector_tss) {
         asm volatile("ltr %%ax" ::"a"(selector_tss));
 }
 
-void core_init_gdt(struct core_env *env) {
+/* 32-bits code */
+void core_init_protect(struct core_env *env) {
     size_t size         = sizeof(KERN_GDT) / sizeof(KERN_GDT[0]);
     BOOL   has_tss      = FALSE;
     uint   gdt_n        = 0;

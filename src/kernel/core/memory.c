@@ -74,7 +74,7 @@ void core_init_memory(struct core_env *env) {
     void *top_memory              = (void *)(0x100000 + upper_mem_length);
     env->memory_end               = (uint)top_memory;
     const size_t PAGE_SIZE_EXTEND = PG_SIZE * 1024; // 4MB
-    /* memset(env->page_dir, 0, PDE_SIZE); */
+    // memset(env->page_dir, 0, PDE_SIZE);
     unsigned int *pde_i    = env->page_dir;
     size_t        pg_count = (uint)top_memory / PAGE_SIZE_EXTEND;
     void *        pa       = 0;
@@ -83,15 +83,16 @@ void core_init_memory(struct core_env *env) {
         pa += PAGE_SIZE_EXTEND;
     }
 
-    void *fb_start = (void *)env->boot_info.framebuffer_addr;
-    void *fb_end   = fb_start + env->boot_info.framebuffer_height *
-                                  env->boot_info.framebuffer_pitch;
-    size_t fb_pg_count =
-        ((uint)(fb_end - fb_start) + PAGE_SIZE_EXTEND - 1) / PAGE_SIZE_EXTEND;
-    pde_i = &env->page_dir[(uint)fb_start >> 22];
-    for (uint i = 0; i < fb_pg_count; pde_i++, i++) {
-        *pde_i = (uint)fb_start | PG_Present | PG_Writable | PG_PS;
-        fb_start += PAGE_SIZE_EXTEND;
+    void * extpg_start = (void *)PGROUNDUP(env->core_space_end);
+    void * extpg_end   = (void *)0xFFFFFFFF;
+    size_t ext_pg_count =
+        ((uint)(extpg_end - extpg_start) + PAGE_SIZE_EXTEND - 1) /
+        PAGE_SIZE_EXTEND;
+    pde_i = &env->page_dir[(uint)extpg_start >> 22];
+    for (uint i = 0; i < ext_pg_count; pde_i++, i++) {
+        *pde_i =
+            (uint)extpg_start | PG_Present | PG_Writable | PG_PS | PG_OS_SYS;
+        extpg_start += PAGE_SIZE_EXTEND;
     }
 
     // reload cr3

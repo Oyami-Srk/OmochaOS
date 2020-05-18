@@ -1,6 +1,7 @@
 #ifndef __ENVIRONMENT_H__
 #define __ENVIRONMENT_H__
 
+#include "core/config.h"
 #include "core/interrupt.h"
 #include "core/multiboot.h"
 #include "core/process.h"
@@ -56,6 +57,11 @@ struct core_env {
     size_t     proc_max;
     bitset *   proc_bitmap;
     size_t     proc_bitmap_size; // count of array
+
+#ifdef USE_APIC
+    void *base_ioapic;
+    void *base_lapic;
+#endif
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
     uint                    interrupt_suscribed[HW_IRQ_COUNT];

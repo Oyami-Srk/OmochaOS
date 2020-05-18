@@ -13,6 +13,7 @@
 #include "modules/modules.h"
 #include "modules/systask.h"
 
+#include "core/cpuid.h"
 #include "core/environment.h"
 #include "core/init.h"
 
@@ -47,6 +48,15 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
     init_timer();
 
+    /*
+     * ===   KERNEL CODE    === <- 0x80100000
+     * === KERNEL CODE END  === <- KERN_VEND
+     * === CORE SPACE START === aligned up 1MB
+     *     (CORE FREE START)
+     * ===  CORE FREE END   === <- FREE START + 1MB
+     * ===  CORE SPACE END  === <- CODE + 4MB
+     */
+
     core_env.beats     = 0;
     core_env.core_vend = (uint)KERN_VEND;
     core_env.core_space_start =
@@ -73,7 +83,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
             *((char *)addr + 3) = (char)0x00;
             addr += 1;
         }
-        */
+    */
     GRAPHIC_init((uint *)addr, multiboot_header->framebuffer_width,
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
@@ -99,7 +109,7 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     kprintf("Bitmap start: 0x%x\n", core_env.proc_bitmap);
     */
 
-    core_init_gdt(&core_env);
+    core_init_protect(&core_env);
     core_init_interrupt(&core_env);
     core_init_proc(&core_env);
 

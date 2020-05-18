@@ -92,7 +92,7 @@ endif
 
 .PHONY: bochs
 bochs: detach
-	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\".*\"/\"$(subst /,\/,$(BOOTIMG))\"/g' > $(BUILD)/bochsrc
+	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\"80m.img\"/\"$(subst /,\/,$(BOOTIMG))\"/g' > $(BUILD)/bochsrc
 	-$(BOCHS) -q -f $(BUILD)/bochsrc
 	@echo "Simulation Terminated"
 

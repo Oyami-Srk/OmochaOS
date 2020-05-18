@@ -66,6 +66,11 @@ _start:
     add ebx, KERNEL_BASE ; ebx is stored by phy address
     push ebx    ; multiboot header
 
+    ;; ensure cpuid usable
+    ;; actually I think grub2 cannot run under cpus having no cpuid...
+    mov eax, 0
+    cpuid ;; if INVOP is occured, then cpuid is unsable
+
     call core_main
     cli
     xchg bx,bx
