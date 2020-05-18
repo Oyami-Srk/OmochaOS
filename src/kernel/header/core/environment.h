@@ -61,6 +61,7 @@ struct core_env {
 #ifdef USE_APIC
     void *base_ioapic;
     void *base_lapic;
+    uint  lapic_feature;
 #endif
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];
@@ -72,5 +73,9 @@ struct core_env {
     struct core_env_memory_zone memory_zone[MEMORY_ZONE_MAX];
     uint                        memory_zone_count;
 } __attribute__((aligned(4096))); // 4KB aligned
+
+enum LAPIC_FEATURE {
+    LAPIC_FEAT_X2APIC = 1 << 0,
+};
 
 #endif // __ENVIRONMENT_H__

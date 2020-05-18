@@ -45,6 +45,10 @@ static inline void io_wait(void) {
 }
 #endif
 
+static inline void mfence() { asm volatile("mfence" ::: "memory"); }
+static inline void lfence() { asm volatile("lfence" ::: "memory"); }
+static inline void sfence() { asm volatile("sfence" ::: "memory"); }
+
 static inline void sti() { asm volatile("sti"); }
 
 static inline void cli() { asm volatile("cli"); }

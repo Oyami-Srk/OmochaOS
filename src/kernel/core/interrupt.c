@@ -148,7 +148,7 @@ void core_init_interrupt(struct core_env *env) {
     u32 * idt_base  = (u32 *)(&idt_ptr[2]);
     *idt_limit      = env->idt_size * sizeof(Gate) - 1;
     *idt_base       = (u32)(env->idt);
-    asm volatile("lidt (%0)" ::"r"(idt_ptr));
+    asm volatile("lidt (%0)\n\t" ::"r"(idt_ptr));
     init_8259A();
 #if USE_APIC
     init_apic(env);
@@ -163,7 +163,7 @@ void core_init_interrupt(struct core_env *env) {
     exception_suscribed_data = env->exception_suscribed_data;
     interrupt_suscribed_data = env->interrupt_suscribed_data;
     beats                    = &env->beats; // TODO: not use pointer anyway
-    asm("sti");
+    asm("sti\n\t");
 }
 
 extern void     scheduler();
