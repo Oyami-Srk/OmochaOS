@@ -1,11 +1,12 @@
-megs: 256
+megs: 512
 romimage: file=$BXSHARE/BIOS-bochs-latest
 vgaromimage: file=$BXSHARE/VGABIOS-lgpl-latest
 vga: extension=vbe, update_freq=15
 #clock: sync=slowdown, time0=local
 mouse: enabled=0
 #cpu: count=1, ips=500000000
-cpu: count=1, model=corei7_haswell_4770
+#cpu: count=1, model=corei7_haswell_4770
+cpu: count=1, model=broadwell_ult
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, path="80m.img", mode=flat
 boot: disk

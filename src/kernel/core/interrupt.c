@@ -183,7 +183,8 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
     }
     if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
         // handler interrupt and enable irq
-        if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE) {
+        if (interrupt_methods[intf->trap_no - IRQ0].avail ==
+            TRUE) { // better not to use this way
             disable_interrupt(intf->trap_no - IRQ0);
             void *       func = interrupt_methods[intf->trap_no - IRQ0].func;
             typedef void fp_v_v(void *);
@@ -193,7 +194,7 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         if (interrupt_suscribed[intf->trap_no - IRQ0])
             send_interrupt_msg(intf->trap_no - IRQ0,
                                interrupt_suscribed[intf->trap_no - IRQ0]);
-        end_interrupt(intf->trap_no - IRQ0);
+        end_interrupt(intf->trap_no - IRQ0); // maybe it could move to the top?
         return;
     }
     switch (intf->trap_no) {

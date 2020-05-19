@@ -44,21 +44,26 @@ static void foreach_rsdt(struct RSDT *pRSDT) {
     kprintf("=======  RSDT Foreach =======\n");
     size_t table_count = RSDT_TABLECOUNT((struct ACPISDTHeader *)pRSDT);
     char   buf[16];
+    if (memcmp("RSDT", pRSDT->h.Signature, 4) != 0 ||
+        sdt_checksum((struct ACPISDTHeader *)pRSDT) != 0)
+        panic(Not a valid RSDT);
     memset(buf, 0, 16);
     memcpy(buf, pRSDT->h.OEMTableID, 8);
+    kprintf("  RSDT Length: %d bytes, sizeof ACPISDTHeader is %d bytes\n",
+            pRSDT->h.Length, sizeof(struct ACPISDTHeader));
     kprintf("  Total %d tables. OEMTableID is: %s\n", table_count, buf);
-    kprintf("  RSDT at 0x%x, Table start at 0x%x\n", pRSDT, pRSDT->table);
-    void *p = pRSDT->table;
+    kprintf("  RSDT at 0x%x, Table at 0x%x\n", pRSDT, pRSDT->table);
     for (uint i = 0; i < table_count; i++) {
-        struct ACPISDTHeader *ph = p;
-        if (sdt_checksum(p) == 0) {
+        kprintf("  Searching for %d item of table, at 0x%x:", i,
+                pRSDT->table[i]);
+        struct ACPISDTHeader *ph = (struct ACPISDTHeader *)(pRSDT->table[i]);
+        if (sdt_checksum(ph) == 0) {
             char sig_buf[5] = {[4] = 0};
             memcpy(sig_buf, ph->Signature, 4);
             kprintf("  %s, Length: %d bytes\n", sig_buf, ph->Length);
         } else {
-            kprintf("  Checksum failed at 0x%x\n", p);
+            kprintf("  Checksum failed at 0x%x\n", ph);
         }
-        p += ph->Length;
     }
     kprintf("=======RSDT ENDForeach=======\n");
 }
@@ -236,6 +241,7 @@ void init_apic(struct core_env *env) {
     memcpy(buf, rsdp->OEMID, 6);
     kprintf("Found rsdp at 0x%x, version: %d, OEM: %s\n", rsdp, rsdp->Revision,
             buf);
+    foreach_rsdt((struct RSDT *)rsdp->RsdtAddress);
 
     // enable Local APIC
     init_lapic(env);

@@ -34,13 +34,13 @@ struct ACPISDTHeader {
     u32  OEMRevision;
     u32  CreatorID;
     u32  CreatorRevision;
-};
+} __attribute__((packed));
 
 struct RSDT {
     struct ACPISDTHeader h;
     // u32                  PointerToOtherSDT[(h.Length - sizeof(h)) / 4];
-    void *table;
-};
+    u32 table[];
+} __attribute__((packed));
 
 #define RSDT_TABLECOUNT(x)                                                     \
     ((((x)->Length) - sizeof(struct ACPISDTHeader)) / sizeof(u32))
