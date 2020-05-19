@@ -77,7 +77,7 @@ enum {
 #define CPUID_VENDOR_NSC          "Geode by NSC"
 #define CPUID_VENDOR_RISE         "RiseRiseRise"
 #define CPUID_VENDOR_VORTEX       "Vortex86 SoC"
-#define CPUID_VENDOR_VIA          "VIA VIA VIA "
+#define CPUID_VENDOR_VIA2         "VIA VIA VIA "
 
 /*Vendor-strings from Virtual Machines.*/
 #define CPUID_VENDOR_VMWARE       "VMwareVMware"

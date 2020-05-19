@@ -1,7 +1,6 @@
 #include "core/config.h"
 
 #if USE_APIC
-#include "core/8259A.h"
 #include "core/apic.h"
 #include "core/cpuid.h"
 #include "core/environment.h"
@@ -109,9 +108,11 @@ void init_ioapic(struct core_env *env) {
     kprintf("IOAPIC Version: 0x%x, RTE count: %d\n", ioapic_ver_reg & 0xFF,
             ((ioapic_ver_reg >> 16) & 0xFF) + 1);
 
-    // init ret start from INT 0x20
+    // init ret start from INT 0x20(IRQ0) to 0x40(IRQ32)
     for (uint i = 0x10; i < 0x40; i += 2) {
-        set_ioapic_ret(ioapic_base, i, 0x10000 + 0x20 + ((i - 0x10) >> 1), 0);
+        // set_ioapic_ret(ioapic_base, i, 0x10000 + 0x20 + ((i - 0x10) >> 1),
+        // 0);
+        set_ioapic_ret(ioapic_base, i, 0x20 + ((i - 0x10) >> 1), 0);
     }
 
     kprintf("IOAPIC Initialized\n");

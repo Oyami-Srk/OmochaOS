@@ -73,18 +73,8 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
            core_env.core_space_end - core_env.core_space_start);
 
     core_init_memory(&core_env);
-    int *addr = (int *)multiboot_header->framebuffer_addr;
-
-    /*
-        for (uint i = 0; i < 1440 * 20; i++) {
-            *((char *)addr + 0) = (char)0x00;
-            *((char *)addr + 1) = (char)0x00;
-            *((char *)addr + 2) = (char)0xff;
-            *((char *)addr + 3) = (char)0x00;
-            addr += 1;
-        }
-    */
-    GRAPHIC_init((uint *)addr, multiboot_header->framebuffer_width,
+    u32 fb_addr = multiboot_header->framebuffer_addr & 0xFFFFFFFF;
+    GRAPHIC_init((void *)(fb_addr), multiboot_header->framebuffer_width,
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
 
