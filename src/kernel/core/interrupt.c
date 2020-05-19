@@ -12,6 +12,8 @@
 
 #ifdef USE_APIC
 #include "core/apic.h"
+#elif USE_8259A
+#include "core/8259A.h"
 #endif
 
 /* void *interrupt_stack; */
@@ -46,9 +48,6 @@ uint *                   interrupt_suscribed;
 struct interrupt_data *  interrupt_suscribed_data;
 uint *                   beats;
 extern pde_t             core_page_dir[PDE_SIZE];
-
-static inline void EOI_M(void) { outb(IO_PIC_M, 0x20); }
-static inline void EOI_S(void) { outb(IO_PIC_S, 0x20); }
 
 void send_interrupt_msg(uint irq, pid_t pid) {
     extern size_t proc_count;
@@ -91,49 +90,6 @@ void send_exception_msg(uint exception, uint data, pid_t pid) {
     exception_suscribed_data[exception].data  = data;
 }
 
-void init_8259A() {
-    outb(IO_PIC_M, 0x11); // ICW 1
-    io_wait();
-    outb(IO_PIC_S, 0x11); // ICW 1
-    io_wait();
-    outb(IO_PIC_M + 1, 0x20); // 0x20 -> Master first
-    io_wait();
-    outb(IO_PIC_S + 1, 0x28); // 0x28 -> Salve first
-    io_wait();
-
-    outb(IO_PIC_M + 1, 0x4); // ICW 3
-    io_wait();
-    outb(IO_PIC_S + 1, 0x2); // ICW 3
-    io_wait();
-    outb(IO_PIC_M + 1, 0x1);
-    io_wait();
-    outb(IO_PIC_S + 1, 0x1);
-    io_wait();
-
-    outb(IO_PIC_M + 1, 0x00);
-    outb(IO_PIC_S + 1, 0x00);
-}
-
-void enable_irq(uint irq) {
-#if USE_APIC
-#else
-    if (irq < 8)
-        outb(IO_PIC_M + 1, inb(IO_PIC_M) & ~(1 << irq));
-    else
-        outb(IO_PIC_S + 1, inb(IO_PIC_S) & ~(1 << irq));
-#endif
-}
-
-void disable_irq(uint irq) {
-#if USE_APIC
-#else
-    if (irq < 8)
-        outb(IO_PIC_M + 1, inb(IO_PIC_M) | (1 << irq));
-    else
-        outb(IO_PIC_S + 1, inb(IO_PIC_S) | (1 << irq));
-#endif
-}
-
 void core_init_interrupt(struct core_env *env) {
     for (uint i = 0; i < env->idt_size; i++) {
         if (i == SYSCALL_INT)
@@ -149,10 +105,7 @@ void core_init_interrupt(struct core_env *env) {
     *idt_limit      = env->idt_size * sizeof(Gate) - 1;
     *idt_base       = (u32)(env->idt);
     asm volatile("lidt (%0)\n\t" ::"r"(idt_ptr));
-    init_8259A();
-#if USE_APIC
-    init_apic(env);
-#endif
+    init_inthw(env);
     /* interrupt_stack = kalloc(0); // notice here allocate */
     /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
     /* memset(interrupt_methods, 0, */
@@ -163,7 +116,7 @@ void core_init_interrupt(struct core_env *env) {
     exception_suscribed_data = env->exception_suscribed_data;
     interrupt_suscribed_data = env->interrupt_suscribed_data;
     beats                    = &env->beats; // TODO: not use pointer anyway
-    asm("sti\n\t");
+    sti();
 }
 
 extern void     scheduler();
@@ -171,8 +124,6 @@ extern process *proc_running;
 
 static char timer_str[] = {'/', '|', '\\', '-'};
 int         timer_str_n = 0;
-
-#define PRINT_CLOCK TRUE
 
 void interrupt_handler(int interrupt_count, stack_frame *intf) {
     if (intf->trap_no == IRQ_TIMER) {
@@ -182,7 +133,7 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         if (timer_str_n >= sizeof(timer_str))
             timer_str_n = 0;
 #endif
-        EOI_M();
+        end_interrupt(IRQ_TIMER - IRQ0);
         if (interrupt_count == 0)
             scheduler();
         return;
@@ -233,20 +184,16 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
     if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
         // handler interrupt and enable irq
         if (interrupt_methods[intf->trap_no - IRQ0].avail == TRUE) {
-            disable_irq(intf->trap_no - IRQ0);
+            disable_interrupt(intf->trap_no - IRQ0);
             void *       func = interrupt_methods[intf->trap_no - IRQ0].func;
             typedef void fp_v_v(void *);
             ((fp_v_v *)func)(interrupt_methods[intf->trap_no - IRQ0].data);
+            enable_interrupt(intf->trap_no - IRQ0);
         }
         if (interrupt_suscribed[intf->trap_no - IRQ0])
             send_interrupt_msg(intf->trap_no - IRQ0,
                                interrupt_suscribed[intf->trap_no - IRQ0]);
-        if (intf->trap_no - IRQ0 < 8)
-            EOI_M();
-        else {
-            EOI_M();
-            EOI_S();
-        }
+        end_interrupt(intf->trap_no - IRQ0);
         return;
     }
     switch (intf->trap_no) {

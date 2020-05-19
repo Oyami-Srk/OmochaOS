@@ -200,14 +200,11 @@ void init_kbd() {
     while (inb(0x64) & 0x01) {
         inb(0x60);
     }
-    enable_irq(HW_IRQ_KBD);
 }
 
 /* Ring 0 */
 
-extern void EOI_M();
-void        interrupt_kbd(void *data) {
+void interrupt_kbd(void *data) {
     Circular_Buffer *kb = (Circular_Buffer *)data;
     write_circular_buffer(kb, inb(0x60));
-    enable_irq(HW_IRQ_KBD);
 };

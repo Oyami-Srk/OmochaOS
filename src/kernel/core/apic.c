@@ -1,6 +1,7 @@
 #include "core/config.h"
 
 #if USE_APIC
+#include "core/8259A.h"
 #include "core/apic.h"
 #include "core/cpuid.h"
 #include "core/environment.h"
@@ -10,6 +11,10 @@
 #include "lib/string.h"
 
 #include "driver/graphic.h"
+
+void *lapic_base;
+void *ioapic_base;
+BOOL  isx2apic = FALSE;
 
 static int rsdp_checksum(char *p) {
     u8 sum = 0;
@@ -59,12 +64,14 @@ static void foreach_rsdt(struct RSDT *pRSDT) {
     kprintf("=======RSDT ENDForeach=======\n");
 }
 
-u32 get_lapic_reg(void *base, u16 offset) { return *((u32 *)(base + offset)); }
-u32 set_lapic_reg(void *base, u16 offset, u32 value) {
-    return (*((u32 *)(base + offset)) = value);
+static inline u32 get_lapic_reg(void *base, u16 offset) {
+    return *((volatile u32 *)(base + offset));
+}
+static inline void set_lapic_reg(void *base, u16 offset, u32 value) {
+    *(volatile u32 *)(base + offset) = value;
 }
 
-void get_ioapic_ret(void *base, u8 index, u32 *lo, u32 *hi) {
+static inline void get_ioapic_ret(void *base, u8 index, u32 *lo, u32 *hi) {
     *((u8 *)base) = index;
     mfence();
     *lo = *((u32 *)base + 0x10);
@@ -75,7 +82,7 @@ void get_ioapic_ret(void *base, u8 index, u32 *lo, u32 *hi) {
     mfence();
 }
 
-void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
+static inline void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
     *((u8 *)base) = index;
     mfence();
     *((u32 *)(base + 0x10)) = lo;
@@ -88,7 +95,7 @@ void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
 
 void init_ioapic(struct core_env *env) {
     // set ioapic id to 0x0F00 0000
-    void *ioapic_base    = env->base_ioapic;
+    ioapic_base          = env->base_ioapic;
     *((u8 *)ioapic_base) = 0x00;
     mfence();
     *((u32 *)(ioapic_base + 0x10)) = 0x0F000000;
@@ -107,8 +114,7 @@ void init_ioapic(struct core_env *env) {
         set_ioapic_ret(ioapic_base, i, 0x10000 + 0x20 + ((i - 0x10) >> 1), 0);
     }
 
-    // open ret int 0x21 for kbd
-    set_ioapic_ret(ioapic_base, 0x12, 0x21, 0);
+    kprintf("IOAPIC Initialized\n");
 }
 
 void init_lapic(struct core_env *env) {
@@ -118,32 +124,84 @@ void init_lapic(struct core_env *env) {
     if (env->lapic_feature & LAPIC_FEAT_X2APIC) {
         kprintf("enable x2APIC for supported device.\n");
         wrmsr(IA32_APIC_BASE_MSR, loaddr | 0xC00, hiaddr);
+        isx2apic = TRUE;
     } else
         wrmsr(IA32_APIC_BASE_MSR, loaddr | 0x800, hiaddr);
 
     BOOL is_bootcpu  = (loaddr & (1 << 8)) ? TRUE : FALSE;
     env->base_lapic  = (void *)(loaddr & 0xFFFFF000);
     env->base_ioapic = (void *)0xFEC00000;
+    lapic_base       = env->base_lapic;
+    u32 verreg       = 0;
+    if (!isx2apic) {
+        verreg = get_lapic_reg(lapic_base, LAPIC_OFFSET_VER);
+    } else {
+        u32 gap;
+        rdmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_VER), &verreg, &gap);
+    }
+    kprintf("Local APIC Version register: 0x%x\n", verreg);
 
-    // enable svr[8] and svr[11]
-    set_lapic_reg(env->base_lapic, 0xF0,
-                  get_lapic_reg(env->base_lapic, 0xF0) | 0x1100);
+    if (!isx2apic) {
+        // enable svr[8] (and svr[12] if possible)
+        if (verreg & (1 << 24))
+            set_lapic_reg(lapic_base, LAPIC_OFFSET_SVR,
+                          get_lapic_reg(lapic_base, LAPIC_OFFSET_SVR) | 0x1100);
+        else
+            set_lapic_reg(lapic_base, LAPIC_OFFSET_SVR,
+                          get_lapic_reg(lapic_base, LAPIC_OFFSET_SVR) | 0x100);
 
-    // mask all lvt
-    set_lapic_reg(env->base_lapic, 0x2F0, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x320, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x330, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x340, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x350, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x360, 0x10000);
-    set_lapic_reg(env->base_lapic, 0x370, 0x10000);
+        // mask all lvt
+        set_lapic_reg(lapic_base, 0x2F0, 0x10000);
+        set_lapic_reg(lapic_base, 0x320, 0x10000);
+        set_lapic_reg(lapic_base, 0x330, 0x10000);
+        set_lapic_reg(lapic_base, 0x340, 0x10000);
+        set_lapic_reg(lapic_base, 0x350, 0x10000);
+        set_lapic_reg(lapic_base, 0x360, 0x10000);
+        set_lapic_reg(lapic_base, 0x370, 0x10000);
+    } else {
+        // enable svr[8] (and svr[12] if possible)
+        u32 hi, lo;
+        rdmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_SVR), &lo, &hi);
+        if (verreg & (1 << 24))
+            wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_SVR), lo | 0x1100, hi);
+        else
+            wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_SVR), lo | 0x100, hi);
+
+        // mask all lvt
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x2F0), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x320), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x330), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x340), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x350), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x360), 0x10000, 0);
+        wrmsr(LAPIC_OFFSET_TO_MSR(0x370), 0x10000, 0);
+    }
 
     kprintf("LAPIC MSR MEM at: %x\n", loaddr);
-    kprintf("LAPIC ID: %x\n", get_lapic_reg(env->base_lapic, 0x20));
+    kprintf("LAPIC ID: %x\n", get_lapic_reg(lapic_base, 0x20));
 }
 
 void init_apic(struct core_env *env) {
-    // disable 8259 pic
+    // init 8259A to remap interrupt (the same as 8259a.c)
+    outb(IO_PIC_M, 0x11); // ICW 1
+    io_wait();
+    outb(IO_PIC_S, 0x11); // ICW 1
+    io_wait();
+    outb(IO_PIC_M + 1, 0x20); // 0x20 -> Master first
+    io_wait();
+    outb(IO_PIC_S + 1, 0x28); // 0x28 -> Salve first
+    io_wait();
+
+    outb(IO_PIC_M + 1, 0x4); // ICW 3
+    io_wait();
+    outb(IO_PIC_S + 1, 0x2); // ICW 3
+    io_wait();
+    outb(IO_PIC_M + 1, 0x1);
+    io_wait();
+    outb(IO_PIC_S + 1, 0x1);
+    io_wait();
+
+    // disable 8259 pic by mask all interrupt
     outb(IO_PIC_M + 1, 0xFF);
     outb(IO_PIC_S + 1, 0xFF);
 
@@ -153,6 +211,8 @@ void init_apic(struct core_env *env) {
     cpuid(regs);
     if (!(regs[3] & CPUID_FEAT_EDX_APIC))
         panic(Not support APIC);
+    if (!(regs[3] & CPUID_FEAT_EDX_MSR))
+        panic(Not support MSR);
     BOOL isx2apic_supported = regs[3] & CPUID_FEAT_ECX_x2APIC ? TRUE : FALSE;
     env->lapic_feature      = 0;
     if (isx2apic_supported)
@@ -180,5 +240,24 @@ void init_apic(struct core_env *env) {
     init_lapic(env);
     // enable IOAPIC
     init_ioapic(env);
+}
+
+void end_interrupt(uint i) {
+    if (!isx2apic)
+        set_lapic_reg(lapic_base, LAPIC_OFFSET_EOI, 0x0);
+    else
+        wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_EOI), 0x00, 0x00);
+}
+void enable_interrupt(uint i) {
+    // 0:7 = 0x20 + i    <- IVT number
+    // 8:10 = 0          <- Fixed delivery mode
+    // 11 = 0            <- Phy Destination mode
+    // 12 = 0            <- RO delivery status
+    // 16 = 0            <- disable mask
+    set_ioapic_ret(ioapic_base, 0x10 + i * 2, IRQ0 + i, 0);
+}
+void disable_interrupt(uint i) {
+    // 16 = 0            <- enable mask
+    set_ioapic_ret(ioapic_base, 0x10 + i * 2, 0x10000 | (IRQ0 + i), 0);
 }
 #endif

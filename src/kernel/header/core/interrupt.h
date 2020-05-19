@@ -46,9 +46,6 @@
 #define EXCEPTION_VE  20
 #define EXCEPTION_SX  30
 
-void enable_irq(uint irq);
-void disable_irq(uint irq);
-
 struct interrupt_method {
     pid_t pid;
     void *func;

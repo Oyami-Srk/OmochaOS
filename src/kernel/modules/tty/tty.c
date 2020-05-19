@@ -22,7 +22,6 @@ void Task_TTY() {
     uint key = 0;
     // init_kbd();
     reg_int_msg(HW_IRQ_KBD);
-    enable_irq(HW_IRQ_KBD);
 
     while (1) {
         recv_msg(&msg, PROC_ANY);
