@@ -19,11 +19,4 @@ static inline void init_8253() {
     outb(I8253_CNL0, (unsigned short)((I8253_CNL0_DATA >> 8) & 0xFF));
 }
 #endif
-
-static inline void init_timer() {
-#ifdef TIMER_USE_8253
-    init_8253();
-#endif
-}
-
 #endif // __MISC_H__

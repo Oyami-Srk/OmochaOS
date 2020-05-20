@@ -16,16 +16,32 @@ static inline void stosl(void *addr, char data, int size) {
 }
 
 static inline void outb(unsigned short port, unsigned char data) {
-    asm volatile("out %0, %1" ::"a"(data), "d"(port));
+    asm volatile("outb %0, %1" ::"a"(data), "d"(port));
 }
 
 static inline void outw(unsigned short port, unsigned short data) {
-    asm volatile("out %0, %1" ::"a"(data), "d"(port));
+    asm volatile("outw %0, %1" ::"a"(data), "d"(port));
+}
+
+static inline void outl(unsigned short port, unsigned int data) {
+    asm volatile("outl %0, %1" ::"a"(data), "d"(port));
 }
 
 static inline unsigned char inb(unsigned short port) {
     unsigned char r;
-    asm volatile("in %1, %0" : "=a"(r) : "d"(port));
+    asm volatile("inb %1, %0" : "=a"(r) : "d"(port));
+    return r;
+}
+
+static inline unsigned short inw(unsigned short port) {
+    unsigned short r;
+    asm volatile("inw %1, %0" : "=a"(r) : "d"(port));
+    return r;
+}
+
+static inline unsigned int inl(unsigned short port) {
+    unsigned int r;
+    asm volatile("inl %1, %0" : "=a"(r) : "d"(port));
     return r;
 }
 

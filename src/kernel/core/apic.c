@@ -11,62 +11,15 @@
 
 #include "driver/graphic.h"
 
+#if ACPI
+#include "core/acpi.h"
+#include "core/pci.h"
+#endif
+#include "driver/misc.h"
+
 void *lapic_base;
 void *ioapic_base;
 BOOL  isx2apic = FALSE;
-
-static int rsdp_checksum(char *p) {
-    u8 sum = 0;
-    for (uint i = 0; i < sizeof(struct RSDPDescriptor); i++)
-        sum += p[i];
-    return sum;
-}
-
-static struct RSDPDescriptor *search_rsdp(char *start, size_t max_offset) {
-    const char   rsdp_sig[] = "RSD PTR ";
-    const size_t rsdp_bound = 16;
-    char *       p          = start;
-    for (; p < start + max_offset; p += rsdp_bound) {
-        if (memcmp(p, rsdp_sig, 8) == 0 && rsdp_checksum(p) == 0)
-            return (struct RSDPDescriptor *)p;
-    }
-    return NULL;
-}
-
-static int sdt_checksum(struct ACPISDTHeader *p) {
-    u8 sum = 0;
-    for (uint i = 0; i < p->Length; i++)
-        sum += ((char *)p)[i];
-    return sum;
-}
-
-static void foreach_rsdt(struct RSDT *pRSDT) {
-    kprintf("=======  RSDT Foreach =======\n");
-    size_t table_count = RSDT_TABLECOUNT((struct ACPISDTHeader *)pRSDT);
-    char   buf[16];
-    if (memcmp("RSDT", pRSDT->h.Signature, 4) != 0 ||
-        sdt_checksum((struct ACPISDTHeader *)pRSDT) != 0)
-        panic(Not a valid RSDT);
-    memset(buf, 0, 16);
-    memcpy(buf, pRSDT->h.OEMTableID, 8);
-    kprintf("  RSDT Length: %d bytes, sizeof ACPISDTHeader is %d bytes\n",
-            pRSDT->h.Length, sizeof(struct ACPISDTHeader));
-    kprintf("  Total %d tables. OEMTableID is: %s\n", table_count, buf);
-    kprintf("  RSDT at 0x%x, Table at 0x%x\n", pRSDT, pRSDT->table);
-    for (uint i = 0; i < table_count; i++) {
-        kprintf("  Searching for %d item of table, at 0x%x:", i,
-                pRSDT->table[i]);
-        struct ACPISDTHeader *ph = (struct ACPISDTHeader *)(pRSDT->table[i]);
-        if (sdt_checksum(ph) == 0) {
-            char sig_buf[5] = {[4] = 0};
-            memcpy(sig_buf, ph->Signature, 4);
-            kprintf("  %s, Length: %d bytes\n", sig_buf, ph->Length);
-        } else {
-            kprintf("  Checksum failed at 0x%x\n", ph);
-        }
-    }
-    kprintf("=======RSDT ENDForeach=======\n");
-}
 
 static inline u32 get_lapic_reg(void *base, u16 offset) {
     return *((volatile u32 *)(base + offset));
@@ -98,7 +51,19 @@ static inline void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
 }
 
 void init_ioapic(struct core_env *env) {
-    // set ioapic id to 0x0F00 0000
+// set ioapic id to 0x0F00 0000
+#if ACPI
+    // use pci to locate rcba and ioapic base
+    // get RCBA address
+    u32 rcba = pci_config_read32(0, 31, 0, 0xF0);
+    rcba &= 0xFFFFC000;
+    kprintf("RCBA Address: 0x%x\n", rcba);
+#define OCI_OFFSET 0x31F
+
+#else
+    // can't use pci to locate rcba
+    env->base_ioapic = (void *)0xFEC00000;
+#endif
     ioapic_base          = env->base_ioapic;
     *((u8 *)ioapic_base) = 0x00;
     mfence();
@@ -134,11 +99,10 @@ void init_lapic(struct core_env *env) {
     } else
         wrmsr(IA32_APIC_BASE_MSR, loaddr | 0x800, hiaddr);
 
-    BOOL is_bootcpu  = (loaddr & (1 << 8)) ? TRUE : FALSE;
-    env->base_lapic  = (void *)(loaddr & 0xFFFFF000);
-    env->base_ioapic = (void *)0xFEC00000;
-    lapic_base       = env->base_lapic;
-    u32 verreg       = 0;
+    BOOL is_bootcpu = (loaddr & (1 << 8)) ? TRUE : FALSE;
+    env->base_lapic = (void *)(loaddr & 0xFFFFF000);
+    lapic_base      = env->base_lapic;
+    u32 verreg      = 0;
     if (!isx2apic) {
         verreg = get_lapic_reg(lapic_base, LAPIC_OFFSET_VER);
     } else {
@@ -187,6 +151,20 @@ void init_lapic(struct core_env *env) {
     kprintf("LAPIC ID: %x\n", get_lapic_reg(lapic_base, 0x20));
 }
 
+#if ACPI
+#include "driver/hpet.h"
+#endif
+
+void init_timer(struct core_env *env) {
+#if ACPI
+    if (init_hpet(env))
+        return;
+#endif
+    // init PIT
+    init_8253();
+    // make PIT running under APIC
+}
+
 void init_apic(struct core_env *env) {
     // init 8259A to remap interrupt (the same as 8259a.c)
     outb(IO_PIC_M, 0x11); // ICW 1
@@ -229,24 +207,14 @@ void init_apic(struct core_env *env) {
     ((u32 *)cpu_vendor)[0] = regs[1];
     ((u32 *)cpu_vendor)[1] = regs[3];
     ((u32 *)cpu_vendor)[2] = regs[2];
-    kprintf("CPU Vendor: %s\nNow Searching rsdp...", cpu_vendor);
-    struct RSDPDescriptor *rsdp =
-        search_rsdp((char *)0xe0000, 0xfffff - 0xe0000);
-    if (!rsdp)
-        rsdp = search_rsdp((char *)0x40E, 0x1000);
-    if (!rsdp)
-        panic(Cannot find RSDP);
-    char buf[16];
-    memset(buf, 0, 16);
-    memcpy(buf, rsdp->OEMID, 6);
-    kprintf("Found rsdp at 0x%x, version: %d, OEM: %s\n", rsdp, rsdp->Revision,
-            buf);
-    foreach_rsdt((struct RSDT *)rsdp->RsdtAddress);
+    kprintf("CPU Vendor: %s\n", cpu_vendor);
 
     // enable Local APIC
     init_lapic(env);
     // enable IOAPIC
     init_ioapic(env);
+    // init timer
+    init_timer(env);
 }
 
 void end_interrupt(uint i) {

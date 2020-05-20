@@ -17,6 +17,10 @@
 #include "core/environment.h"
 #include "core/init.h"
 
+#ifdef ACPI
+#include "core/acpi.h"
+#endif
+
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
 
@@ -46,7 +50,6 @@ struct core_env core_env;
 void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memset(&core_env, 0, sizeof(struct core_env));
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
-    init_timer();
 
     /*
      * ===   KERNEL CODE    === <- 0x80100000
@@ -73,10 +76,15 @@ void core_main(multiboot_info_t *multiboot_header, u32 magic) {
            core_env.core_space_end - core_env.core_space_start);
 
     core_init_memory(&core_env);
+
     u32 fb_addr = multiboot_header->framebuffer_addr & 0xFFFFFFFF;
     GRAPHIC_init((void *)(fb_addr), multiboot_header->framebuffer_width,
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
+
+#ifdef ACPI
+    init_acpi(&core_env);
+#endif
 
     core_env.proc_table = (process *)core_env.core_space_free_end;
     size_t ideal_proc_max =

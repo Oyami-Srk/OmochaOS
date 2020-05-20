@@ -2,6 +2,7 @@
 
 #if USE_8259A
 #include "core/8259A.h"
+#include "driver/misc.h"
 #include "generic/asm.h"
 
 void init_8259A(struct core_env *env) {
@@ -25,6 +26,8 @@ void init_8259A(struct core_env *env) {
 
     outb(IO_PIC_M + 1, 0x00);
     outb(IO_PIC_S + 1, 0x00);
+
+    init_8253();
 }
 
 void enable_interrupt(uint irq) {
