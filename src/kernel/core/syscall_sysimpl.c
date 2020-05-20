@@ -8,7 +8,7 @@
 #include "lib/string.h"
 #include "lib/syscall.h"
 
-extern uint     beats;
+extern uint *   beats;
 extern process *proc_table; // TODO: not hardcode
 
 extern uint *                 exception_suscribed;
@@ -16,7 +16,7 @@ extern struct interrupt_data *exception_suscribed_data;
 extern uint *                 interrupt_suscribed;
 extern struct interrupt_data *interrupt_suscribed_data;
 
-uint __get_beats(void) { return beats; }
+uint __get_beats(void) { return *beats; }
 
 uint __add(void *caller, uint a, uint b, uint c) { return a + b + c; }
 

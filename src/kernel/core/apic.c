@@ -106,7 +106,7 @@ void init_ioapic(struct core_env *env) {
 
     *((u8 *)ioapic_base) = 0x00;
     mfence();
-    *((u32 *)(ioapic_base + 0x10)) = 0x0F000000;
+    *((u32 *)(ioapic_base + 0x10)) = 0x0F000000; // ioapic id
     mfence();
 
     // get version of ioapic
@@ -114,8 +114,11 @@ void init_ioapic(struct core_env *env) {
     mfence();
     u32 ioapic_ver_reg = *((u32 *)(ioapic_base + 0x10));
     mfence();
-    kprintf("IOAPIC Version: 0x%x, RTE count: %d\n", ioapic_ver_reg & 0xFF,
-            ((ioapic_ver_reg >> 16) & 0xFF) + 1);
+    *((u8 *)ioapic_base) = 0x00;
+    mfence();
+    kprintf("IOAPIC Version: 0x%x, RTE count: %d, ID: 0x%x\n",
+            ioapic_ver_reg & 0xFF, ((ioapic_ver_reg >> 16) & 0xFF) + 1,
+            (*((u32 *)(ioapic_base + 0x10)) >> 24));
 
     // init ret start from INT 0x20(IRQ0) to 0x40(IRQ32)
     for (uint i = 0x10; i < 0x40; i += 2) {
@@ -134,7 +137,7 @@ void init_lapic(struct core_env *env) {
     // enable lapic
     rdmsr(IA32_APIC_BASE_MSR, &loaddr, &hiaddr);
     if (env->lapic_feature & LAPIC_FEAT_X2APIC) {
-        kprintf("enable x2APIC for supported device.\n");
+        kprintf("enable x2APIC for supported device.\n", env->lapic_feature);
         wrmsr(IA32_APIC_BASE_MSR, loaddr | 0xC00, hiaddr);
         isx2apic = TRUE;
     } else
@@ -237,8 +240,10 @@ void init_apic(struct core_env *env) {
         panic(Not support APIC);
     if (!(regs[3] & CPUID_FEAT_EDX_MSR))
         panic(Not support MSR);
-    BOOL isx2apic_supported = regs[3] & CPUID_FEAT_ECX_x2APIC ? TRUE : FALSE;
-    env->lapic_feature      = 0;
+    BOOL isx2apic_supported = regs[2] & CPUID_FEAT_ECX_x2APIC ? TRUE : FALSE;
+    kprintf("CPUID 1: 0x%x 0x%x 0x%x 0x%x\n", regs[0], regs[1], regs[2],
+            regs[3]);
+    env->lapic_feature = 0;
     if (isx2apic_supported)
         env->lapic_feature |= LAPIC_FEAT_X2APIC;
 

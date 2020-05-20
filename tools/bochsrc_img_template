@@ -6,7 +6,8 @@ vga: extension=vbe, update_freq=15
 mouse: enabled=0
 #cpu: count=1, ips=500000000
 #cpu: count=1, model=corei7_haswell_4770
-cpu: count=1, model=broadwell_ult
+#cpu: count=1, model=broadwell_ult
+cpu: count=1, model=corei7_sandy_bridge_2600k, reset_on_triple_fault=1, cpuid_limit_winnt=0, ignore_bad_msrs=1, mwait_is_nop=0
 ata0: enabled=1, ioaddr1=0x1f0, ioaddr2=0x3f0, irq=14
 ata0-master: type=disk, path="80m.img", mode=flat
 debug_symbols: file="dbg.bsb"

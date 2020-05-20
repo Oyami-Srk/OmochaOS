@@ -25,7 +25,6 @@ void Task_TTY() {
 
     while (1) {
         recv_msg(&msg, PROC_ANY);
-        kprintfc(BLUE, BLACK, "%d", msg.type);
         switch (msg.type) {
         case MSG_INTERRUPT: {
             /*
@@ -47,7 +46,7 @@ void Task_TTY() {
             }
             break;
             */
-            kprintfc(YELLOW, BLACK, "%x ", inb(0x60));
+            kprintfc(YELLOW, BLACK, "[%x when %d] ", inb(0x60), get_ticks());
             break;
         }
         default: {

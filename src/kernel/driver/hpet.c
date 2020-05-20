@@ -82,13 +82,17 @@ BOOL init_hpet(struct core_env *env) {
             general_cap_reg_lo);
     disable_8253();
 
-    set_hpet_reg(hpet_base, 0x10, 0x3, 0);     // enable
-    set_hpet_reg(hpet_base, 0x100, 0x004c, 0); // set timer 0 conf_cap reg
+    set_hpet_reg(hpet_base, 0xF0, 0x1, 0x0);
+    set_hpet_reg(hpet_base, 0x100,
+                 0x2 << 9 /*IOAPIC Route(irq number)*/ | 0x004c,
+                 0); // set timer 0 conf_cap reg
 #define fsconst 1000000000000UL
     u64                v          = fsconst * BEATS_MS;
     unsigned long long comparator = divide_64_by_32(&v, general_cap_reg_hi);
     set_hpet_reg(hpet_base, 0x108, (((u32 *)&v))[0],
                  (((u32 *)&v))[1]); // set timer 0 comparator value
+
+    set_hpet_reg(hpet_base, 0x10, 0x1, 0); // enable
 
     return TRUE;
 }
