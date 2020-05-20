@@ -1,4 +1,5 @@
 #include "core/acpi.h"
+#include "core/pci.h"
 #include "lib/stdlib.h"
 #include "lib/string.h"
 
@@ -93,4 +94,16 @@ void init_acpi(struct core_env *env) {
     foreach_rsdt((struct RSDT *)rsdp->RsdtAddress);
     env->rsdt         = (struct RSDT *)rsdp->RsdtAddress;
     env->ACPI_version = rsdp->Revision;
+
+    // get rcba for supported chipset
+    u16 vid = pci_config_read16(0, 31, 0, 0);
+    if (vid == 0x8086) {
+        // get RCBA address
+        u32 rcba = pci_config_read32(0, 31, 0, 0xF0);
+        rcba &= 0xFFFFC000;
+        kprintf("RCBA Address: 0x%x\n", rcba);
+        env->rcba = (void *)rcba;
+    } else {
+        env->rcba = 0;
+    }
 }

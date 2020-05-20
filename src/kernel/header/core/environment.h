@@ -63,9 +63,11 @@ struct core_env {
     void *base_lapic;
     uint  lapic_feature;
 #endif
+
 #ifdef ACPI
     u8           ACPI_version;
     struct RSDT *rsdt;
+    void *       rcba;
 #endif
 
     struct interrupt_method interrupt_methods[HW_IRQ_COUNT];

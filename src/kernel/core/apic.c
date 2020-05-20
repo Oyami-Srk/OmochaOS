@@ -55,18 +55,10 @@ void init_ioapic(struct core_env *env) {
     void *ioapic_base = 0;
 // set ioapic id to 0x0F00 0000
 #if ACPI
-    // ICH10 chipset
-
     // use pci to locate rcba and ioapic base
-    // test PCI config
-    u16 vid = pci_config_read16(0, 31, 0, 0);
-    if (vid == 0x8086) {
-        // get RCBA address
-        u32 rcba = pci_config_read32(0, 31, 0, 0xF0);
-        rcba &= 0xFFFFC000;
-        kprintf("RCBA Address: 0x%x\n", rcba);
+    if (env->rcba) {
 #define OIC_OFFSET 0x31F
-        u16 *OIC = (u16 *)(rcba + OIC_OFFSET);
+        u16 *OIC = (u16 *)(env->rcba + OIC_OFFSET);
         kprintf("OIC Init Value: 0x%x\n", *OIC);
         *OIC |= 0x100;
         kprintf("OIC Set Value: 0x%x\n", *OIC);

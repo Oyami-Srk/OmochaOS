@@ -39,7 +39,8 @@ endif
 
 BXIMAGE = bximage
 BOCHS 	= bochs
-QEMU 	= qemu-system-i386
+# QEMU 	= qemu-system-i386
+QEMU 	= qemu-system-x86_64
 
 PY 		= python3
 PY3 	= python3
@@ -55,7 +56,8 @@ BOOTIMG 		= $(BUILD)/HD.img
 GRUB2IMG 		= $(TOOLS)/HD_grub2.img
 GRUB2CFG 		= $(TOOLS)/grub.cfg
 ROOT_DIR 		= $(TOOLS)/root_dir
-QEMU_OPTIONS 	= -accel tcg,thread=single -m 128 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
+QEMU_OPTIONS 	= -cpu Skylake-Server,+x2apic -machine q35 -m 512 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
+QEMU_OPTIONS_RUN= -cpu Skylake-Server,+x2apic -machine q35 -m 512 -no-reboot -smp 1 -serial stdio -drive file=$(BOOTIMG)
 
 
 export CC CXX LD AR NM OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY PY3 SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME
@@ -101,6 +103,11 @@ bochs: detach
 .PHONY: qemu
 qemu: detach
 	-$(QEMU) $(QEMU_OPTIONS)
+	@echo "Simulation Terminated"
+
+.PHONY: qemu-run
+qemu-run: detach
+	-$(QEMU) $(QEMU_OPTIONS_RUN)
 	@echo "Simulation Terminated"
 
 .PHONY: attach

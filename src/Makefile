@@ -2,7 +2,8 @@
 # src
 
 # max optimaze level is 2
-CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib
+CC_FLAGS = -fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib 
+
 CC_FLAGS += -DAPIC
 CC_FLAGS += -DACPI
 HEADER = $(shell pwd)/header
