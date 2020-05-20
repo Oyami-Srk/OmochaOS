@@ -14,6 +14,7 @@ uint  char_width;
 uint  char_height;
 int   char_x; // point to next char space
 int   char_y;
+int   char_y_start;
 uint  disp_width  = 0;
 uint  disp_height = 0;
 uint  disp_pitch  = 0;
@@ -57,6 +58,8 @@ void kputc_color(char c, uint fg, uint bg) {
     if (c == '\n') {
         char_y++;
         char_x = 0;
+        if (char_y >= char_height)
+            char_y = char_y_start;
         return;
     }
     if (c == '\b') {
@@ -100,7 +103,7 @@ void kputc_color(char c, uint fg, uint bg) {
     if (++char_x >= char_width) {
         char_x = 0;
         if (++char_y >= char_height)
-            char_y = 0;
+            char_y = char_y_start;
         return;
     }
 }
@@ -174,6 +177,6 @@ void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     for (uint y = 0; y < LOGO_Y; y++) {
         memcpy(fb_addr + y * disp_width, logo[y], sizeof(uint) * LOGO_X);
     }
-    disp_offset = disp_width * (LOGO_Y + 5);
-    char_y += (LOGO_Y + 2 + FONT_HEIGHT) / FONT_HEIGHT;
+    disp_offset  = disp_width * (LOGO_Y + 5);
+    char_y_start = char_y = (LOGO_Y + 2 + FONT_HEIGHT) / FONT_HEIGHT;
 }
