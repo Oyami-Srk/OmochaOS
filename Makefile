@@ -27,6 +27,7 @@ DD 		= dd
 CAT 	= cat
 SED 	= sed
 AWK 	= awk
+SORT 	= sort
 TEE 	= tee
 RM 		= rm
 MKDIR 	= mkdir
@@ -92,7 +93,8 @@ endif
 
 .PHONY: bochs
 bochs: detach
-	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\"80m.img\"/\"$(subst /,\/,$(BOOTIMG))\"/g' > $(BUILD)/bochsrc
+	$(NM) $(KERNEL_OUT) | $(SORT) | $(AWK) '{ print $$1" "$$3 }' > $(BUILD)/kernel.bsb
+	$(CAT) $(TOOLS)/bochsrc_img_template | $(SED) -e 's/\"80m.img\"/\"$(subst /,\/,$(BOOTIMG))\"/g' | $(SED) -e 's/\"dbg.bsb\"/\"$(subst /,\/,$(BUILD)/kernel.bsb)\"/g' > $(BUILD)/bochsrc
 	-$(BOCHS) -q -f $(BUILD)/bochsrc
 	@echo "Simulation Terminated"
 

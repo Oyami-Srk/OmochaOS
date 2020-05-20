@@ -40,6 +40,7 @@ static inline void get_ioapic_ret(void *base, u8 index, u32 *lo, u32 *hi) {
 }
 
 static inline void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
+    // kprintf("Set IOAPIC RET index 0x%x = 0x%x 0x%x\n", index, hi, lo);
     *((u8 *)base) = index;
     mfence();
     *((u32 *)(base + 0x10)) = lo;
@@ -51,20 +52,66 @@ static inline void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
 }
 
 void init_ioapic(struct core_env *env) {
+    void *ioapic_base = 0;
 // set ioapic id to 0x0F00 0000
 #if ACPI
+    // ICH10 chipset
+
     // use pci to locate rcba and ioapic base
-    // get RCBA address
-    u32 rcba = pci_config_read32(0, 31, 0, 0xF0);
-    rcba &= 0xFFFFC000;
-    kprintf("RCBA Address: 0x%x\n", rcba);
-#define OCI_OFFSET 0x31F
+    // test PCI config
+    u16 vid = pci_config_read16(0, 31, 0, 0);
+    if (vid == 0x8086) {
+        // get RCBA address
+        u32 rcba = pci_config_read32(0, 31, 0, 0xF0);
+        rcba &= 0xFFFFC000;
+        kprintf("RCBA Address: 0x%x\n", rcba);
+#define OIC_OFFSET 0x31F
+        u16 *OIC = (u16 *)(rcba + OIC_OFFSET);
+        kprintf("OIC Init Value: 0x%x\n", *OIC);
+        *OIC |= 0x100;
+        kprintf("OIC Set Value: 0x%x\n", *OIC);
+    }
+
+    struct MADT *madt = (struct MADT *)search_sdt(env, "APIC");
+    if (madt) {
+        struct MADT_Entry_Header *ph =
+            (struct MADT_Entry_Header *)(&madt->table_start);
+        kprintf("MADT Addr: 0x%x, length: %d bytes,  MADT Defined LAPIC Addr: "
+                "0x%x\n",
+                madt, madt->header.Length, madt->lapic_addr);
+        kprintf("Loop for MADT Table from 0x%x to 0x%x: \n", ph,
+                ((void *)madt) + madt->header.Length);
+        for (; (void *)ph < ((void *)(madt)) + madt->header.Length;) {
+            kprintf("| MADT Entry Type %d, length: %d bytes, at 0x%x\n",
+                    ph->type, ph->length, ph);
+            switch (ph->type) {
+            case 0:
+                kprintf("|-- Processor Local APIC: ACPI Processor ID 0x%x, "
+                        "APIC ID 0x%x, Flags 0x%x\n",
+                        ph->data.type0.ACPI_Processor_ID,
+                        ph->data.type0.APIC_ID, ph->data.type0.Flags);
+                break;
+            case 1:
+                kprintf("|-- IO APIC: IOAPIC ID 0x%x, IOAPIC Addr 0x%x\n",
+                        ph->data.type1.IOAPIC_ID, ph->data.type1.IOAPIC_ADDR);
+                ioapic_base = (void *)ph->data.type1.IOAPIC_ADDR;
+                break;
+            default:
+                break;
+            }
+            ph = ((void *)ph) + ph->length;
+        }
+        if (!ioapic_base)
+            ioapic_base = (void *)0xFEC00000;
+    } else {
+        ioapic_base = (void *)0xFEC00000;
+    }
 
 #else
-    // can't use pci to locate rcba
-    env->base_ioapic = (void *)0xFEC00000;
+    ioapic_base = (void *)0xFEC00000;
 #endif
-    ioapic_base          = env->base_ioapic;
+    env->base_ioapic = (void *)ioapic_base;
+
     *((u8 *)ioapic_base) = 0x00;
     mfence();
     *((u32 *)(ioapic_base + 0x10)) = 0x0F000000;
@@ -84,6 +131,8 @@ void init_ioapic(struct core_env *env) {
         // 0);
         set_ioapic_ret(ioapic_base, i, 0x20 + ((i - 0x10) >> 1), 0);
     }
+    // enable_interrupt(2);
+    // enable_interrupt(1);
 
     kprintf("IOAPIC Initialized\n");
 }
@@ -162,7 +211,6 @@ void init_timer(struct core_env *env) {
 #endif
     // init PIT
     init_8253();
-    // make PIT running under APIC
 }
 
 void init_apic(struct core_env *env) {

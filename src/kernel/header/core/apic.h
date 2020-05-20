@@ -7,6 +7,49 @@
 #define IOAPIC_MSR_MEM 0xFEC00000
 #define LAPIC_MSR_MEM  0xFEE00000
 
+#include "core/acpi.h"
+
+struct MADT_Entry_Header {
+    u8 type;
+    u8 length;
+    union {
+        struct {
+            u8  ACPI_Processor_ID;
+            u8  APIC_ID;
+            u32 Flags; // bit0: processor enabled, bit1: online capable
+        } __attribute__((packed)) type0; // local apic
+        struct {
+            u8  IOAPIC_ID;
+            u8  resv;
+            u32 IOAPIC_ADDR;
+            u32 GlobalSysInterruptBase;
+        } __attribute__((packed)) type1; // io apic
+        struct {
+            u8  BusSource;
+            u8  IRQSource;
+            u32 GlobalSysInterrupt;
+            u16 Flags;
+        } __attribute__((packed)) type2; // interrupt source override
+        struct {
+            u8  ACPI_Processor_ID; // 0xFF means all
+            u16 Flags;
+            u8  LINT_Num;                // 0 or 1
+        } __attribute__((packed)) type4; // nmi
+        struct {
+            u16 resv;
+            u32 APIC_phyaddr_override_lo;
+            u32 APIC_phyaddr_override_hi;
+        } __attribute__((packed)) type5; // Local APIC Address Override
+    } data;
+} __attribute__((packed));
+
+struct MADT {
+    struct ACPISDTHeader header;
+    u32                  lapic_addr;
+    u32                  flags;
+    u32                  table_start;
+} __attribute__((packed));
+
 void init_apic(struct core_env *env);
 #define init_inthw init_apic
 void end_interrupt(uint i);

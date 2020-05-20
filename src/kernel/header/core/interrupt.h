@@ -1,6 +1,7 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
 
+#include "core/config.h"
 #include "core/protect.h"
 #include "generic/typedefs.h"
 
@@ -13,9 +14,14 @@
 #define IO_PIC_M 0x20
 #define IO_PIC_S 0xA0
 
+#if APIC
+// IOAPIC remap
+#define HW_IRQ_TIMER 2
+#else
 #define HW_IRQ_TIMER 0
-#define HW_IRQ_KBD   1
-#define HW_IRQ_AT    14
+#endif
+#define HW_IRQ_KBD 1
+#define HW_IRQ_AT  14
 
 #define HW_IRQ_COUNT    16
 #define EXCEPTION_COUNT 32

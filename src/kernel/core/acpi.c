@@ -58,9 +58,12 @@ static void foreach_rsdt(struct RSDT *pRSDT) {
 }
 
 struct ACPISDTHeader *search_sdt(struct core_env *env, char *sig) {
-    struct RSDT *pRSDT       = env->rsdt;
-    size_t       table_count = RSDT_TABLECOUNT((struct ACPISDTHeader *)pRSDT);
-    char         buf[16];
+    struct RSDT *pRSDT = env->rsdt;
+    if (!pRSDT) {
+        return NULL;
+    }
+    size_t table_count = RSDT_TABLECOUNT((struct ACPISDTHeader *)pRSDT);
+    char   buf[16];
     if (memcmp("RSDT", pRSDT->h.Signature, 4) != 0 ||
         sdt_checksum((struct ACPISDTHeader *)pRSDT) != 0)
         panic(Not a valid RSDT);

@@ -136,7 +136,6 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         end_interrupt(IRQ_TIMER - IRQ0);
         if (interrupt_count == 0)
             scheduler();
-        return;
     }
 
     asm volatile("movl %%cr3, %%ebx\n\t"
@@ -181,7 +180,8 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         while (1)
             ;
     }
-    if (intf->trap_no <= IRQ0 + HW_IRQ_COUNT && intf->trap_no > IRQ_TIMER) {
+    if (intf->trap_no <=
+        IRQ0 + HW_IRQ_COUNT /*&& intf->trap_no != IRQ_TIMER*/) {
         // handler interrupt and enable irq
         if (interrupt_methods[intf->trap_no - IRQ0].avail ==
             TRUE) { // better not to use this way
@@ -191,9 +191,10 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
             ((fp_v_v *)func)(interrupt_methods[intf->trap_no - IRQ0].data);
             enable_interrupt(intf->trap_no - IRQ0);
         }
-        if (interrupt_suscribed[intf->trap_no - IRQ0])
+        if (interrupt_suscribed[intf->trap_no - IRQ0]) {
             send_interrupt_msg(intf->trap_no - IRQ0,
                                interrupt_suscribed[intf->trap_no - IRQ0]);
+        }
         end_interrupt(intf->trap_no - IRQ0); // maybe it could move to the top?
         return;
     }
