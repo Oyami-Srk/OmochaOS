@@ -56,8 +56,8 @@ BOOTIMG 		= $(BUILD)/HD.img
 GRUB2IMG 		= $(TOOLS)/HD_grub2.img
 GRUB2CFG 		= $(TOOLS)/grub.cfg
 ROOT_DIR 		= $(TOOLS)/root_dir
-QEMU_OPTIONS 	= -cpu Skylake-Server,+x2apic -machine q35 -m 512 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG)
-QEMU_OPTIONS_RUN= -cpu Skylake-Server,+x2apic -machine q35 -m 512 -no-reboot -smp 1 -serial stdio -drive file=$(BOOTIMG)
+QEMU_OPTIONS 	= -m 512 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG),format=raw
+QEMU_OPTIONS_RUN= -m 512 -no-reboot -smp 1 -serial stdio -drive id=disk,file=$(BOOTIMG),format=raw
 
 
 export CC CXX LD AR NM OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY PY3 SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME
