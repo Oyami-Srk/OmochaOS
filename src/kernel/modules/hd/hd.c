@@ -164,7 +164,7 @@ void init_hd() {
     if (reg_int_msg(HW_IRQ_AT))
         printf("[HD] Cannot attach to interrupt AT\n");
     // enable_irq(2); // Cascade
-    // enable_irq(HW_IRQ_AT);
+    // enable_interrupt(HW_IRQ_AT);
     for (int i = 0; i < (sizeof(hd_info) / sizeof(hd_info[0])); i++) {
         memset(&hd_info[i], 0, sizeof(hd_info[0]));
         hd_info[i].open_cnt = 0;

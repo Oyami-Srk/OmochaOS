@@ -12,6 +12,7 @@
 
 #ifdef USE_APIC
 #include "core/apic.h"
+#include "driver/hpet.h"
 #elif USE_8259A
 #include "core/8259A.h"
 #endif
@@ -136,6 +137,7 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         end_interrupt(IRQ_TIMER - IRQ0);
         if (interrupt_count == 0)
             scheduler();
+        return;
     }
 
     asm volatile("movl %%cr3, %%ebx\n\t"
@@ -182,6 +184,11 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
     }
     if (intf->trap_no <=
         IRQ0 + HW_IRQ_COUNT /*&& intf->trap_no != IRQ_TIMER*/) {
+        kprintf("[INT %d]", intf->trap_no);
+        // test hpet
+        u32 counter_hi, counter_lo;
+        get_hpet_reg(0xFED00000, 0xF0, &counter_lo, &counter_hi);
+        kprintf("HPET Counter test: 0x%x 0x%x\n", counter_hi, counter_lo);
         // handler interrupt and enable irq
         if (interrupt_methods[intf->trap_no - IRQ0].avail ==
             TRUE) { // better not to use this way

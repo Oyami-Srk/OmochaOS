@@ -28,5 +28,7 @@ struct HPET {
 } __attribute__((packed));
 
 BOOL init_hpet(struct core_env *env);
+void get_hpet_reg(void *base, u16 offset, u32 *lo, u32 *hi);
+void set_hpet_reg(void *base, u16 offset, u32 lo, u32 hi);
 
 #endif // __HPET_H__

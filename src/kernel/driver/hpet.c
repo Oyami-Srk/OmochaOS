@@ -42,17 +42,20 @@ static u32                 divide_64_by_32(u64 *n, u32 base) {
     return rem;
 }
 
-static inline void get_hpet_reg(void *base, u16 offset, u32 *lo, u32 *hi) {
-    *lo = ((u32 *)base + offset)[0];
+void get_hpet_reg(void *base, u16 offset, u32 *lo, u32 *hi) {
+    u32 addr = (u32)base + offset;
+    *lo      = *((volatile u32 *)addr);
     mfence();
-    *hi = ((u32 *)base + offset)[1];
+    *hi = *((volatile u32 *)(addr + 0x4));
     mfence();
 }
 
-static inline void set_hpet_reg(void *base, u16 offset, u32 lo, u32 hi) {
-    ((u32 *)(base + offset))[0] = lo;
+void set_hpet_reg(void *base, u16 offset, u32 lo, u32 hi) {
+    u32 addr = (u32)base + offset;
+    // kprintf("[HPET] Set 0x%x = 0x%x 0x%x\n", addr, hi, lo);
+    *((volatile u32 *)(addr)) = lo;
     mfence();
-    ((u32 *)(base + offset))[1] = hi;
+    *((volatile u32 *)(addr + 0x4)) = hi;
     mfence();
 }
 
@@ -82,17 +85,67 @@ BOOL init_hpet(struct core_env *env) {
             general_cap_reg_lo);
     disable_8253();
 
-    set_hpet_reg(hpet_base, 0xF0, 0x1, 0x0);
-    set_hpet_reg(hpet_base, 0x100,
-                 0x2 << 9 /*IOAPIC Route(irq number)*/ | 0x004c,
-                 0); // set timer 0 conf_cap reg
-#define fsconst 1000000000000UL
-    u64                v          = fsconst * BEATS_MS;
-    unsigned long long comparator = divide_64_by_32(&v, general_cap_reg_hi);
-    set_hpet_reg(hpet_base, 0x108, (((u32 *)&v))[0],
-                 (((u32 *)&v))[1]); // set timer 0 comparator value
-
+    set_hpet_reg(hpet_base, 0x10, 0x0, 0); // disable if BIOS has enabled it
+    set_hpet_reg(hpet_base, 0xF0, 0, 0);   // clear the counter
+    u32 counter_lo = 0, counter_hi = 0;
     set_hpet_reg(hpet_base, 0x10, 0x1, 0); // enable
+    /*
 
-    return TRUE;
+
+        */
+
+    // test if counter works
+    // delay a while
+    for (volatile int i = 0; i < 100000; i++)
+        asm volatile("nop\n\t");
+    // read the counter
+    set_hpet_reg(hpet_base, 0x10, 0x0, 0); // disable
+    counter_lo = 0, counter_hi = 0;
+    get_hpet_reg(hpet_base, 0xF0, &counter_lo, &counter_hi);
+    kprintf("HPET Counter test: 0x%x 0x%x\n", counter_hi, counter_lo);
+    set_hpet_reg(hpet_base, 0xF0, 0x0, 0x0); // resrt counter
+    if (counter_lo || counter_hi) {
+        get_hpet_reg(hpet_base, 0xF0, &counter_lo, &counter_hi);
+        kprintf("HPET Counter test: 0x%x 0x%x\n", counter_hi, counter_lo);
+
+        // check timer 0 if support periodic
+        u32 caplo = 0, caphi = 0;
+        get_hpet_reg(hpet_base, 0x100, &caplo, &caphi);
+        kprintf("HPET Timer 0 cap reg: 0x%x 0x%x\n", caphi, caplo);
+        if (!(caplo & (1 << 4))) {
+            kprintf("HPET Timer 0 doesn't support peridoic type!\n");
+            return FALSE;
+        }
+
+        set_hpet_reg(hpet_base, 0x100,
+                     0x2 << 9 // IOAPIC Route(irq number)
+                         | 0x004c | caplo,
+                     0); // set timer 0 conf_cap reg
+
+#define fsconst 1000000000000UL
+        u64                v          = fsconst * BEATS_MS;
+        unsigned long long comparator = divide_64_by_32(&v, general_cap_reg_hi);
+        kprintf("HPET Timer0 comparator set to: 0x%x 0x%x\n", ((u32 *)&v)[1],
+                ((u32 *)&v)[0]);
+
+        u32 addr = (u32)hpet_base + 0x108;
+        *((volatile u32 *)(addr)) =
+            ((u32 *)&v)[0]; // set timer 0 comparator value lower 32
+        mfence();
+
+        set_hpet_reg(hpet_base, 0x100,
+                     0x2 << 9 // IOAPIC Route(irq number)
+                         | 0x004c | caplo,
+                     0); // reenable Tn_VAL_SET_CNF for cmp write
+
+        *((volatile u32 *)(addr + 0x4)) =
+            ((u32 *)&v)[1]; // set timer 0 comparator value higher 32
+        mfence();
+
+        set_hpet_reg(hpet_base, 0x10, 0x3, 0); // enable for legency
+        return TRUE;
+    } else {
+        kprintf("HPET Counter doesn't work.\n");
+        return FALSE;
+    }
 }
