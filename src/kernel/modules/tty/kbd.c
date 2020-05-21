@@ -36,6 +36,23 @@ static inline uchar read_circular_buffer(Circular_Buffer *b) {
     return data;
 }
 
+static inline uchar peek_circular_buffer(Circular_Buffer *b, uint offset) {
+    uchar data;
+    while (b->count <= 0) {
+        asm("nop");
+    }
+    /*
+    if (b->count <= 0)
+        return 0;
+        */
+    if (b->tail + offset >= b->buf + CIRCULAR_BUFFER_SIZE)
+        data =
+            *(b->buf + (offset - (CIRCULAR_BUFFER_SIZE - (b->buf - b->tail))));
+    else
+        data = *(b->tail + offset);
+    return data;
+}
+
 static inline void write_circular_buffer(Circular_Buffer *b, uchar data) {
     if (b->count >= CIRCULAR_BUFFER_SIZE)
         read_circular_buffer(b); // 抛弃
@@ -200,6 +217,24 @@ void init_kbd() {
     while (inb(0x64) & 0x01) {
         inb(0x60);
     }
+}
+
+int kbd_code_end() {
+    if (kbd_buffer.count == 0)
+        return 0;
+    u8 firstbyte = peek_circular_buffer(&kbd_buffer, 0);
+    if (firstbyte != 0xE0 && firstbyte != 0xE1)
+        return 1;
+    u8 secondbyte = peek_circular_buffer(&kbd_buffer, 1);
+    if (firstbyte == 0xE0) {
+        if (secondbyte == 0x2A && kbd_buffer.count >= 4)
+            return 1;
+        if (kbd_buffer.count >= 2)
+            return 1;
+    }
+    if (firstbyte == 0xE1 && secondbyte == 0x1D && kbd_buffer.count >= 6)
+        return 1;
+    return 0;
 }
 
 /* Ring 0 */

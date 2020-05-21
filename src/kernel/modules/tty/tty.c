@@ -20,33 +20,31 @@ void Task_TTY() {
     if (reg_proc("TaskTTY") != 0)
         kprintf("Cannot register as TaskTTY!\n");
     uint key = 0;
-    // init_kbd();
     reg_int_msg(HW_IRQ_KBD);
+    init_kbd();
 
     while (1) {
         recv_msg(&msg, PROC_ANY);
         switch (msg.type) {
         case MSG_INTERRUPT: {
-            /*
-            if (!((key = kbd_read()) & 0x0100)) {
-                char buf[2];
-                sprintf(buf, "%c", key);
-                write_console(&con[cur_con], buf);
-                flush_console(&con[cur_con]);
-            } else {
-                int raw = key & MASK_RAW;
-                switch (raw) {
-                case ENTER:
-                    write_console(&con[cur_con], "\n");
-                    break;
-                case BACKSPACE:
-                    write_console(&con[cur_con], "\b");
-                    break;
+            if (kbd_code_end()) {
+                if (!((key = kbd_read()) & 0x0100)) {
+                    char buf[2];
+                    sprintf(buf, "%c", key);
+                    write_console(&con[cur_con], buf);
+                    flush_console(&con[cur_con]);
+                } else {
+                    int raw = key & MASK_RAW;
+                    switch (raw) {
+                    case ENTER:
+                        write_console(&con[cur_con], "\n");
+                        break;
+                    case BACKSPACE:
+                        write_console(&con[cur_con], "\b");
+                        break;
+                    }
                 }
             }
-            break;
-            */
-            kprintfc(YELLOW, BLACK, "[%x when %d] ", inb(0x60), get_ticks());
             break;
         }
         default: {
