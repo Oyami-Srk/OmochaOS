@@ -71,17 +71,23 @@ void init_ioapic(struct core_env *env) {
         kprintf("MADT Addr: 0x%x, length: %d bytes,  MADT Defined LAPIC Addr: "
                 "0x%x\n",
                 madt, madt->header.Length, madt->lapic_addr);
-        kprintf("Loop for MADT Table from 0x%x to 0x%x: \n", ph,
-                ((void *)madt) + madt->header.Length);
+        /*
+kprintf("Loop for MADT Table from 0x%x to 0x%x: \n", ph,
+        ((void *)madt) + madt->header.Length);
+        */
         for (; (void *)ph < ((void *)(madt)) + madt->header.Length;) {
+            /*
             kprintf("| MADT Entry Type %d, length: %d bytes, at 0x%x\n",
                     ph->type, ph->length, ph);
+                    */
             switch (ph->type) {
             case 0:
-                kprintf("|-- Processor Local APIC: ACPI Processor ID 0x%x, "
-                        "APIC ID 0x%x, Flags 0x%x\n",
-                        ph->data.type0.ACPI_Processor_ID,
-                        ph->data.type0.APIC_ID, ph->data.type0.Flags);
+                /*
+                    kprintf("|-- Processor Local APIC: ACPI Processor ID 0x%x, "
+                            "APIC ID 0x%x, Flags 0x%x\n",
+                            ph->data.type0.ACPI_Processor_ID,
+                            ph->data.type0.APIC_ID, ph->data.type0.Flags);
+                            */
                 break;
             case 1:
                 kprintf("|-- IO APIC: IOAPIC ID 0x%x, IOAPIC Addr 0x%x\n",

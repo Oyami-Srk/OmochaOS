@@ -1,7 +1,7 @@
 #ifndef __CONFIG_H__
 #define __CONFIG_H__
 
-#define PRINT_CLOCK 1
+#define PRINT_CLOCK 0
 
 // beats rate in hz, 100 beats a second
 #define BEATS_RATE 100

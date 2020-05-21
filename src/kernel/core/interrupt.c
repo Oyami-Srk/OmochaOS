@@ -184,11 +184,6 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
     }
     if (intf->trap_no <=
         IRQ0 + HW_IRQ_COUNT /*&& intf->trap_no != IRQ_TIMER*/) {
-        kprintf("[INT %d]", intf->trap_no);
-        // test hpet
-        u32 counter_hi, counter_lo;
-        get_hpet_reg(0xFED00000, 0xF0, &counter_lo, &counter_hi);
-        kprintf("HPET Counter test: 0x%x 0x%x\n", counter_hi, counter_lo);
         // handler interrupt and enable irq
         if (interrupt_methods[intf->trap_no - IRQ0].avail ==
             TRUE) { // better not to use this way

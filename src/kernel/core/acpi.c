@@ -91,7 +91,7 @@ void init_acpi(struct core_env *env) {
     memcpy(buf, rsdp->OEMID, 6);
     kprintf("Found rsdp at 0x%x, version: %d, OEM: %s\n", rsdp, rsdp->Revision,
             buf);
-    foreach_rsdt((struct RSDT *)rsdp->RsdtAddress);
+    // foreach_rsdt((struct RSDT *)rsdp->RsdtAddress);
     env->rsdt         = (struct RSDT *)rsdp->RsdtAddress;
     env->ACPI_version = rsdp->Revision;
 
