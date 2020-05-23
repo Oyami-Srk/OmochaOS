@@ -11,3 +11,4 @@ bochsrc
 active
 /src/kernel/vector_table.asm
 .vscode/
+.idea/

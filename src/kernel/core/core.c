@@ -31,7 +31,7 @@ void restart() {
     outb(0x64, 0xFE);
 }
 
-void SysIdle() {
+_Noreturn void SysIdle() {
     // reflect msg to sender
     message msg;
     while (1) {
@@ -47,7 +47,7 @@ pde_t core_page_dir[PDE_SIZE];
 
 struct core_env core_env;
 
-void core_main(multiboot_info_t *multiboot_header, u32 magic) {
+_Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memset(&core_env, 0, sizeof(struct core_env));
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
 

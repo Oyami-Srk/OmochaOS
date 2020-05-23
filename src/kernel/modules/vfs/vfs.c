@@ -1,7 +1,11 @@
 #include "modules/systask.h"
 
+#include "modules/tty.h"
+
 void Task_VFS() {
     message msg;
-    while (1)
-        ;
+    if (reg_proc("TaskVFS") != 0)
+        printf("Cannot register as TaskVFS!\n");
+    while (1) {
+    }
 }

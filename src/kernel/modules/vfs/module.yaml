@@ -1,0 +1,5 @@
+module:
+  name: VFS
+  author: Shiroko
+  summary: VFS Process
+  entry: Task_VFS
