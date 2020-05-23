@@ -25,15 +25,17 @@ MODULES_OBJS = $(foreach n, $(MODULES_SRCS), $(patsubst %, $(KERNEL_BUILD)/%.o, 
 OBJS += $(MODULES_OBJS)
 
 $(KERNEL_BUILD)/%.o: %.c
-	$(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
+	# $(CC) -o $@ -c $< $(CC_FLAGS) -I$(KERNEL_HEADER)
+	$(CC) -MMD -c -o $@ $< $(CC_FLAGS) -I $(KERNEL_HEADER)/
 
 $(KERNEL_BUILD)/%.o: %.asm
 	$(ASM) -f elf $< -I $(KERNEL_HEADER)/ -I $(KERNEL_BUILD)/ -o $@
 
-$(KERNEL_BUILD)/%.d: %.c
-	@set -e; rm -f $@; $(CC) -MM $< -I$(KERNEL_HEADER)  > $@.$$$$; \
-	$(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
-	$(RM) -f $@.$$$$
+#$(KERNEL_BUILD)/%.d: %.c
+	# @set -e; rm -f $@; $(CC) -MM $< -I$(KERNEL_HEADER) > $@.$$$$; \
+	# $(SED) 's,\($*\)\.o[ :]*,\1.o $@ : ,g' < $@.$$$$ > $@; \
+	# $(RM) -f $@.$$$$
+	# $(CC) -MMD -c -o $@ $< $(CC_FLAGS) -I $(KERNEL_HEADER)/
 
 
 $(KERNEL_BUILD)/kernel.out: $(OBJS) kernel.ld $(KERNEL_BUILD)/init.out.o
@@ -58,9 +60,7 @@ $(KERNEL_BUILD)/init.out.o: $(KERNEL_BUILD)/init.out init/package.S
 kernel: $(KERNEL_BUILD)/kernel.out
 	@echo Kernel is built.
 
-ifneq ($(filter pre-build,$(MAKECMDGOALS)),pre-build)
 -include $(OBJS:.o=.d)
-endif
 
 .PHONY: generate_sources
 generate_sources: $(KERNEL_BUILD)/multiboot.i header/modules/modules.h

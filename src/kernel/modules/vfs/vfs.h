@@ -36,7 +36,7 @@ struct file {
     struct vfs_file_operator *ops;
 
     void *priv_data;
-}
+};
 
 struct vfs_superblock {
     struct vfs_dir *        root;
