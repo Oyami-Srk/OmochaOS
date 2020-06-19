@@ -8,5 +8,6 @@ void Task_VFS() {
     if (reg_proc("TaskVFS") != 0)
         printf("Cannot register as TaskVFS!\n");
     while (1) {
+
     }
 }

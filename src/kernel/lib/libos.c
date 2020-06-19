@@ -2,6 +2,7 @@
 #include "lib/stdlib.h"
 #include "modules/memory.h"
 #include "modules/systask.h"
+#include "modules/tty.h"
 
 uint query_proc(const char *name) {
     message msg;
@@ -33,7 +34,7 @@ int printf(const char *fmt, ...) {
     i             = vsprintf(buf, fmt, arg);
     buf[i]        = 0;
     msg.major     = (uint)buf;
-    msg.type      = 1;
+    msg.type      = TTY_WRITE;
     uint task_tty = query_proc("TaskTTY");
     if (task_tty == 0)
         return 0;
@@ -85,3 +86,4 @@ void execve(const char *fn, const char *argv[], const char *env[]) {
     send_msg(&msg);
     recv_msg(&msg, task_mem); // halt the process
 }
+

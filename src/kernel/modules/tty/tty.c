@@ -9,13 +9,15 @@
 #include "modules/memory.h"
 #include "modules/systask.h"
 #include "monitor.h"
+#include "modules/tty.h"
+#include "tty.h"
 
 uint       cur_con = 0;
 const uint max_con = 4;
 
 struct console con[4];
 
-void Task_TTY() {
+_Noreturn void Task_TTY() {
     message msg;
     if (reg_proc("TaskTTY") != 0)
         kprintf("Cannot register as TaskTTY!\n");
@@ -47,7 +49,7 @@ void Task_TTY() {
             }
             break;
         }
-        default: {
+        case TTY_WRITE: {
             const char *buf =
                 (const char *)proc_vir2phy(msg.sender, (char *)msg.major);
             write_console(&con[cur_con], buf);

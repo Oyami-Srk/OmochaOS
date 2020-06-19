@@ -8,7 +8,7 @@
 extern void SysTask(void);
 // VFS Process
 extern void Task_VFS(void);
-// TTY process
+_Noreturn // TTY process
 extern void Task_TTY(void);
 // Memory Process
 extern void Task_Memory(void);

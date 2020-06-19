@@ -20,9 +20,12 @@ struct vfs_dir {
     char * name;
     size_t name_length;
 
+    struct vfs_inode *dir_inode;
+    struct vfs_dir *parent;
+
     struct vfs_dir *subdirs;
-    struct vfs_dir *next;
-    struct vfs_dir *prev;
+    struct vfs_dir *sub_next;
+    struct vfs_dir *sub_prev;
 
     struct vfs_dir_operator *ops;
 };
