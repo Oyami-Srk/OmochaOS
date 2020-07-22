@@ -1,7 +1,7 @@
-# VenlafaxOS
-VenlafaxOS is my personal studying project. Some code and lower design is inherited from my old project [OmochaOS](https://github.com/Oyami-Srk/OmochaOS). Why am I interseted in OS-Developing is under the readme of that project.
+# OmochaOS
+OmochaOS is my personal studying project. Some code and lower design is inherited from my old project archive branch [OmochaOS(original archive)](https://github.com/Oyami-Srk/OmochaOS/tree/original_omochaos). Why am I interseted in OS-Developing is under the readme of that branch.
 
-#### Now preparing for College Entrance Examination
+#### Now waiting for the exam score to come out at 7/26 5 PM
 
 # Build
 Run `make` in project root dir.
@@ -34,7 +34,7 @@ Run `make qemu` or `make bochs` in project root dir.
 If qemu/bochs is installed and `make attach/detach` is implemented. You can use `make debug DEBUG_WAY=qemu/bochs` to build and run in one command.
 
 # System Design
-Venlafaxos is micro-kernel but with *memory* and *systask* running in kernel space (has kernel symbol linked)
+Omochaos is micro-kernel but with *memory* and *systask* running in kernel space (has kernel symbol linked)
 Currently most of modules are running in kernel space. Those modules will exit when modules from disk is properly loaded.
 All of modules are running under ring 1. Only two syscall `__recv_msg` and `__send_msg`, `interrupt_handler` are running under ring 0 after core finish boot up.
 `systask` should give a common way to access core data in `struct environment`(not impl yet)
