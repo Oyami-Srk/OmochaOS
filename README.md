@@ -1,5 +1,7 @@
 # OmochaOS
 OmochaOS is my personal studying project. Some code and lower design is inherited from my old project archive branch [OmochaOS(original archive)](https://github.com/Oyami-Srk/OmochaOS/tree/original_omochaos). Why am I interseted in OS-Developing is under the readme of that branch.
+> This branch of OmochaOS is directly forked from VenlafaxOS which was already archived.
+> I will face my future and break the dependence of medicine. So I deciced not to use VenlafaxOS as a name anymore.
 
 #### Now waiting for the exam score to come out at 7/26 5 PM
 
