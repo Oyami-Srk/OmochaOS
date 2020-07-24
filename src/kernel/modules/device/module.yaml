@@ -1,0 +1,6 @@
+module:
+  name: Device
+  author: Shiroko
+  summary: Device Process
+  entry: Task_DEV
+  description: Provide block device and stream device

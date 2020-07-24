@@ -18,7 +18,7 @@ struct memory_info mem_info;
 extern char _init_elf_start_[];
 extern char _init_elf_end_[];
 
-void Task_Memory(void) {
+_Noreturn void Task_Memory(void) {
     if (reg_proc("TaskMM") != 0)
         printf("[MEM] Cannot register as TaskMM\n");
     reg_exc_msg(EXCEPTION_PF);

@@ -11,6 +11,8 @@
 #include "driver/graphic.h"
 #include "modules/tty.h"
 
+// TODO: move out execve to make mem module only depends on systask
+
 // counts the str array ending in NULL, NULL is not included
 static int count_strs(const char **strs) {
     uint r = 0;

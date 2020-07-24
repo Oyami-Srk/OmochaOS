@@ -250,7 +250,7 @@ size_t hd_rw_drv(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
     return hd_rw(RW, buf, device, final_lba, count);
 }
 
-void Task_HD() {
+_Noreturn void Task_HD() {
     message msg;
     if (reg_proc("TaskHD") != 0)
         printf("[HD] Cannot register as TaskHD\n");
