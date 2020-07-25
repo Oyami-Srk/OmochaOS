@@ -75,6 +75,7 @@ int wait(uint *status) {
     return msg.type == 0x12344321 ? msg.data.uint_arr.d1 : -1;
 }
 
+/*
 void execve(const char *fn, const char *argv[], const char *env[]) {
     uint    task_mem = query_proc("TaskMM");
     message msg;
@@ -86,4 +87,4 @@ void execve(const char *fn, const char *argv[], const char *env[]) {
     send_msg(&msg);
     recv_msg(&msg, task_mem); // halt the process
 }
-
+*/

@@ -421,7 +421,9 @@ size_t read_file(struct FAT32_FileSystem *fs, struct fs_file_info *fileinfo,
     return size;
 }
 
-void Task_FS() {
+_Noreturn void Task_FS() {
+    while (1)
+        ;
     if (reg_proc("TaskFS") != 0)
         printf("[FS] Cannot register as TaskFS\n");
     delay_ms(200);

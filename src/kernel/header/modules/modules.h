@@ -17,8 +17,9 @@ _Noreturn // Memory Process
 _Noreturn // HD Process
     extern void
     Task_HD(void);
-// FS Process
-extern void Task_FS(void);
+_Noreturn // FS Process
+    extern void
+    Task_FS(void);
 
 #define __MODULES_COUNT__ 6
 #define __MODULES_ENTRIES__                                                    \

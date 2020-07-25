@@ -16,7 +16,7 @@ void init(void) {
         printf("I am child, going to exec test.out\n");
         const char *argv[] = {"arg1", "pworld", "helloi", "arg4", NULL};
         const char *env[]  = {"env1", "env2", NULL};
-        execve("/test.out", argv, env);
+        // execve("/test.out", argv, env);
         exit(10);
     }
 

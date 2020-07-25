@@ -85,6 +85,6 @@ static inline void *sbrk(int increasement) {
 uint fork();
 int  wait(uint *);
 void exit(uint);
-void execve(const char *fn, const char *argv[], const char *env[]);
+// void execve(const char *fn, const char *argv[], const char *env[]);
 
 #endif // __MODULE_MEMORY__

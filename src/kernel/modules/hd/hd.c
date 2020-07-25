@@ -73,8 +73,8 @@ void print_identify_info(ushort *hdinfo) {
 
 void hd_identify(int drv) {
     delay_ms(10);
-    struct HD_Command cmd;
-    HD_make_command(&cmd, 0, 0, drv, 0, ATA_IDENTIFY);
+    struct HD_Command cmd = {.command = ATA_IDENTIFY, .device = 0xA0};
+    // HD_make_command(&cmd, 0, 0, drv, 0, ATA_IDENTIFY);
     HD_send_command(&cmd);
     message msg;
     recv_msg(&msg, PROC_INTERRUPT);
@@ -250,6 +250,8 @@ size_t hd_rw_drv(uint RW, u8 *buf, uint drv, uint lba, size_t count) {
     return hd_rw(RW, buf, device, final_lba, count);
 }
 
+/*
+
 _Noreturn void Task_HD() {
     message msg;
     if (reg_proc("TaskHD") != 0)
@@ -327,5 +329,20 @@ _Noreturn void Task_HD() {
         default:
             break;
         }
+    }
+}
+
+*/
+
+_Noreturn void Task_HD() {
+    message msg;
+    if (reg_proc("TaskHD") != 0)
+        printf("[HD] Cannot register as TaskHD\n");
+    init_hd();
+    hd_identify(0);
+    printf("\n[HD] Initialized\n");
+    delay_ms(200);
+    while (1) {
+        ;
     }
 }
