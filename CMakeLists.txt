@@ -19,7 +19,7 @@ if (APPLE)
     SET(CMAKE_ASM_NASM_OBJECT_FORMAT "elf")
 endif (APPLE)
 
-project(VenlafaxOS)
+project(OmochaOS)
 
 set(CMAKE_C_FLAGS "-fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAPIC")
