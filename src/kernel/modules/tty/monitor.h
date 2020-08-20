@@ -1,7 +1,7 @@
 #ifndef __MODULE_MONITOR_H__
 #define __MODULE_MONITOR_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 struct console {
     uint origin_offset;

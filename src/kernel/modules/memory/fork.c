@@ -1,12 +1,12 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "memory.h"
-#include "modules/systask.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <memory.h>
+#include <modules/systask.h>
+#include <paging.h>
 
 static pde_t *copy_parent(struct memory_info *mem, process *parent) {
     pde_t *pg_dir = create_page_dir(mem, PG_Writable);

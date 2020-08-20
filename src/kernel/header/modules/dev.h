@@ -5,10 +5,10 @@
 #ifndef __MOD_DEV__
 #define __MOD_DEV__
 
-#include "generic/typedefs.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "modules/systask.h"
+#include <generic/typedefs.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <modules/systask.h>
 
 struct DeviceImpl_Register_Struct {
     char DeviceName[32];

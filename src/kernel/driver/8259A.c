@@ -1,9 +1,9 @@
-#include "core/config.h"
+#include <core/config.h>
 
 #if USE_8259A
-#include "core/8259A.h"
-#include "driver/misc.h"
-#include "generic/asm.h"
+#include <driver/8259A.h>
+#include <driver/misc.h>
+#include <generic/asm.h>
 
 void init_8259A(struct core_env *env) {
     outb(IO_PIC_M, 0x11); // ICW 1

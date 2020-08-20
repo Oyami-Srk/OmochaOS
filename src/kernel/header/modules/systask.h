@@ -1,8 +1,8 @@
 #ifndef __MODULE_SYSTASK_H__
 #define __MODULE_SYSTASK_H__
 
-#include "generic/typedefs.h"
-#include "lib/syscall.h"
+#include <generic/typedefs.h>
+#include <lib/syscall.h>
 
 #define SYSTASK_PID 2
 

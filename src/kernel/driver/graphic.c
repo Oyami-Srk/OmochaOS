@@ -1,10 +1,12 @@
-#include "driver/graphic.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <driver/graphic.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
-#include "font_8x13.h"
-#include "logo.h"
+#include <static/font_8x13.h>
+#include <static/logo.h>
+
+#include <driver/driver.h>
 
 const volatile char *vm_start = (volatile char *)0x800B8000;
 uint                 disp_pos = 0;
@@ -180,3 +182,13 @@ void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     disp_offset  = disp_width * (LOGO_Y + 5);
     char_y_start = char_y = (LOGO_Y + 2 + FONT_HEIGHT) / FONT_HEIGHT;
 }
+
+static Driver_Declaration driver_graphic = {.magic       = DRIVER_DC,
+                                            .name        = "Graphic",
+                                            .major_ver   = 0,
+                                            .minor_ver   = 1,
+                                            .deps        = NULL,
+                                            .init        = NULL,
+                                            .initialized = FALSE};
+
+ADD_DRIVER(driver_graphic);

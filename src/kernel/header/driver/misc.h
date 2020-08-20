@@ -1,8 +1,8 @@
 #ifndef __DRIVER_MISC_H__
 #define __DRIVER_MISC_H__
 
-#include "core/config.h"
-#include "generic/asm.h"
+#include <core/config.h>
+#include <generic/asm.h>
 
 #define TIMER_USE_8253
 

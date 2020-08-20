@@ -1,13 +1,13 @@
 #ifndef __ENVIRONMENT_H__
 #define __ENVIRONMENT_H__
 
-#include "core/config.h"
-#include "core/interrupt.h"
-#include "core/multiboot.h"
-#include "core/process.h"
-#include "core/protect.h"
-#include "generic/typedefs.h"
-#include "lib/bitset.h"
+#include <core/config.h>
+#include <core/interrupt.h>
+#include <core/multiboot.h>
+#include <core/process.h>
+#include <core/protect.h>
+#include <generic/typedefs.h>
+#include <lib/bitset.h>
 
 #define GDT_SIZE        128
 #define IDT_SIZE        256 // must match IVT.asm
@@ -75,6 +75,9 @@ struct core_env {
     uint                    exception_suscribed[EXCEPTION_COUNT];
     struct interrupt_data   interrupt_suscribed_data[HW_IRQ_COUNT];
     struct interrupt_data   exception_suscribed_data[EXCEPTION_COUNT];
+    interrupt_func          enable_interrupt;
+    interrupt_func          disable_interrupt;
+    interrupt_func          end_interrupt;
 
     struct core_env_memory_zone memory_zone[MEMORY_ZONE_MAX];
     uint                        memory_zone_count;

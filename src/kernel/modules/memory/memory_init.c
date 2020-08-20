@@ -1,15 +1,15 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "core/protect.h"
-#include "generic/asm.h"
-#include "lib/elf.h"
-#include "lib/stdlib.h"
-#include "memory.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <core/protect.h>
+#include <generic/asm.h>
+#include <lib/elf.h>
+#include <lib/stdlib.h>
+#include <memory.h>
+#include <paging.h>
 
-#include "modules/tty.h"
+#include <modules/tty.h>
 
 BOOL elf_check_file(Elf32_Ehdr *hdr); // execve.c
 BOOL elf_check_supported(Elf32_Ehdr *hdr);

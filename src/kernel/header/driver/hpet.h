@@ -1,7 +1,7 @@
 #ifndef __HPET_H__
 #define __HPET_H__
 
-#include "core/acpi.h"
+#include <driver/acpi.h>
 
 struct address_structure {
     u8 address_space_id; // 0 - system memory, 1 - system I/O

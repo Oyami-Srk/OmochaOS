@@ -1,8 +1,8 @@
-#include "driver/misc.h"
-#include "generic/typedefs.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
-#include "modules/systask.h"
+#include <driver/misc.h>
+#include <generic/typedefs.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
+#include <modules/systask.h>
 
 char *itoa(uint value, char *str, int base) {
     char *rc;

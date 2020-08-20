@@ -1,7 +1,7 @@
 #ifndef __RBTREE_H__
 #define __RBTREE_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 struct _rb_node {
     uint key;

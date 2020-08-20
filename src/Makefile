@@ -10,6 +10,7 @@ HEADER = $(shell pwd)/header
 
 ifeq ($(BUILD_TYPE), debug)
 	CC_FLAGS += -D__DEBUG__
+	CC_FLAGS += -D__HD_DEBUG__
 endif
 
 export CC_FLAGS HEADER

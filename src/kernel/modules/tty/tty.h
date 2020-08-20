@@ -5,9 +5,9 @@
 #ifndef __MODULE_TTY_TTY_H__
 #define __MODULE_TTY_TTY_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
-struct TTY_Reader{
+struct TTY_Reader {
     pid_t task;
 };
 

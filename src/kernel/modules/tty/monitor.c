@@ -1,6 +1,6 @@
-#include "monitor.h"
-#include "driver/graphic.h"
-#include "lib/string.h"
+#include <driver/graphic.h>
+#include <lib/string.h>
+#include <monitor.h>
 
 void flush_console(struct console *con) {}
 

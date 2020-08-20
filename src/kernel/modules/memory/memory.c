@@ -1,16 +1,16 @@
-#include "core/memory.h"
-#include "buddy.h"
-#include "core/environment.h"
-#include "core/paging.h"
-#include "generic/asm.h"
-#include "lib/bitset.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
-#include "memory.h"
-#include "modules/memory.h"
-#include "modules/systask.h"
-#include "modules/tty.h"
+#include <buddy.h>
+#include <core/environment.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <generic/asm.h>
+#include <lib/bitset.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
+#include <memory.h>
+#include <modules/memory.h>
+#include <modules/systask.h>
+#include <modules/tty.h>
 
 struct memory_info mem_info;
 // in pages, not in bytes

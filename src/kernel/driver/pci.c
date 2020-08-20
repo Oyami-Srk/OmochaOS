@@ -1,6 +1,6 @@
-#include "core/pci.h"
+#include <driver/pci.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 // offset & 2 == 0 chose the vendor (lower)
 // offset & 2 != 0 chose the device (higher)

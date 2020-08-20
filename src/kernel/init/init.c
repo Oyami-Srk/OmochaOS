@@ -1,9 +1,9 @@
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/syscall.h"
-#include "modules/memory.h"
-#include "modules/systask.h"
-#include "modules/tty.h"
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/syscall.h>
+#include <modules/memory.h>
+#include <modules/systask.h>
+#include <modules/tty.h>
 
 // first actual process
 void init(void) {

@@ -1,25 +1,21 @@
-#include "core/interrupt.h"
-#include "core/memory.h"
-#include "core/multiboot.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "core/protect.h"
-#include "driver/graphic.h"
-#include "driver/misc.h"
-#include "generic/typedefs.h"
-#include "lib/stdlib.h"
+#include <core/interrupt.h>
+#include <core/memory.h>
+#include <core/multiboot.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <core/protect.h>
+#include <driver/graphic.h>
+#include <driver/misc.h>
+#include <generic/typedefs.h>
+#include <lib/stdlib.h>
 
-#include "lib/syscall.h"
-#include "modules/modules.h"
-#include "modules/systask.h"
+#include <lib/syscall.h>
+#include <modules/modules.h>
+#include <modules/systask.h>
 
-#include "core/cpuid.h"
-#include "core/environment.h"
-#include "core/init.h"
-
-#ifdef ACPI
-#include "core/acpi.h"
-#endif
+#include <core/cpuid.h>
+#include <core/environment.h>
+#include <core/init.h>
 
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
@@ -82,9 +78,10 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
 
-#ifdef ACPI
-    init_acpi(&core_env);
-#endif
+    kprintf("Hello world!");
+
+    while (1)
+        ;
 
     core_env.proc_table = (process *)core_env.core_space_free_end;
     size_t ideal_proc_max =

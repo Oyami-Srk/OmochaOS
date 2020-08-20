@@ -1,13 +1,13 @@
 #ifndef __APIC_H__
 #define __APIC_H__
 
-#include "core/environment.h"
-#include "generic/typedefs.h"
+#include <core/environment.h>
+#include <generic/typedefs.h>
 
 #define IOAPIC_MSR_MEM 0xFEC00000
 #define LAPIC_MSR_MEM  0xFEE00000
 
-#include "core/acpi.h"
+#include <driver/acpi.h>
 
 struct MADT_Entry_Header {
     u8 type;
@@ -52,9 +52,9 @@ struct MADT {
 
 void init_apic(struct core_env *env);
 #define init_inthw init_apic
-void end_interrupt(uint i);
-void enable_interrupt(uint i);
-void disable_interrupt(uint i);
+// void end_interrupt(uint i);
+// void enable_interrupt(uint i);
+// void disable_interrupt(uint i);
 
 // LAPIC OFFSET
 #define LAPIC_OFFSET_ID  0x020

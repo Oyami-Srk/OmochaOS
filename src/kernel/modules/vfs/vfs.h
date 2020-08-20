@@ -1,7 +1,7 @@
 #ifndef __MOD_VFS_VFS_INC__
 #define __MOD_VFS_VFS_INC__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 struct vfs_inode {
     unsigned long long file_size;
@@ -21,7 +21,7 @@ struct vfs_dir {
     size_t name_length;
 
     struct vfs_inode *dir_inode;
-    struct vfs_dir *parent;
+    struct vfs_dir *  parent;
 
     struct vfs_dir *subdirs;
     struct vfs_dir *sub_next;

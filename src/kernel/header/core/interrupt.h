@@ -1,9 +1,9 @@
 #ifndef __INTERRUPT_H__
 #define __INTERRUPT_H__
 
-#include "core/config.h"
-#include "core/protect.h"
-#include "generic/typedefs.h"
+#include <core/config.h>
+#include <core/protect.h>
+#include <generic/typedefs.h>
 
 #define GATE_TASK   0x5
 #define GATE_INT16  0x6
@@ -63,5 +63,12 @@ struct interrupt_data {
     uint avail;
     uint data;
 } __attribute__((packed));
+
+// void enable_interrupt(uint irq);
+// void disable_interrupt(uint irq);
+// void end_interrupt(uint irq);
+interrupt_func enable_interrupt;
+interrupt_func disable_interrupt;
+interrupt_func end_interrupt;
 
 #endif // __INTERRUPT_H__

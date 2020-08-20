@@ -1,10 +1,10 @@
-#include "modules/fs.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
-#include "modules/hd.h"
-#include "modules/tty.h"
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
+#include <modules/fs.h>
+#include <modules/hd.h>
+#include <modules/tty.h>
 
 ubyte hd_buf[512];
 

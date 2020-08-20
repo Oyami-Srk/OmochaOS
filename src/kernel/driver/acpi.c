@@ -1,9 +1,9 @@
-#include "core/acpi.h"
-#include "core/pci.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <driver/acpi.h>
+#include <driver/pci.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 static int rsdp_checksum(char *p) {
     u8 sum = 0;

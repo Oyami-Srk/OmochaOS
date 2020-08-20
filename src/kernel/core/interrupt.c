@@ -1,23 +1,14 @@
-#include "core/interrupt.h"
-#include "core/config.h"
-#include "core/cpuid.h"
-#include "core/environment.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "driver/graphic.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
-
-#ifdef USE_APIC
-#include "core/apic.h"
-#include "driver/hpet.h"
-#elif USE_8259A
-#include "core/8259A.h"
-#endif
-
-/* void *interrupt_stack; */
+#include <core/config.h>
+#include <core/cpuid.h>
+#include <core/environment.h>
+#include <core/interrupt.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <driver/graphic.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
 
 const char *exception_message[] = {"#DE: Divide-by-zero Error",
                                    "#DB: Debug",
@@ -106,7 +97,7 @@ void core_init_interrupt(struct core_env *env) {
     *idt_limit      = env->idt_size * sizeof(Gate) - 1;
     *idt_base       = (u32)(env->idt);
     asm volatile("lidt (%0)\n\t" ::"r"(idt_ptr));
-    init_inthw(env);
+    /* init_inthw(env); */
     /* interrupt_stack = kalloc(0); // notice here allocate */
     /* memset(interrupt_suscribed, 0, sizeof(interrupt_suscribed)); */
     /* memset(interrupt_methods, 0, */
@@ -187,17 +178,18 @@ void interrupt_handler(int interrupt_count, stack_frame *intf) {
         // handler interrupt and enable irq
         if (interrupt_methods[intf->trap_no - IRQ0].avail ==
             TRUE) { // better not to use this way
-            disable_interrupt(intf->trap_no - IRQ0);
+            (*disable_interrupt)(intf->trap_no - IRQ0);
             void *       func = interrupt_methods[intf->trap_no - IRQ0].func;
             typedef void fp_v_v(void *);
             ((fp_v_v *)func)(interrupt_methods[intf->trap_no - IRQ0].data);
-            enable_interrupt(intf->trap_no - IRQ0);
+            (*enable_interrupt)(intf->trap_no - IRQ0);
         }
         if (interrupt_suscribed[intf->trap_no - IRQ0]) {
             send_interrupt_msg(intf->trap_no - IRQ0,
                                interrupt_suscribed[intf->trap_no - IRQ0]);
         }
-        end_interrupt(intf->trap_no - IRQ0); // maybe it could move to the top?
+        (*end_interrupt)(intf->trap_no -
+                         IRQ0); // maybe it could move to the top?
         return;
     }
     switch (intf->trap_no) {

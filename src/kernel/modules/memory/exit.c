@@ -1,13 +1,13 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "lib/stdlib.h"
-#include "memory.h"
-#include "modules/systask.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <lib/stdlib.h>
+#include <memory.h>
+#include <modules/systask.h>
+#include <paging.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 process *set_proc_exit(pid_t pid, uint exit_status) {
     process *proc     = get_proc(pid);

@@ -1,13 +1,13 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "memory.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <memory.h>
+#include <paging.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 void do_page_fault(struct memory_info *mem, stack_frame *intf) {
 #pragma GCC diagnostic push

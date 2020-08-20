@@ -1,21 +1,21 @@
-#include "core/config.h"
+#include <core/config.h>
 
 #if USE_APIC
-#include "core/apic.h"
-#include "core/cpuid.h"
-#include "core/environment.h"
-#include "core/msr.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <core/cpuid.h>
+#include <core/environment.h>
+#include <core/msr.h>
+#include <driver/apic.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 #if ACPI
-#include "core/acpi.h"
-#include "core/pci.h"
+#include <driver/acpi.h>
+#include <driver/pci.h>
 #endif
-#include "driver/misc.h"
+#include <driver/misc.h>
 
 void *lapic_base;
 void *ioapic_base;
@@ -202,7 +202,7 @@ void init_lapic(struct core_env *env) {
 }
 
 #if ACPI
-#include "driver/hpet.h"
+#include <driver/hpet.h>
 #endif
 
 void init_timer(struct core_env *env) {
@@ -268,13 +268,13 @@ void init_apic(struct core_env *env) {
     init_timer(env);
 }
 
-void end_interrupt(uint i) {
+void __end_interrupt(uint i) {
     if (!isx2apic)
         set_lapic_reg(lapic_base, LAPIC_OFFSET_EOI, 0x0);
     else
         wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_EOI), 0x00, 0x00);
 }
-void enable_interrupt(uint i) {
+void __enable_interrupt(uint i) {
     // 0:7 = 0x20 + i    <- IVT number
     // 8:10 = 0          <- Fixed delivery mode
     // 11 = 0            <- Phy Destination mode
@@ -282,7 +282,7 @@ void enable_interrupt(uint i) {
     // 16 = 0            <- disable mask
     set_ioapic_ret(ioapic_base, 0x10 + i * 2, IRQ0 + i, 0);
 }
-void disable_interrupt(uint i) {
+void __disable_interrupt(uint i) {
     // 16 = 0            <- enable mask
     set_ioapic_ret(ioapic_base, 0x10 + i * 2, 0x10000 | (IRQ0 + i), 0);
 }

@@ -1,13 +1,14 @@
-#include "modules/hd.h"
-#include "core/interrupt.h"
-#include "core/process.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
-#include "modules/memory.h"
-#include "modules/systask.h"
-#include "modules/tty.h"
+#include <core/interrupt.h>
+#include <core/process.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
+#include <modules/dev.h>
+#include <modules/hd.h>
+#include <modules/memory.h>
+#include <modules/systask.h>
+#include <modules/tty.h>
 
 u8             hd_status;
 u8             hd_buf[HD_BUFFER_SIZE];
@@ -73,8 +74,8 @@ void print_identify_info(ushort *hdinfo) {
 
 void hd_identify(int drv) {
     delay_ms(10);
-    struct HD_Command cmd = {.command = ATA_IDENTIFY, .device = 0xA0};
-    // HD_make_command(&cmd, 0, 0, drv, 0, ATA_IDENTIFY);
+    struct HD_Command cmd;
+    HD_make_command(&cmd, 0, 0, drv, 0, ATA_IDENTIFY);
     HD_send_command(&cmd);
     message msg;
     recv_msg(&msg, PROC_INTERRUPT);
@@ -335,11 +336,13 @@ _Noreturn void Task_HD() {
 */
 
 _Noreturn void Task_HD() {
+    delay_ms(2000);
     message msg;
     if (reg_proc("TaskHD") != 0)
         printf("[HD] Cannot register as TaskHD\n");
     init_hd();
     hd_identify(0);
+    hd_identify(1);
     printf("\n[HD] Initialized\n");
     delay_ms(200);
     while (1) {

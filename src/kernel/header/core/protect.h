@@ -1,8 +1,8 @@
 #ifndef __PROTECT_H__
 #define __PROTECT_H__
 
-#include "core/process.h"
-#include "generic/typedefs.h"
+#include <core/process.h>
+#include <generic/typedefs.h>
 
 typedef struct {
     u16 limit_l;

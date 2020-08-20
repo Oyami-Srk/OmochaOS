@@ -1,8 +1,8 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "memory.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <memory.h>
+#include <paging.h>
 
 void *mem_sbrk(struct memory_info *mem, process *proc, int increse) {
     if (!proc->prog_info) {

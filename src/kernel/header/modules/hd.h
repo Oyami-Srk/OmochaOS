@@ -1,9 +1,9 @@
 #ifndef __MODULE_HD__
 #define __MODULE_HD__
 
-#include "generic/typedefs.h"
-#include "lib/syscall.h"
-#include "modules/systask.h"
+#include <generic/typedefs.h>
+#include <lib/syscall.h>
+#include <modules/systask.h>
 
 #define HD_REG_DATA     0x1F0
 #define HD_REG_FEATURES 0x1F1

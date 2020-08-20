@@ -98,4 +98,9 @@ struct __process {
 } __attribute__((aligned(32)));
 
 typedef struct __process process;
+
+// typedefs of function pointers
+typedef int (*init_fp)(void *); // void * means struct core_env in environment.h
+typedef void (*interrupt_func)(int);
+
 #endif // __TYPEDEFS_H__

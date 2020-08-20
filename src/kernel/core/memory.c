@@ -1,11 +1,11 @@
-#include "core/memory.h"
-#include "core/environment.h"
-#include "core/multiboot.h"
-#include "core/paging.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <core/environment.h>
+#include <core/memory.h>
+#include <core/multiboot.h>
+#include <core/paging.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
 list *freemem;
 

@@ -1,12 +1,12 @@
-#include "core/interrupt.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "driver/graphic.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
+#include <core/interrupt.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <driver/graphic.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
 
 extern uint *   beats;
 extern process *proc_table; // TODO: not hardcode

@@ -1,14 +1,14 @@
-#include "modules/systask.h"
-#include "core/environment.h"
-#include "core/interrupt.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/process.h"
-#include "driver/graphic.h"
-#include "driver/misc.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
-#include "lib/syscall.h"
+#include <core/environment.h>
+#include <core/interrupt.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <driver/graphic.h>
+#include <driver/misc.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
+#include <lib/syscall.h>
+#include <modules/systask.h>
 
 // this task will be at the same addr sapce as the kernel does
 // like a macrokernel, just because I am a good vegetable

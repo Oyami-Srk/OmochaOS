@@ -1,8 +1,8 @@
 #ifndef __SYSCALL_H__
 #define __SYSCALL_H__
 
-#include "generic/typedefs.h"
-#include "lib/string.h"
+#include <generic/typedefs.h>
+#include <lib/string.h>
 
 #define SYSCALL_INT   0xE9
 #define MSG_INTERRUPT 0x7FFFFFFF

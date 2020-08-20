@@ -1,5 +1,5 @@
-#include "lib/string.h"
-#include "generic/asm.h"
+#include <generic/asm.h>
+#include <lib/string.h>
 
 void *memcpy(void *dst, const void *src, int size) {
     const char *s;

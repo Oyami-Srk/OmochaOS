@@ -1,7 +1,7 @@
 #ifndef __PAGING_H__
 #define __PAGING_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 #define PG_Present  0x01
 #define PG_Writable 0x02

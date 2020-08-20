@@ -1,9 +1,9 @@
-#include "driver/hpet.h"
-#include "core/acpi.h"
-#include "driver/misc.h"
-#include "generic/asm.h"
+#include <driver/acpi.h>
+#include <driver/hpet.h>
+#include <driver/misc.h>
+#include <generic/asm.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 void *hpet_base;
 

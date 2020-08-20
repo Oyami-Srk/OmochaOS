@@ -1,11 +1,11 @@
-#include "paging.h"
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "lib/stdlib.h"
-#include "memory.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <lib/stdlib.h>
+#include <memory.h>
+#include <paging.h>
 
-#include "driver/graphic.h"
+#include <driver/graphic.h>
 
 // sys_mapping pa should not contained in free memory
 unsigned int sys_mapping[][3] = {

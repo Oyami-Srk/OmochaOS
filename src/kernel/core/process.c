@@ -1,13 +1,13 @@
-#include "core/process.h"
-#include "core/environment.h"
-#include "core/memory.h"
-#include "core/paging.h"
-#include "core/protect.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "lib/bitset.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <core/environment.h>
+#include <core/memory.h>
+#include <core/paging.h>
+#include <core/process.h>
+#include <core/protect.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <lib/bitset.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
 process * proc_running   = NULL;
 process * proc_table     = NULL;

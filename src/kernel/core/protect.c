@@ -1,9 +1,9 @@
-#include "core/protect.h"
-#include "core/environment.h"
-#include "core/memory.h"
-#include "generic/asm.h"
-#include "lib/stdlib.h"
-#include "lib/string.h"
+#include <core/environment.h>
+#include <core/memory.h>
+#include <core/protect.h>
+#include <generic/asm.h>
+#include <lib/stdlib.h>
+#include <lib/string.h>
 
 Descriptor *_GDT_start;
 Descriptor *_GDT_current; // point to next empty slot;

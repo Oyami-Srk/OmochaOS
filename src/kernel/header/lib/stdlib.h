@@ -1,7 +1,7 @@
 #ifndef __STDLIB_H__
 #define __STDLIB_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 char *itoa(unsigned int value, char *str, int base);
 int   vsprintf(char *buf, const char *fmt, va_list args);

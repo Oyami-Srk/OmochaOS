@@ -1,15 +1,15 @@
-#include "buddy.h"
-#include "core/memory.h"
-#include "core/process.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "lib/elf.h"
-#include "memory.h"
-#include "modules/fs.h"
-#include "paging.h"
+#include <buddy.h>
+#include <core/memory.h>
+#include <core/process.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <lib/elf.h>
+#include <memory.h>
+#include <modules/fs.h>
+#include <paging.h>
 
-#include "driver/graphic.h"
-#include "modules/tty.h"
+#include <driver/graphic.h>
+#include <modules/tty.h>
 
 // TODO: move out execve to make mem module only depends on systask
 

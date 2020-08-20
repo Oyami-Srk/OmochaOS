@@ -1,7 +1,7 @@
 #ifndef __MSR_H__
 #define __MSR_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 #define IA32_APIC_BASE_MSR 0x1B
 

@@ -1,9 +1,9 @@
-#include "buddy.h"
-#include "generic/asm.h"
-#include "generic/typedefs.h"
-#include "lib/rbtree.h"
-#include "lib/stdlib.h"
-#include "memory.h"
+#include <buddy.h>
+#include <generic/asm.h>
+#include <generic/typedefs.h>
+#include <lib/rbtree.h>
+#include <lib/stdlib.h>
+#include <memory.h>
 
 struct __kmem_pool {
     size_t              total_size;
@@ -143,7 +143,7 @@ static rb_node *rb_search_upper(rb_node *x, uint key) {
         return closet;
 }
 
-#include "modules/tty.h"
+#include <modules/tty.h>
 
 char *mem_kmalloc(size_t size) {
     size += kmem_block_head_size;

@@ -1,7 +1,7 @@
 #ifndef __GRAPHIC_H__
 #define __GRAPHIC_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 #define WHITE  0x00ffffff //白
 #define BLACK  0x00000000 //黑

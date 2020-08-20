@@ -1,8 +1,8 @@
-#include "driver/misc.h"
-#include "lib/stdlib.h"
-#include "modules/memory.h"
-#include "modules/systask.h"
-#include "modules/tty.h"
+#include <driver/misc.h>
+#include <lib/stdlib.h>
+#include <modules/memory.h>
+#include <modules/systask.h>
+#include <modules/tty.h>
 
 uint query_proc(const char *name) {
     message msg;

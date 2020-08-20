@@ -8,7 +8,7 @@
 
 int printf(const char *fmt, ...);
 
-#include "modules/systask.h"
+#include <modules/systask.h>
 
 // type = 0: tty do output
 // type = 1: tty only do write and read

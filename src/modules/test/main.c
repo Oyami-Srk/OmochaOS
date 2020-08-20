@@ -1,5 +1,5 @@
-#include "modules/systask.h"
-#include "modules/tty.h"
+#include <modules/systask.h>
+#include <modules/tty.h>
 
 int main(int argc, char **argv) {
     printf("Hi, this is your first app!\n");

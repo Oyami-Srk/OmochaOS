@@ -1,9 +1,9 @@
 #ifndef __MODULE_MEMORY_MEMORY_INC__
 #define __MODULE_MEMORY_MEMORY_INC__
 
-#include "generic/typedefs.h"
-#include "lib/bitset.h"
-#include "modules/memory.h"
+#include <generic/typedefs.h>
+#include <lib/bitset.h>
+#include <modules/memory.h>
 
 #define PAGE_TYPE_USABLE   0x001
 #define PAGE_TYPE_RESERVED 0x002

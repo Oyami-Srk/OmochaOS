@@ -1,7 +1,7 @@
 #ifndef __PROCESS_H__
 #define __PROCESS_H__
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 #define PROC_STATUS_SUSPEND  0x000
 #define PROC_STATUS_RUNNING  0x001

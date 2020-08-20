@@ -1,6 +1,6 @@
 ;; entry for multiboot bootloader.
 
-%include "multiboot.i"
+%include <multiboot.i>
 
 ;; definations
 MB_MAGIC    equ 0x1BADB002

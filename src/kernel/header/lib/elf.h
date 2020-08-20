@@ -3,7 +3,7 @@
 
 // copy from osdev.org
 
-#include "generic/typedefs.h"
+#include <generic/typedefs.h>
 
 typedef u16 Elf32_Half;  // unsigned half word
 typedef u32 Elf32_Off;   // unsigned offset

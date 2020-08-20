@@ -1,9 +1,9 @@
 #ifndef __MOD_MEMORY_PAGING_INC__
 #define __MOD_MEMORY_PAGING_INC__
 
-#include "core/paging.h"
-#include "lib/stdlib.h"
-#include "memory.h"
+#include <core/paging.h>
+#include <lib/stdlib.h>
+#include <memory.h>
 
 // return NULL if cannot find.
 static inline pte_t *get_pte(pde_t *page_dir, void *va) {

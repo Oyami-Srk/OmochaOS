@@ -1,8 +1,8 @@
 #ifndef __ACPI_H__
 #define __ACPI_H__
 
-#include "core/environment.h"
-#include "generic/typedefs.h"
+#include <core/environment.h>
+#include <generic/typedefs.h>
 
 struct RSDPDescriptor {
     char Signature[8];

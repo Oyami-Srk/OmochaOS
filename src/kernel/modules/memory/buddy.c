@@ -1,10 +1,10 @@
-#include "buddy.h"
-#include "generic/typedefs.h"
-#include "lib/stdlib.h"
-#include "memory.h"
-#include "paging.h"
+#include <buddy.h>
+#include <generic/typedefs.h>
+#include <lib/stdlib.h>
+#include <memory.h>
+#include <paging.h>
 
-#include "modules/tty.h"
+#include <modules/tty.h>
 
 static block_list *remove_from_free_list(struct memory_info *mem, block_list *p,
                                          uint order) {
