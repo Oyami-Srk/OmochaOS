@@ -1,11 +1,11 @@
-#include <buddy.h>
+#include "buddy.h"
+#include "memory.h"
+#include "paging.h"
 #include <core/memory.h>
 #include <core/paging.h>
 #include <core/process.h>
 #include <generic/asm.h>
 #include <generic/typedefs.h>
-#include <memory.h>
-#include <paging.h>
 
 #include <driver/graphic.h>
 

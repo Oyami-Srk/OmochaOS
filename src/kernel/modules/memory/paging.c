@@ -1,9 +1,9 @@
-#include <buddy.h>
+#include "paging.h"
+#include "buddy.h"
+#include "memory.h"
 #include <core/memory.h>
 #include <core/paging.h>
 #include <lib/stdlib.h>
-#include <memory.h>
-#include <paging.h>
 
 #include <driver/graphic.h>
 

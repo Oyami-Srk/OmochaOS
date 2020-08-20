@@ -1,8 +1,8 @@
+#include "kbd.h"
+#include "keymap.h"
 #include <core/interrupt.h>
 #include <generic/asm.h>
 #include <generic/typedefs.h>
-#include <kbd.h>
-#include <keymap.h>
 #include <lib/syscall.h>
 #include <modules/systask.h>
 

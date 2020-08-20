@@ -1,4 +1,5 @@
-#include <buddy.h>
+#include "memory.h"
+#include "buddy.h"
 #include <core/environment.h>
 #include <core/memory.h>
 #include <core/paging.h>
@@ -7,7 +8,6 @@
 #include <lib/stdlib.h>
 #include <lib/string.h>
 #include <lib/syscall.h>
-#include <memory.h>
 #include <modules/memory.h>
 #include <modules/systask.h>
 #include <modules/tty.h>
@@ -136,9 +136,11 @@ _Noreturn void Task_Memory(void) {
             break;
         }
         case MEM_EXECVE: {
+            /*
             mem_execve(&mem_info, get_proc(msg.sender), (const char *)msg.major,
                        (const char **)msg.data.uint_arr.d1,
                        (const char **)msg.data.uint_arr.d2);
+                       */
             break;
         }
         case MEM_SBRK: {

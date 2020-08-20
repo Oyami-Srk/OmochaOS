@@ -1,6 +1,6 @@
 ;; Vector Handler used in IVT
 
-%include <core/process.i>
+%include "core/process.i"
 
 [BITS 32]
 [SECTION .text]

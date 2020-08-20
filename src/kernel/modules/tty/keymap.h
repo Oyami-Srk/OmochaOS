@@ -1,3 +1,5 @@
+#include "keycode.h"
+
 unsigned int keymap[NR_SCAN_CODES * MAP_COLS] = {
 
 /* scan-code			!Shift		Shift		E0 XX	*/

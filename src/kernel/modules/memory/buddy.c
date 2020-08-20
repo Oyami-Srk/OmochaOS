@@ -1,8 +1,8 @@
-#include <buddy.h>
+#include "buddy.h"
+#include "memory.h"
+#include "paging.h"
 #include <generic/typedefs.h>
 #include <lib/stdlib.h>
-#include <memory.h>
-#include <paging.h>
 
 #include <modules/tty.h>
 

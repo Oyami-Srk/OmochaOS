@@ -1,5 +1,5 @@
+#include "vfs.h"
 #include <modules/systask.h>
-#include <vfs.h>
 
 #include <modules/tty.h>
 

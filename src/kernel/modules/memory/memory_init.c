@@ -1,4 +1,6 @@
-#include <buddy.h>
+#include "buddy.h"
+#include "memory.h"
+#include "paging.h"
 #include <core/memory.h>
 #include <core/paging.h>
 #include <core/process.h>
@@ -6,8 +8,6 @@
 #include <generic/asm.h>
 #include <lib/elf.h>
 #include <lib/stdlib.h>
-#include <memory.h>
-#include <paging.h>
 
 #include <modules/tty.h>
 

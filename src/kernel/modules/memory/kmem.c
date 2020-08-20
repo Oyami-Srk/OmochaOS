@@ -1,9 +1,9 @@
-#include <buddy.h>
+#include "buddy.h"
+#include "memory.h"
 #include <generic/asm.h>
 #include <generic/typedefs.h>
 #include <lib/rbtree.h>
 #include <lib/stdlib.h>
-#include <memory.h>
 
 struct __kmem_pool {
     size_t              total_size;

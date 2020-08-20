@@ -1,7 +1,7 @@
 #ifndef __MOD_MEMORY_BUDDY_INC__
 #define __MOD_MEMORY_BUDDY_INC__
 
-#include <memory.h>
+#include "memory.h"
 
 static inline uint round_down_power_2(uint x) {
     if (x == 0)

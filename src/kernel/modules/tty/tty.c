@@ -1,16 +1,16 @@
+#include "tty.h"
+#include "kbd.h"
+#include "monitor.h"
 #include <core/interrupt.h>
 #include <core/process.h>
 #include <driver/graphic.h>
 #include <generic/asm.h>
-#include <kbd.h>
 #include <lib/stdlib.h>
 #include <lib/string.h>
 #include <lib/syscall.h>
 #include <modules/memory.h>
 #include <modules/systask.h>
 #include <modules/tty.h>
-#include <monitor.h>
-#include <tty.h>
 
 uint       cur_con = 0;
 const uint max_con = 4;
