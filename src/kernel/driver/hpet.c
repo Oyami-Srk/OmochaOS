@@ -3,6 +3,7 @@
 #include <driver/misc.h>
 #include <generic/asm.h>
 
+#include <driver/driver.h>
 #include <driver/graphic.h>
 
 void *hpet_base;
@@ -149,3 +150,13 @@ BOOL init_hpet(struct core_env *env) {
         return FALSE;
     }
 }
+
+static Driver_Declaration driver_hpet = {.magic       = DRIVER_DC,
+                                         .name        = "HPET",
+                                         .major_ver   = 0,
+                                         .minor_ver   = 1,
+                                         .deps        = 0,
+                                         .init        = 0,
+                                         .initialized = FALSE};
+
+ADD_DRIVER(driver_hpet);

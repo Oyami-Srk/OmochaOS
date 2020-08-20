@@ -17,6 +17,8 @@
 #include <core/environment.h>
 #include <core/init.h>
 
+#include <driver/driver.h>
+
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
 
@@ -78,7 +80,11 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
 
-    kprintf("Hello world!");
+    kprintf("Hello world! Driver attached: ");
+
+    section_foreach_entry(DrvDclrList, Driver_Declaration *, entry) {
+        kprintf("%s,", (*entry)->name);
+    }
 
     while (1)
         ;
