@@ -87,4 +87,6 @@ enum LAPIC_FEATURE {
     LAPIC_FEAT_X2APIC = 1 << 0,
 };
 
+typedef int (*init_fp)(struct core_env *);
+
 #endif // __ENVIRONMENT_H__

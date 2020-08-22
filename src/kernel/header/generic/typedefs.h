@@ -23,6 +23,14 @@ struct __proto_list__ {
 
 typedef struct __proto_list__ list;
 
+struct __proto_dlist__ {
+    void *                  data;
+    struct __proto_dlist__ *prev;
+    struct __proto_dlist__ *next;
+};
+
+typedef struct __proto_dlist__ dlist;
+
 typedef char *va_list;
 
 typedef struct __message {
@@ -100,7 +108,6 @@ struct __process {
 typedef struct __process process;
 
 // typedefs of function pointers
-typedef int (*init_fp)(void *); // void * means struct core_env in environment.h
-typedef void (*interrupt_func)(int);
+typedef void (*interrupt_func)(uint);
 
 #endif // __TYPEDEFS_H__

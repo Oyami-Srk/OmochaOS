@@ -165,7 +165,7 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
             ;
 }
 
-void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
+int __GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     fb_addr     = fb;
     disp_width  = width;
     disp_height = height;
@@ -183,12 +183,21 @@ void GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     char_y_start = char_y = (LOGO_Y + 2 + FONT_HEIGHT) / FONT_HEIGHT;
 }
 
+int GRAPHIC_init(struct core_env *env) {
+    multiboot_info_t *multiboot_header = &env->boot_info;
+    u32               fb_addr = multiboot_header->framebuffer_addr & 0xFFFFFFFF;
+    __GRAPHIC_init((void *)(fb_addr), multiboot_header->framebuffer_width,
+                   multiboot_header->framebuffer_height,
+                   multiboot_header->framebuffer_pitch);
+    return 0;
+}
+
 static Driver_Declaration driver_graphic = {.magic       = DRIVER_DC,
-                                            .name        = "Graphic",
+                                            .name        = "GRAPHIC",
                                             .major_ver   = 0,
                                             .minor_ver   = 1,
-                                            .deps        = NULL,
-                                            .init        = NULL,
+                                            .level       = 0,
+                                            .init        = GRAPHIC_init,
                                             .initialized = FALSE};
 
 ADD_DRIVER(driver_graphic);

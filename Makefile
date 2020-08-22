@@ -39,8 +39,8 @@ endif
 
 BXIMAGE = bximage
 BOCHS 	= bochs
-# QEMU 	= qemu-system-i386
-QEMU 	= qemu-system-x86_64
+QEMU 	= qemu-system-i386
+# QEMU 	= qemu-system-x86_64
 
 PY 		= python3
 PY3 	= python3

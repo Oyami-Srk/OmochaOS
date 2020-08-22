@@ -18,7 +18,6 @@
 
 void kprintf(const char *fmt, ...);
 void kprintfc(uint fg, uint bg, const char *fmt, ...);
-void GRAPHIC_init(uint *fb, int width, int height, uint pitch);
 void put_bitmap(uint *addr, size_t width_pitch, const unsigned char *bitmap,
                 uint bitmap_X, uint bitmap_Y, uint Front_Color,
                 uint Background_Color);

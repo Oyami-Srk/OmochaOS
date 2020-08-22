@@ -1,27 +1,20 @@
 #ifndef __DRIVER_H__
 #define __DRIVER_H__
 
+#include <core/environment.h>
 #include <generic/typedefs.h>
 
 #define DRIVER_DEP     0x7FDEDEF7
 #define DRIVER_DC      0x7FDEDCF7
 #define DRIVER_DC_HEAD 0x7FDEDC00
 
-struct __Driver_Dependence {
-    uint                        magic;
-    const char *                name;
-    uint                        major_ver;
-    uint                        minor_ver;
-    struct __Drvier_Dependence *next;
-};
-typedef struct __Drvier_Dependence Driver_Dependence;
-
 struct __Driver_Declaration {
-    uint               magic;
-    const char *       name;
-    uint               major_ver;
-    uint               minor_ver;
-    Driver_Dependence *deps;
+    uint        magic;
+    const char *name;
+    uint        major_ver;
+    uint        minor_ver;
+    uint        level; // -1 means not loading this driver
+                       // loading order is from 0 to larger level
 
     struct __Driver_Declaration *next;
     init_fp                      init;
@@ -44,5 +37,14 @@ typedef struct __Driver_Declaration Driver_Declaration;
              &__stop_##section_name;                                           \
          });                                                                   \
          ++elem)
+
+/* ret:
+    0: driver found
+    1: driver found, but version too low
+    2: driver found, but not initialized
+    -1: driver not found
+*/
+
+int check_driver_exists(const char *name, int major_ver, int minor_ver);
 
 #endif // __DRIVER_H__

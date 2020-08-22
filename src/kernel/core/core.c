@@ -43,7 +43,9 @@ _Noreturn void SysIdle() {
 
 pde_t core_page_dir[PDE_SIZE];
 
-struct core_env core_env;
+struct core_env    core_env;
+Driver_Declaration drivers = {
+    .magic = DRIVER_DC_HEAD, .name = "HEAD", .level = -1};
 
 _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memset(&core_env, 0, sizeof(struct core_env));
@@ -75,19 +77,25 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     core_init_memory(&core_env);
 
+    /*
     u32 fb_addr = multiboot_header->framebuffer_addr & 0xFFFFFFFF;
     GRAPHIC_init((void *)(fb_addr), multiboot_header->framebuffer_width,
                  multiboot_header->framebuffer_height,
                  multiboot_header->framebuffer_pitch);
+                 */
 
-    kprintf("Hello world! Driver attached: ");
-
+    // prepare for load driver
+    Driver_Declaration *dd_parent    = &drivers;
+    uint                driver_count = 0;
     section_foreach_entry(DrvDclrList, Driver_Declaration *, entry) {
-        kprintf("%s,", (*entry)->name);
+        // kprintf("%s,", (*entry)->name);
+        dd_parent->next = *entry;
+        dd_parent       = dd_parent->next;
+        dd_parent->next = NULL;
+        driver_count++;
     }
-
-    while (1)
-        ;
+    drivers.major_ver = driver_count;
+    core_init_driver(&core_env, &drivers);
 
     core_env.proc_table = (process *)core_env.core_space_free_end;
     size_t ideal_proc_max =

@@ -3,6 +3,7 @@
 #include <lib/stdlib.h>
 #include <lib/string.h>
 
+#include <driver/driver.h>
 #include <driver/graphic.h>
 
 static int rsdp_checksum(char *p) {
@@ -79,7 +80,7 @@ struct ACPISDTHeader *search_sdt(struct core_env *env, char *sig) {
     return NULL;
 }
 
-void init_acpi(struct core_env *env) {
+int init_acpi(struct core_env *env) {
     struct RSDPDescriptor *rsdp =
         search_rsdp((char *)0xe0000, 0xfffff - 0xe0000);
     if (!rsdp)
@@ -106,4 +107,15 @@ void init_acpi(struct core_env *env) {
     } else {
         env->rcba = 0;
     }
+    return 0;
 }
+
+static Driver_Declaration driver_acpi = {.magic       = DRIVER_DC,
+                                         .name        = "ACPI",
+                                         .major_ver   = 0,
+                                         .minor_ver   = 1,
+                                         .level       = 1,
+                                         .init        = init_acpi,
+                                         .initialized = FALSE};
+
+ADD_DRIVER(driver_acpi);

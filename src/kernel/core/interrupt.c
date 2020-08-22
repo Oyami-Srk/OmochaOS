@@ -108,6 +108,9 @@ void core_init_interrupt(struct core_env *env) {
     exception_suscribed_data = env->exception_suscribed_data;
     interrupt_suscribed_data = env->interrupt_suscribed_data;
     beats                    = &env->beats; // TODO: not use pointer anyway
+    end_interrupt            = env->end_interrupt;
+    enable_interrupt         = env->enable_interrupt;
+    disable_interrupt        = env->disable_interrupt;
     sti();
 }
 

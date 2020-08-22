@@ -42,7 +42,7 @@ struct RSDT {
 #define RSDT_TABLECOUNT(x)                                                     \
     ((((x)->Length) - sizeof(struct ACPISDTHeader)) / sizeof(u32))
 
-void                  init_acpi(struct core_env *env);
+// void                  init_acpi(struct core_env *env);
 struct ACPISDTHeader *search_sdt(struct core_env *env, char *sig);
 
 #endif // __ACPI_H__

@@ -15,6 +15,7 @@
 #include <driver/acpi.h>
 #include <driver/pci.h>
 #endif
+#include <driver/driver.h>
 #include <driver/misc.h>
 
 void *lapic_base;
@@ -201,6 +202,7 @@ void init_lapic(struct core_env *env) {
     kprintf("LAPIC ID: %x\n", get_lapic_reg(lapic_base, 0x20));
 }
 
+/*
 #if ACPI
 #include <driver/hpet.h>
 #endif
@@ -213,8 +215,28 @@ void init_timer(struct core_env *env) {
     // init PIT
     init_8253();
 }
+*/
 
-void init_apic(struct core_env *env) {
+void __end_interrupt(uint i) {
+    if (!isx2apic)
+        set_lapic_reg(lapic_base, LAPIC_OFFSET_EOI, 0x0);
+    else
+        wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_EOI), 0x00, 0x00);
+}
+void __enable_interrupt(uint i) {
+    // 0:7 = 0x20 + i    <- IVT number
+    // 8:10 = 0          <- Fixed delivery mode
+    // 11 = 0            <- Phy Destination mode
+    // 12 = 0            <- RO delivery status
+    // 16 = 0            <- disable mask
+    set_ioapic_ret(ioapic_base, 0x10 + i * 2, IRQ0 + i, 0);
+}
+void __disable_interrupt(uint i) {
+    // 16 = 0            <- enable mask
+    set_ioapic_ret(ioapic_base, 0x10 + i * 2, 0x10000 | (IRQ0 + i), 0);
+}
+
+int init_apic(struct core_env *env) {
     // init 8259A to remap interrupt (the same as 8259a.c)
     outb(IO_PIC_M, 0x11); // ICW 1
     io_wait();
@@ -265,25 +287,21 @@ void init_apic(struct core_env *env) {
     // enable IOAPIC
     init_ioapic(env);
     // init timer
-    init_timer(env);
+    // init_timer(env);
+    env->end_interrupt     = __end_interrupt;
+    env->enable_interrupt  = __enable_interrupt;
+    env->disable_interrupt = __disable_interrupt;
+    return 0;
 }
 
-void __end_interrupt(uint i) {
-    if (!isx2apic)
-        set_lapic_reg(lapic_base, LAPIC_OFFSET_EOI, 0x0);
-    else
-        wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_EOI), 0x00, 0x00);
-}
-void __enable_interrupt(uint i) {
-    // 0:7 = 0x20 + i    <- IVT number
-    // 8:10 = 0          <- Fixed delivery mode
-    // 11 = 0            <- Phy Destination mode
-    // 12 = 0            <- RO delivery status
-    // 16 = 0            <- disable mask
-    set_ioapic_ret(ioapic_base, 0x10 + i * 2, IRQ0 + i, 0);
-}
-void __disable_interrupt(uint i) {
-    // 16 = 0            <- enable mask
-    set_ioapic_ret(ioapic_base, 0x10 + i * 2, 0x10000 | (IRQ0 + i), 0);
-}
 #endif
+
+static Driver_Declaration driver_apic = {.magic       = DRIVER_DC,
+                                         .name        = "APIC",
+                                         .major_ver   = 0,
+                                         .minor_ver   = 1,
+                                         .level       = 2,
+                                         .init        = init_apic,
+                                         .initialized = FALSE};
+
+ADD_DRIVER(driver_apic);

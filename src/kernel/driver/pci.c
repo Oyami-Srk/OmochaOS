@@ -1,6 +1,8 @@
 #include <driver/pci.h>
 
+#include <driver/driver.h>
 #include <driver/graphic.h>
+#include <lib/stdlib.h>
 
 // offset & 2 == 0 chose the vendor (lower)
 // offset & 2 != 0 chose the device (higher)
@@ -23,3 +25,13 @@ u32 pci_config_read32(u8 bus, u8 slot, u8 func, u8 offset) {
     io_wait();
     return inl(PCI_CONF_DATA);
 }
+
+static Driver_Declaration driver_pci = {.magic       = DRIVER_DC,
+                                        .name        = "PCI",
+                                        .major_ver   = 0,
+                                        .minor_ver   = 1,
+                                        .level       = 2,
+                                        .init        = NULL,
+                                        .initialized = FALSE};
+
+ADD_DRIVER(driver_pci);

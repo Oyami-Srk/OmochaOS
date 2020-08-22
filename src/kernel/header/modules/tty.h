@@ -13,15 +13,15 @@ int printf(const char *fmt, ...);
 // type = 0: tty do output
 // type = 1: tty only do write and read
 inline int tty_open(int type){
-
+    return 0;
 }
 
 inline int getkey(){
-
+    return 0;
 }
 
 inline int readline(char *buf, unsigned int buf_size){
-
+    return 0;
 }
 
 

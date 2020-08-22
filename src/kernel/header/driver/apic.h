@@ -50,8 +50,8 @@ struct MADT {
     u32                  table_start;
 } __attribute__((packed));
 
-void init_apic(struct core_env *env);
-#define init_inthw init_apic
+// void init_apic(struct core_env *env);
+// #define init_inthw init_apic
 // void end_interrupt(uint i);
 // void enable_interrupt(uint i);
 // void disable_interrupt(uint i);

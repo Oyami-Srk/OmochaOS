@@ -5,6 +5,7 @@
 
 #include <driver/driver.h>
 #include <driver/graphic.h>
+#include <lib/stdlib.h>
 
 void *hpet_base;
 
@@ -60,7 +61,7 @@ void set_hpet_reg(void *base, u16 offset, u32 lo, u32 hi) {
     mfence();
 }
 
-BOOL init_hpet(struct core_env *env) {
+int init_hpet(struct core_env *env) {
     kprintf("Initializing HPET\n");
     struct HPET *hpet = (struct HPET *)search_sdt(env, "HPET");
     if (!hpet)
@@ -90,10 +91,6 @@ BOOL init_hpet(struct core_env *env) {
     set_hpet_reg(hpet_base, 0xF0, 0, 0);   // clear the counter
     u32 counter_lo = 0, counter_hi = 0;
     set_hpet_reg(hpet_base, 0x10, 0x1, 0); // enable
-    /*
-
-
-        */
 
     // test if counter works
     // delay a while
@@ -149,14 +146,15 @@ BOOL init_hpet(struct core_env *env) {
         kprintf("HPET Counter doesn't work.\n");
         return FALSE;
     }
+    return 0;
 }
 
 static Driver_Declaration driver_hpet = {.magic       = DRIVER_DC,
                                          .name        = "HPET",
                                          .major_ver   = 0,
                                          .minor_ver   = 1,
-                                         .deps        = 0,
-                                         .init        = 0,
+                                         .level       = 3,
+                                         .init        = init_hpet,
                                          .initialized = FALSE};
 
 ADD_DRIVER(driver_hpet);
