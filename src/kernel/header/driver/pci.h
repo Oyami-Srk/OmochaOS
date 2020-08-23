@@ -9,7 +9,7 @@
 
 #include <driver/graphic.h>
 
-#if ACPI
+// #if ACPI
 
 // offset & 2 == 0 chose the vendor (lower)
 // offset & 2 != 0 chose the device (higher)
@@ -18,6 +18,7 @@ u16 pci_config_read16(u8 bus, u8 slot, u8 func, u8 offset);
 // return all of register
 u32 pci_config_read32(u8 bus, u8 slot, u8 func, u8 offset);
 
+/*
 #else
 #include <lib/stdlib.h>
 
@@ -31,5 +32,6 @@ static inline u32 pci_config_read32(u8 bus, u8 slot, u8 func, u8 offset) {
     return 0;
 }
 #endif
+*/
 
 #endif // __PCI_H__

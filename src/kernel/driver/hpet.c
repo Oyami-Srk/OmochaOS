@@ -65,7 +65,7 @@ int init_hpet(struct core_env *env) {
     kprintf("Initializing HPET\n");
     struct HPET *hpet = (struct HPET *)search_sdt(env, "HPET");
     if (!hpet)
-        return FALSE;
+        return 1;
     kprintf("HPET rev_id: %d, address: 0x%x, vendor_id: 0x%x\n",
             hpet->hardware_rev_id, hpet->address.address_lo,
             hpet->pci_vendor_id);
@@ -85,7 +85,14 @@ int init_hpet(struct core_env *env) {
     get_hpet_reg(hpet_base, 0x0, &general_cap_reg_lo, &general_cap_reg_hi);
     kprintf("HPET general_cap_reg: 0x%x 0x%x\n", general_cap_reg_hi,
             general_cap_reg_lo);
-    disable_8253();
+
+    // disable 8253
+// disable_8253();
+#define I8253_CTR_PORT 0x43
+#define I8253_CNL0     0x40
+    outb(I8253_CTR_PORT, 0x32); // one-shot
+    outb(I8253_CNL0, 0);
+    outb(I8253_CNL0, 0);
 
     set_hpet_reg(hpet_base, 0x10, 0x0, 0); // disable if BIOS has enabled it
     set_hpet_reg(hpet_base, 0xF0, 0, 0);   // clear the counter
@@ -112,7 +119,7 @@ int init_hpet(struct core_env *env) {
         kprintf("HPET Timer 0 cap reg: 0x%x 0x%x\n", caphi, caplo);
         if (!(caplo & (1 << 4))) {
             kprintf("HPET Timer 0 doesn't support peridoic type!\n");
-            return FALSE;
+            return 1;
         }
 
         set_hpet_reg(hpet_base, 0x100,
@@ -141,10 +148,10 @@ int init_hpet(struct core_env *env) {
         mfence();
 
         set_hpet_reg(hpet_base, 0x10, 0x3, 0); // enable for legency
-        return TRUE;
+        return 0;
     } else {
         kprintf("HPET Counter doesn't work.\n");
-        return FALSE;
+        return 1;
     }
     return 0;
 }

@@ -7,10 +7,12 @@
 #define BEATS_RATE 100
 #define BEATS_MS   (1000 / BEATS_RATE)
 
+/*
 #if APIC
 #define USE_APIC 1
 #else
 #define USE_8259A 1
 #endif
+*/
 
 #endif // __CONFIG_H__

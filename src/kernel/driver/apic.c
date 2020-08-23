@@ -1,6 +1,4 @@
 #include <core/config.h>
-
-#if USE_APIC
 #include <core/cpuid.h>
 #include <core/environment.h>
 #include <core/msr.h>
@@ -54,61 +52,64 @@ static inline void set_ioapic_ret(void *base, u8 index, u32 lo, u32 hi) {
 
 void init_ioapic(struct core_env *env) {
     void *ioapic_base = 0;
-// set ioapic id to 0x0F00 0000
-#if ACPI
-    // use pci to locate rcba and ioapic base
-    if (env->rcba) {
+    // set ioapic id to 0x0F00 0000
+    int acpi_driver_status = check_driver_exists("ACPI", 0, 1);
+    if (acpi_driver_status == 0) {
+        // use pci to locate rcba and ioapic base
+        if (env->rcba) {
 #define OIC_OFFSET 0x31F
-        u16 *OIC = (u16 *)(env->rcba + OIC_OFFSET);
-        kprintf("OIC Init Value: 0x%x\n", *OIC);
-        *OIC |= 0x100;
-        kprintf("OIC Set Value: 0x%x\n", *OIC);
-    }
+            u16 *OIC = (u16 *)(env->rcba + OIC_OFFSET);
+            kprintf("OIC Init Value: 0x%x\n", *OIC);
+            *OIC |= 0x100;
+            kprintf("OIC Set Value: 0x%x\n", *OIC);
+        }
 
-    struct MADT *madt = (struct MADT *)search_sdt(env, "APIC");
-    if (madt) {
-        struct MADT_Entry_Header *ph =
-            (struct MADT_Entry_Header *)(&madt->table_start);
-        kprintf("MADT Addr: 0x%x, length: %d bytes,  MADT Defined LAPIC Addr: "
+        struct MADT *madt = (struct MADT *)search_sdt(env, "APIC");
+        if (madt) {
+            struct MADT_Entry_Header *ph =
+                (struct MADT_Entry_Header *)(&madt->table_start);
+            kprintf(
+                "MADT Addr: 0x%x, length: %d bytes,  MADT Defined LAPIC Addr: "
                 "0x%x\n",
                 madt, madt->header.Length, madt->lapic_addr);
-        /*
-kprintf("Loop for MADT Table from 0x%x to 0x%x: \n", ph,
-        ((void *)madt) + madt->header.Length);
-        */
-        for (; (void *)ph < ((void *)(madt)) + madt->header.Length;) {
             /*
-            kprintf("| MADT Entry Type %d, length: %d bytes, at 0x%x\n",
-                    ph->type, ph->length, ph);
-                    */
-            switch (ph->type) {
-            case 0:
+    kprintf("Loop for MADT Table from 0x%x to 0x%x: \n", ph,
+            ((void *)madt) + madt->header.Length);
+            */
+            for (; (void *)ph < ((void *)(madt)) + madt->header.Length;) {
                 /*
-                    kprintf("|-- Processor Local APIC: ACPI Processor ID 0x%x, "
-                            "APIC ID 0x%x, Flags 0x%x\n",
-                            ph->data.type0.ACPI_Processor_ID,
-                            ph->data.type0.APIC_ID, ph->data.type0.Flags);
-                            */
-                break;
-            case 1:
-                kprintf("|-- IO APIC: IOAPIC ID 0x%x, IOAPIC Addr 0x%x\n",
-                        ph->data.type1.IOAPIC_ID, ph->data.type1.IOAPIC_ADDR);
-                ioapic_base = (void *)ph->data.type1.IOAPIC_ADDR;
-                break;
-            default:
-                break;
+                kprintf("| MADT Entry Type %d, length: %d bytes, at 0x%x\n",
+                        ph->type, ph->length, ph);
+                        */
+                switch (ph->type) {
+                case 0:
+                    /*
+                        kprintf("|-- Processor Local APIC: ACPI Processor ID
+                       0x%x, " "APIC ID 0x%x, Flags 0x%x\n",
+                                ph->data.type0.ACPI_Processor_ID,
+                                ph->data.type0.APIC_ID, ph->data.type0.Flags);
+                                */
+                    break;
+                case 1:
+                    kprintf("|-- IO APIC: IOAPIC ID 0x%x, IOAPIC Addr 0x%x\n",
+                            ph->data.type1.IOAPIC_ID,
+                            ph->data.type1.IOAPIC_ADDR);
+                    ioapic_base = (void *)ph->data.type1.IOAPIC_ADDR;
+                    break;
+                default:
+                    break;
+                }
+                ph = ((void *)ph) + ph->length;
             }
-            ph = ((void *)ph) + ph->length;
-        }
-        if (!ioapic_base)
+            if (!ioapic_base)
+                ioapic_base = (void *)0xFEC00000;
+        } else {
             ioapic_base = (void *)0xFEC00000;
+        }
+
     } else {
         ioapic_base = (void *)0xFEC00000;
     }
-
-#else
-    ioapic_base = (void *)0xFEC00000;
-#endif
     env->base_ioapic = (void *)ioapic_base;
 
     *((u8 *)ioapic_base) = 0x00;
@@ -217,13 +218,13 @@ void init_timer(struct core_env *env) {
 }
 */
 
-void __end_interrupt(uint i) {
+void __apic__end_interrupt(uint i) {
     if (!isx2apic)
         set_lapic_reg(lapic_base, LAPIC_OFFSET_EOI, 0x0);
     else
         wrmsr(LAPIC_OFFSET_TO_MSR(LAPIC_OFFSET_EOI), 0x00, 0x00);
 }
-void __enable_interrupt(uint i) {
+void __apic__enable_interrupt(uint i) {
     // 0:7 = 0x20 + i    <- IVT number
     // 8:10 = 0          <- Fixed delivery mode
     // 11 = 0            <- Phy Destination mode
@@ -231,7 +232,7 @@ void __enable_interrupt(uint i) {
     // 16 = 0            <- disable mask
     set_ioapic_ret(ioapic_base, 0x10 + i * 2, IRQ0 + i, 0);
 }
-void __disable_interrupt(uint i) {
+void __apic__disable_interrupt(uint i) {
     // 16 = 0            <- enable mask
     set_ioapic_ret(ioapic_base, 0x10 + i * 2, 0x10000 | (IRQ0 + i), 0);
 }
@@ -288,13 +289,11 @@ int init_apic(struct core_env *env) {
     init_ioapic(env);
     // init timer
     // init_timer(env);
-    env->end_interrupt     = __end_interrupt;
-    env->enable_interrupt  = __enable_interrupt;
-    env->disable_interrupt = __disable_interrupt;
+    env->end_interrupt     = __apic__end_interrupt;
+    env->enable_interrupt  = __apic__enable_interrupt;
+    env->disable_interrupt = __apic__disable_interrupt;
     return 0;
 }
-
-#endif
 
 static Driver_Declaration driver_apic = {.magic       = DRIVER_DC,
                                          .name        = "APIC",

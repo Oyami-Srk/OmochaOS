@@ -165,7 +165,7 @@ void panic_proto(const char *str, const char *s_fn, const char *b_fn,
             ;
 }
 
-int __GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
+void __GRAPHIC_init(uint *fb, int width, int height, uint pitch) {
     fb_addr     = fb;
     disp_width  = width;
     disp_height = height;

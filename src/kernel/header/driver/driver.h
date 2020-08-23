@@ -13,7 +13,7 @@ struct __Driver_Declaration {
     const char *name;
     uint        major_ver;
     uint        minor_ver;
-    uint        level; // -1 means not loading this driver
+    int         level; // -1 means not loading this driver
                        // loading order is from 0 to larger level
 
     struct __Driver_Declaration *next;
@@ -40,8 +40,9 @@ typedef struct __Driver_Declaration Driver_Declaration;
 
 /* ret:
     0: driver found
-    1: driver found, but version too low
+    1: driver found, but version not matched
     2: driver found, but not initialized
+    3: driver found, version not matched and not initialized
     -1: driver not found
 */
 

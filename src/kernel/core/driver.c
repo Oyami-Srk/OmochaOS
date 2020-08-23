@@ -84,6 +84,10 @@ void core_init_driver(struct core_env *env, Driver_Declaration *drivers) {
     while (driver) {
         if (driver->magic != DRIVER_DC)
             magic_break();
+        if (driver->level < 0) {
+            driver = driver->next;
+            continue;
+        }
         if (driver->init == NULL || driver->init(env) == 0)
             driver->initialized = TRUE;
         else
@@ -92,5 +96,37 @@ void core_init_driver(struct core_env *env, Driver_Declaration *drivers) {
     }
 
     // Graphic driver is loaded, print status
-    kprintf("Driver finished loaded");
+    kprintf("Driver finished loaded\n");
+    driver = drivers->next;
+    while (driver) {
+        if (driver->magic != DRIVER_DC)
+            magic_break();
+        if (driver->level < 0) {
+            driver = driver->next;
+            continue;
+        }
+        kprintf("Driver(%d) %s: ", driver->level, driver->name);
+        kprintf(driver->initialized ? "Loaded" : "NotLoaded");
+        kprintf("\n");
+        driver = driver->next;
+    }
+}
+
+int check_driver_exists(const char *name, int major_ver, int minor_ver) {
+    Driver_Declaration *driver = g_drivers->next;
+    while (driver) {
+        if (driver->magic != DRIVER_DC)
+            magic_break();
+        if (strcmp(name, driver->name) == 0) {
+            int status = 0;
+            if (major_ver != driver->major_ver ||
+                minor_ver != driver->minor_ver)
+                status |= 1;
+            if (driver->initialized == FALSE)
+                status |= 2;
+            return status;
+        }
+        driver = driver->next;
+    }
+    return -1;
 }
