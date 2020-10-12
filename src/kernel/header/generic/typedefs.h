@@ -1,13 +1,20 @@
 #ifndef __TYPEDEFS_H__
 #define __TYPEDEFS_H__
 
-typedef unsigned int   uint;
-typedef unsigned short ushort;
-typedef unsigned char  uchar;
+typedef unsigned long long ulonglong;
+typedef unsigned int       uint;
+typedef unsigned short     ushort;
+typedef unsigned char      uchar;
 
-typedef uint   u32;
-typedef ushort u16;
-typedef uchar  u8;
+typedef ulonglong u64;
+typedef uint      u32;
+typedef ushort    u16;
+typedef uchar     u8;
+
+typedef u64 uint64_t;
+typedef u32 uint32_t;
+typedef u16 uint16_t;
+typedef u8  uint8_t;
 
 typedef uchar ubyte;
 typedef uint  BOOL;

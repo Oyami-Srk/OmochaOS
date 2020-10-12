@@ -4,7 +4,7 @@
 KERNEL_BUILD 	= $(BUILD)/kernel
 KERNEL_LD_FLAGS = -m elf_i386 -N
 KERNEL_HEADER 	= $(shell pwd)/header
-SRC_DIRS = core driver lib modules
+SRC_DIRS = core driver driver/ahci lib
 
 .PHONY: all
 all: pre-build kernel
