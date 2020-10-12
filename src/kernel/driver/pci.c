@@ -9,7 +9,7 @@
 u16 pci_config_read16(u8 bus, u8 slot, u8 func, u8 offset) {
     u32 address = (bus << 16) | ((slot) << 11) | ((func) << 8) |
                   (offset & 0xFC) | 0x80000000;
-    kprintf("Read PCI config from 0x%x\n", address);
+    // kprintf("Read PCI config from 0x%x\n", address);
     outl(PCI_CONF_ADDR, address);
     io_wait();
     volatile u16 tmp = ((inl(PCI_CONF_DATA) >> ((offset & 2) * 8)) & 0xFFFF);
@@ -20,7 +20,7 @@ u16 pci_config_read16(u8 bus, u8 slot, u8 func, u8 offset) {
 u32 pci_config_read32(u8 bus, u8 slot, u8 func, u8 offset) {
     u32 address = (bus << 16) | ((slot) << 11) | ((func) << 8) |
                   (offset & 0xFC) | 0x80000000;
-    kprintf("Read PCI config from 0x%x\n", address);
+    // kprintf("Read PCI config from 0x%x\n", address);
     outl(PCI_CONF_ADDR, address);
     io_wait();
     return inl(PCI_CONF_DATA);
