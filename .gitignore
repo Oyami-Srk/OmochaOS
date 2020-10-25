@@ -14,3 +14,6 @@ active
 .idea/
 .*
 *build*
+compile_commands.json
+/src/kernel/header/modules/modules.h
+
