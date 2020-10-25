@@ -114,7 +114,7 @@ static Driver_Declaration driver_acpi = {.magic       = DRIVER_DC,
                                          .name        = "ACPI",
                                          .major_ver   = 0,
                                          .minor_ver   = 1,
-                                         .level       = 1,
+                                         .level       = 2,
                                          .init        = init_acpi,
                                          .initialized = FALSE};
 

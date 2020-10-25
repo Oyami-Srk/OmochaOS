@@ -160,7 +160,7 @@ static Driver_Declaration driver_hpet = {.magic       = DRIVER_DC,
                                          .name        = "HPET",
                                          .major_ver   = 0,
                                          .minor_ver   = 1,
-                                         .level       = 3,
+                                         .level       = 4,
                                          .init        = init_hpet,
                                          .initialized = FALSE};
 

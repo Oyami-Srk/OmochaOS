@@ -299,7 +299,7 @@ static Driver_Declaration driver_apic = {.magic       = DRIVER_DC,
                                          .name        = "APIC",
                                          .major_ver   = 0,
                                          .minor_ver   = 1,
-                                         .level       = 2,
+                                         .level       = 3,
                                          .init        = init_apic,
                                          .initialized = FALSE};
 

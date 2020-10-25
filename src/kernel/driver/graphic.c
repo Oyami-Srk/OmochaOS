@@ -7,6 +7,7 @@
 #include <static/logo.h>
 
 #include <driver/driver.h>
+#include <driver/port.h>
 
 const volatile char *vm_start = (volatile char *)0x800B8000;
 uint                 disp_pos = 0;
@@ -57,6 +58,7 @@ void kputc_color_xy(int x, int y, char c, uint fg, uint bg) {
 }
 
 void kputc_color(char c, uint fg, uint bg) {
+    write_serial(c);
     if (c == '\n') {
         char_y++;
         char_x = 0;
@@ -196,7 +198,7 @@ static Driver_Declaration driver_graphic = {.magic       = DRIVER_DC,
                                             .name        = "GRAPHIC",
                                             .major_ver   = 0,
                                             .minor_ver   = 1,
-                                            .level       = 0,
+                                            .level       = 1,
                                             .init        = GRAPHIC_init,
                                             .initialized = FALSE};
 

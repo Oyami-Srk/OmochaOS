@@ -57,8 +57,8 @@ TESTIMG         = $(TOOLS)/Test.img
 GRUB2IMG 		= $(TOOLS)/HD_grub2.img
 GRUB2CFG 		= $(TOOLS)/grub.cfg
 ROOT_DIR 		= $(TOOLS)/root_dir
-QEMU_OPTIONS 	= -m 512 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive file=$(BOOTIMG),format=raw,if=none -drive file=$(TESTIMG),format=raw,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0
-QEMU_OPTIONS_RUN= -m 512 -no-reboot -smp 1 -serial stdio -drive id=disk,file=$(BOOTIMG),format=raw,if=none -drive file=$(TESTIMG),format=raw,if=none -device ahci,id=ahci -device ide-drive,drive=disk,bus=ahci.0
+QEMU_OPTIONS 	= -m 512 -no-reboot -smp 1 -serial stdio -d cpu_reset,int,guest_errors -S -s -drive id=disk,file=$(BOOTIMG),format=raw,if=none -drive file=$(TESTIMG),format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0
+QEMU_OPTIONS_RUN= -M q35 -m 512 -no-reboot -smp 1 -serial stdio -drive id=disk,file=$(BOOTIMG),format=raw,if=none -drive file=$(TESTIMG),format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0
 
 
 export CC CXX LD AR NM OBJDUMP OBJCOPY ASM CP DD CAT SED AWK TEE RM MKDIR PY PY3 SRC TOOLS BUILD BUILD_TYPE ROOT_DIR UNAME

@@ -47,6 +47,14 @@ struct core_env    core_env;
 Driver_Declaration drivers = {
     .magic = DRIVER_DC_HEAD, .name = "HEAD", .level = -1};
 
+#include <driver/ahci/ahci.h>
+
+BOOL read(HBA_PORT *port, uint32_t startl, uint32_t starth, uint32_t count,
+          uint16_t *buf);
+
+u16             buf[512];
+extern HBA_MEM *hba;
+
 _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
     memset(&core_env, 0, sizeof(struct core_env));
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
@@ -133,6 +141,16 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         if (modules_preferred_pid[i] >= 0xFFFF)
             init_proc(modules_preferred_pid[i], (void *)modules[i],
                       core_page_dir);
+
+    memset((void *)buf, 0xBF, 512 * 2);
+
+    BOOL result = read(&hba->ports[0], 0, 0, 2, buf);
+
+    kprintf("result: %d, last is : 0x%x\n", result, buf[0]);
+    for (int i = 0; i < 512; i++) {
+        kprintf("%x ", buf[i]);
+    }
+
     kprintfc(YELLOW, BLACK, "Jump to process.\n");
     move_to_proc();
     while (1)
