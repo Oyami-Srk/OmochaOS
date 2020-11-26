@@ -25,6 +25,7 @@ static const AHCI_Device_Info AHCI_IntelDevices[] = {
     {0x2924, "ICH9"},
     {0x2925, "ICH9"},
     {0x2927, "ICH9"},
+    {0x2829, "Intel ICH8M (AHCI mode)"},
     {},
 };
 
@@ -124,7 +125,7 @@ void probe_port(HBA_MEM *abar) {
     }
 }
 
-#define AHCI_BASE 0x800000 // 4M
+#define AHCI_BASE 0x800000 // 8M
 
 #define HBA_PxCMD_ST  0x0001
 #define HBA_PxCMD_FRE 0x0010

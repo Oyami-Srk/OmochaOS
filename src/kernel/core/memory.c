@@ -7,6 +7,8 @@
 #include <lib/stdlib.h>
 #include <lib/string.h>
 
+#include <driver/port.h>
+
 list *freemem;
 
 // free pages
@@ -63,6 +65,8 @@ void core_init_memory(struct core_env *env) {
         env->memory_zone[i].addr   = mmap->addr_low;
         env->memory_zone[i].length = mmap->len_low;
         env->memory_zone[i].type   = mmap->type;
+        printf_serial("[MEM] Addr: 0x%x length: 0x%x\n", mmap->addr_low,
+                      mmap->len_low);
         i++;
         if (mmap->addr_low == 0x100000 &&
             mmap->type == MEMORY_AVAILABLE) // upper memory higher than 1MB

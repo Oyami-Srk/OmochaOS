@@ -18,6 +18,7 @@
 #include <core/init.h>
 
 #include <driver/driver.h>
+#include <driver/port.h>
 
 uint modules[__MODULES_COUNT__]               = __MODULES_ENTRIES__;
 uint modules_preferred_pid[__MODULES_COUNT__] = __MODULES_PREFERRED_PID__;
@@ -56,6 +57,7 @@ u16             buf[512];
 extern HBA_MEM *hba;
 
 _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
+    init_port();
     memset(&core_env, 0, sizeof(struct core_env));
     memcpy(&core_env.boot_info, multiboot_header, sizeof(multiboot_info_t));
 
@@ -160,4 +162,6 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 // map 4MB
 __attribute__((__aligned__(PG_SIZE))) pde_t core_page_dir[PDE_SIZE] = {
     [0]               = (0) | PG_Present | PG_Writable | PG_PS,
+    [1]               = (0x1000) | PG_Present | PG_Writable | PG_PS,
+    [2]               = (0x2000) | PG_Present | PG_Writable | PG_PS,
     [KERN_BASE >> 22] = (0) | PG_Present | PG_Writable | PG_PS};

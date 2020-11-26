@@ -1,3 +1,4 @@
+#warn __BIN_PATH__
 .section .init_code
 .global _init_elf_start_
 _init_elf_start_:

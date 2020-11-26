@@ -93,6 +93,7 @@ ifeq ($(GRUB2CFG),$(wildcard $(GRUB2CFG)))
 	$(CP) "$(GRUB2CFG)" "$(shell $(CAT) $(BOOTIMG).lock)/boot/grub/"
 endif
 	$(RSYNC) -avh --progress "$(ROOT_DIR)/" "$(shell $(CAT) $(BOOTIMG).lock)/"
+	$(MAKE) detach
 
 .PHONY: bochs
 bochs: detach

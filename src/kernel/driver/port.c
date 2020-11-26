@@ -1,9 +1,10 @@
 #include <driver/driver.h>
 #include <generic/asm.h>
+#include <lib/stdlib.h>
 
 #define PORT 0x3f8 /* COM1 */
 
-int init_port(struct core_env *env) {
+int init_port(void) {
 
     outb(PORT + 1, 0x00); // Disable all interrupts
     outb(PORT + 3, 0x80); // Enable DLAB (set baud rate divisor)
@@ -34,6 +35,23 @@ void write_serial(char a) {
     outb(PORT, a);
 }
 
+void printf_serial(const char *fmt, ...) {
+    int     i;
+    char    buf[256];
+    va_list arg = (va_list)((char *)(&fmt) + 4);
+    i           = vsprintf(buf, fmt, arg);
+    buf[i]      = 0;
+
+    char *str = buf;
+
+    while (*str != 0) {
+        write_serial(*str);
+        str++;
+    }
+}
+
+/*
+
 static Driver_Declaration driver_PORTCOM1 = {.magic       = DRIVER_DC,
                                              .name        = "COM1",
                                              .major_ver   = 0,
@@ -43,3 +61,4 @@ static Driver_Declaration driver_PORTCOM1 = {.magic       = DRIVER_DC,
                                              .initialized = FALSE};
 
 ADD_DRIVER(driver_PORTCOM1);
+*/
