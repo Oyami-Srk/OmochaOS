@@ -3,8 +3,6 @@ OmochaOS is my personal studying project. Some code and lower design is inherite
 > This branch of OmochaOS is directly forked from VenlafaxOS which was already archived.
 > I will face my future and break the dependence of medicine. So I deciced not to use VenlafaxOS as a name anymore.
 
-#### Now waiting for the exam score to come out at 7/26 5 PM
-
 # Build
 Run `make` in project root dir.
 * #### dependencies
@@ -49,3 +47,6 @@ All of modules are running under ring 1. Only two syscall `__recv_msg` and `__se
 * SMP Support
 * Process scheduler
 * Graphic Interface
+
+# Thanks
+[![CLion](./resource/icon_CLion.png)](https://www.jetbrains.com/?from=OmochaOS)
