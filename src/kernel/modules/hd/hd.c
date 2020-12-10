@@ -83,7 +83,7 @@ void hd_identify(int drv) {
     insl(HD_REG_DATA, hd_buf, 512 / 4);
 #if __DEBUG__ && __HD_DEBUG__
     printf("[HD] ============ Debug Message ============\n");
-    print_identify_info((ushort *)hd_buf);
+    print_identify_info((ushort *)hd_buf_1);
     printf("[HD] =======================================\n");
 #endif
 

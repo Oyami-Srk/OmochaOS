@@ -41,6 +41,10 @@ struct interrupt_data *  interrupt_suscribed_data;
 uint *                   beats;
 extern pde_t             core_page_dir[PDE_SIZE];
 
+interrupt_func enable_interrupt;
+interrupt_func disable_interrupt;
+interrupt_func end_interrupt;
+
 void send_interrupt_msg(uint irq, pid_t pid) {
     extern size_t proc_count;
     assert(pid < proc_count);

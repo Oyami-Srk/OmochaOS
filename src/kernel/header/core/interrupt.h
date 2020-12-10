@@ -67,8 +67,8 @@ struct interrupt_data {
 // void enable_interrupt(uint irq);
 // void disable_interrupt(uint irq);
 // void end_interrupt(uint irq);
-interrupt_func enable_interrupt;
-interrupt_func disable_interrupt;
-interrupt_func end_interrupt;
+extern interrupt_func enable_interrupt;
+extern interrupt_func disable_interrupt;
+extern interrupt_func end_interrupt;
 
 #endif // __INTERRUPT_H__

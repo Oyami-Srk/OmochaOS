@@ -6,7 +6,7 @@
 #include <modules/hd.h>
 #include <modules/tty.h>
 
-ubyte hd_buf[512];
+ubyte hd_buf_1[512];
 
 struct FAT32_BS {
     u8    jmpBoot[3];
@@ -130,10 +130,10 @@ void ReadBootSector(ushort drv, struct FAT32_FileSystem *fs) {
     HD_info(drv, &part_info);
     if (part_info.fsid != 0xC)
         panic("FS is not FAT32 LBA");
-    HD_drv_read(drv, 0, hd_buf, 512);
+    HD_drv_read(drv, 0, hd_buf_1, 512);
     struct FAT32_BS BootSector;
     memset(&BootSector, 0, sizeof(struct FAT32_BS));
-    memcpy(&BootSector, hd_buf, sizeof(struct FAT32_BS));
+    memcpy(&BootSector, hd_buf_1, sizeof(struct FAT32_BS));
     char VolLab[12];
     char OEMName[9];
     char FileSysType[9];
@@ -193,18 +193,18 @@ void ReadBootSector(ushort drv, struct FAT32_FileSystem *fs) {
 static inline u32 get_next_clus_in_FAT(struct FAT32_FileSystem *fs, u32 clus) {
     // 32 bit a fat ent(4 byte)
     uint sector_of_clus_in_fat = clus / 128;
-    HD_drv_read(fs->drv, fs->FATstartSct + sector_of_clus_in_fat, hd_buf, 512);
-    u32 next_clus = ((u32 *)hd_buf)[clus - 128 * sector_of_clus_in_fat];
+    HD_drv_read(fs->drv, fs->FATstartSct + sector_of_clus_in_fat, hd_buf_1, 512);
+    u32 next_clus = ((u32 *)hd_buf_1)[clus - 128 * sector_of_clus_in_fat];
     return next_clus & 0x0FFFFFFF;
 }
 
 void ReadFSInfo(struct FAT32_FileSystem *fs) {
-    HD_drv_read(fs->drv, fs->FSInfo, hd_buf, 512);
+    HD_drv_read(fs->drv, fs->FSInfo, hd_buf_1, 512);
     struct FAT32_FSInfo FSInfo;
     uint                FSInfo_LeadSig;
-    memcpy(&FSInfo_LeadSig, hd_buf, 4);
+    memcpy(&FSInfo_LeadSig, hd_buf_1, 4);
     assert(FSInfo_LeadSig == 0x41615252);
-    memcpy(&FSInfo, hd_buf + 484, sizeof(struct FAT32_FSInfo));
+    memcpy(&FSInfo, hd_buf_1 + 484, sizeof(struct FAT32_FSInfo));
     assert(FSInfo.StrucSig == 0x61417272);
     assert(FSInfo.TrailSig == 0xAA550000);
     fs->FreeClusCount     = FSInfo.FreeCount;
@@ -322,11 +322,11 @@ int get_file_info(uint dir_clus, struct FAT32_FileSystem *fs, const char *fn,
     write_8_3_filename(name, name_83);
     for (;;) {
         for (uint i = 0; i < fs->SecPerClus; i++) {
-            HD_drv_read(fs->drv, CLUS2SECTOR(fs, dir_clus) + i, hd_buf, 512);
+            HD_drv_read(fs->drv, CLUS2SECTOR(fs, dir_clus) + i, hd_buf_1, 512);
             union FAT32_DirEnt DirEnt;
             for (uint offset = 0; offset < 512;
                  offset += sizeof(union FAT32_DirEnt)) {
-                memcpy(&DirEnt, hd_buf + offset, sizeof(union FAT32_DirEnt));
+                memcpy(&DirEnt, hd_buf_1 + offset, sizeof(union FAT32_DirEnt));
                 if (DirEnt.Name[0] == 0)
                     break;
                 if (DirEnt.Name[0] == 0xE5 || DirEnt.Name[0] == 0x05)
@@ -379,8 +379,8 @@ size_t read_file(struct FAT32_FileSystem *fs, struct fs_file_info *fileinfo,
     size_t r_size = size;
     if (p_clus % 512) {
         size_t s = MIN(512 - (p_clus % 512), r_size);
-        HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), hd_buf, 512);
-        memcpy(buf, hd_buf + (p_clus % 512), s);
+        HD_drv_read(fs->drv, CLUS2SECTOR(fs, clus), hd_buf_1, 512);
+        memcpy(buf, hd_buf_1 + (p_clus % 512), s);
         buf += s; // buf is sector aligned now
         p_clus += s;
         r_size -= s;
