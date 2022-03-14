@@ -13,7 +13,7 @@ bochs="bochs"
 
 
 function run() {
-    qemu-system-i386 -M q35 -m 512 -no-reboot -smp 1 -serial stdio -drive id=disk,file=build/HD.img,format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0
+    qemu-system-i386 -M q35 -m 512 -no-reboot -smp 1 -serial stdio -drive id=disk,file=build/boot.img,format=raw,if=none -device ahci,id=ahci -device ide-hd,drive=disk,bus=ahci.0
 }
 
 function debug() {

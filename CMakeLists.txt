@@ -17,13 +17,17 @@ if (APPLE)
     set(CMAKE_C_COMPILER_WORKS TRUE) # Pass Cmake Compiler tests manually
     set(CMAKE_CXX_COMPILER_WORKS TRUE)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY) # Remove annoying -rdynamic option
-
 endif (APPLE)
+
+if (LINUX)
+    set(CMAKE_C_LINK_EXECUTABLE "ld <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+endif(LINUX)
+
 
 enable_language(ASM_NASM) # need to setup first
 enable_language(ASM)
 
-set(CMAKE_C_FLAGS "-fno-pic -nostdinc -c -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib")
+set(CMAKE_C_FLAGS "-fno-pic -nostdinc -static -fno-builtin -fno-strict-aliasing -m32 -fno-stack-protector -g -nostdlib")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DAPIC")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACPI")
 
