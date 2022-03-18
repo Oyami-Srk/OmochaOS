@@ -8,7 +8,7 @@ static inline void stosb(void *addr, char data, int size) {
                  : "memory", "cc");
 }
 
-static inline void stosl(void *addr, char data, int size) {
+static inline void stosl(void *addr, unsigned long data, int size) {
     asm volatile("cld; rep stosl"
                  : "=D"(addr), "=c"(size)
                  : "0"(addr), "1"(size), "a"(data)
