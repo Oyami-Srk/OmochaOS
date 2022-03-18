@@ -19,9 +19,10 @@ if (APPLE)
     set(CMAKE_TRY_COMPILE_TARGET_TYPE STATIC_LIBRARY) # Remove annoying -rdynamic option
 endif (APPLE)
 
-if (LINUX)
+if(UNIX AND NOT APPLE)
     set(CMAKE_C_LINK_EXECUTABLE "ld <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-endif(LINUX)
+    set(CMAKE_C_COMPILER_NM "nm")
+endif(UNIX AND NOT APPLE)
 
 
 enable_language(ASM_NASM) # need to setup first
@@ -33,6 +34,13 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DACPI")
 
 project(OmochaOS)
 set(CMAKE_VERBOSE_MAKEFILE ON) # Set after project
+
+find_program(AWK awk mawk gawk)
+find_program(SED sed)
+find_program(GREP grep ggrep)
+find_program(SORT sort)
+find_program(CAT cat)
+find_program(BOCHS bochs)
 
 
 file(GLOB_RECURSE CORE_C_SRCS "src/kernel/core/*.c")
@@ -63,8 +71,8 @@ add_custom_command(
         OUTPUT ${MULTIBOOT_I_OUTPUT}
         DEPENDS src/kernel/header/core/multiboot.h
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND gcc ${CFLAGS_LIST} -E -dM ${MULTIBOOT_H} |
-        awk -F' ' 'substr\($$2,0,1\)!="_" {gsub\(/\#/,"%"\)\; print}'
+        COMMAND ${CMAKE_C_COMPILER} ${CFLAGS_LIST} -E -dM ${MULTIBOOT_H} |
+        ${AWK} -F' ' 'substr\($$2,0,1\)!="_" {gsub\(/\#/,"%"\)\; print}'
         > ${MULTIBOOT_I_OUTPUT}
         COMMENT "Generates the nasm multiboot header file."
 )
@@ -86,7 +94,7 @@ target_link_options(init.out PRIVATE -m elf_i386 -e init -Ttext 0x0)
 add_library(init.bin OBJECT ${CMAKE_SOURCE_DIR}/src/kernel/init/package.S)
 set_source_files_properties(${CMAKE_SOURCE_DIR}/src/kernel/init/package.S PROPERRIES LANGUAGE ASM)
 target_compile_options(init.bin PRIVATE -m32)
-target_compile_definitions(init.bin PRIVATE __BIN_PATH__="$(CMAKE_BINARY_DIR)/init.out")
+target_compile_definitions(init.bin PRIVATE __BIN_PATH__="${CMAKE_BINARY_DIR}/init.out")
 add_dependencies(init.bin init.out)
 # End of Compile init binary
 
@@ -97,6 +105,13 @@ target_link_libraries(kernel.elf init.bin)
 set_target_properties(kernel.elf PROPERTIES LINK_FLAGS "-m elf_i386 -N -T${CMAKE_SOURCE_DIR}/src/kernel/kernel.ld ")
 # End of Compile kernel.elf
 
+# Generate Symbol File
+add_custom_target(kernel.bsb
+        COMMAND ${CMAKE_C_COMPILER_NM} kernel.elf | ${SORT} | ${AWK} '{ print $$1\" \"$$3 }' > kernel.bsb
+        DEPENDS kernel.elf
+)
+# End of Generate Symbol File
+
 # Generate HD.img
 set(BUILD_IMAGE ${TOOLS}/build_image.sh)
 set(BOOT_IMG boot.img)
@@ -106,3 +121,36 @@ add_custom_target(${BOOT_IMG}
         )
 add_dependencies(${BOOT_IMG} kernel.elf)
 # End of Generate HD.img
+
+# Running Qemu
+set(BOOT_SCRIPT ${TOOLS}/boot_image.sh)
+set(BOOT_IMG boot.img)
+add_custom_target(RunQEMU
+        COMMAND ${BOOT_SCRIPT} qemu run ${CMAKE_BINARY_DIR}/${BOOT_IMG}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${BOOT_IMG}
+        )
+# End of Running Qemu
+
+# Debuging Qemu
+set(BOOT_IMG boot.img)
+add_custom_target(DebugQEMU
+        COMMAND ${BOOT_SCRIPT} qemu debug ${CMAKE_BINARY_DIR}/${BOOT_IMG}
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        DEPENDS ${BOOT_IMG}
+        )
+# End of Debuging Qemu
+
+# Running Bochs
+string(REPLACE "/" "\\/" SED_USED_BOOT_IMG "${CMAKE_BINARY_DIR}/${BOOT_IMG}")
+string(REPLACE "/" "\\/" SED_USED_KERNEL_BSB "${CMAKE_BINARY_DIR}/kernel.bsb")
+
+add_custom_target(bochsrc
+        COMMAND sh -c \"${CAT} ${TOOLS}/bochsrc_img_template |
+                        ${SED} -e 's/\\"80m.img\\"/\\"${SED_USED_BOOT_IMG}\\"/g' |
+                        ${SED} -e 's/\\"dbg.bsb\\"/\\"${SED_USED_KERNEL_BSB}\\"/g'
+                        > bochsrc\"
+        DEPENDS kernel.bsb
+        DEPENDS ${BOOT_IMG}
+)
+# End of Running Bochs
