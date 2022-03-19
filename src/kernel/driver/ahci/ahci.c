@@ -3,6 +3,7 @@
 #include <driver/pci.h>
 #include <lib/stdlib.h>
 #include <lib/string.h>
+#include <core/paging.h>
 
 #include <driver/graphic.h>
 
@@ -95,8 +96,10 @@ static int check_type(HBA_PORT *port) {
         return AHCI_DEV_SEMB;
     case SATA_SIG_PM:
         return AHCI_DEV_PM;
-    default:
+    case SATA_SIG_ATA:
         return AHCI_DEV_SATA;
+    default:
+        return AHCI_DEV_NULL;
     }
 }
 
@@ -310,6 +313,7 @@ HBA_MEM *hba;
 int ahci_init(struct core_env *env) {
     kprintf("AHCI Initializing...\n");
 
+    // Check PCI Buses
     u8          bus, slot;
     const char *vendor_name, *device_name;
     if (find_ahci_pci(&bus, &slot, &vendor_name, &device_name) != 0) {
@@ -319,16 +323,27 @@ int ahci_init(struct core_env *env) {
     kprintf("ACHI Controller\"%s %s\" at bus %d slot %d.\n", vendor_name,
             device_name, bus, slot);
     u16 class_code = pci_config_read16(bus, slot, 0, 0x08 | 0x02);
+    // note: 0x0106: 01 Massive Storage 06 SATA Controller
     kprintf("Class code is 0x%x, Subclass code is 0x%x\n", class_code >> 8,
             class_code & 0xFF);
     u32 abar = pci_config_read32(bus, slot, 0, 0x24);
     kprintf("ABAR is located at: 0x%x\n", abar);
+
     hba = (HBA_MEM *)abar;
+    // map abar uncacheable
+
+    env->page_dir[abar >> 22] =
+        ((abar)&0xFFC00000) | PG_PCD | PG_Writable | PG_Present | PG_PS;
+    // reload cr3
+    asm volatile("movl %%cr3, %%eax\n\t"
+                 "movl %%eax, %%cr3\n\t" ::
+                     : "eax", "memory");
+
     kprintf("CAP: 0x%x, Ver: 0x%x, Pi: 0x%x\n", hba->cap, hba->vs, hba->pi);
     probe_port(hba);
     cmdslots = (hba->cap & 0x0f00) >> 8; // Bit 8-12
     kprintf("CMDSlots: %d; \n", cmdslots);
-    port_rebase(&hba->ports[0], 0);
+
     return 0;
 }
 

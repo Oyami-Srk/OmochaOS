@@ -39,7 +39,10 @@ void *memset(void *dst, char ch, int size) {
     if ((int)dst % 4 == 0 &&
         size % 4 == 0) { // 当对齐的时候，一口气写入long而不是byte
         ch &= 0xFF;
-        stosl(dst, (ch << 24) | (ch << 16) | (ch << 8) | ch, size / 4);
+        unsigned long data;
+        char         *pdata = (char *)&data;
+        pdata[0] = pdata[1] = pdata[2] = pdata[3] = ch;
+        stosl(dst, data, size / 4);
     } else
         stosb(dst, ch, size);
     return dst;

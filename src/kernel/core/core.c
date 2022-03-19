@@ -76,16 +76,27 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         ((uint)KERN_VEND & 0xFFF00000) + 0x100000; // align 1MB
     core_env.core_space_free_start = core_env.core_space_start;
     core_env.core_space_free_end =
-        core_env.core_space_free_start + 0x100000;         // 1MB
-    core_env.core_space_end = (uint)KP2V(4 * 1024 * 1024); // 4MB
-    core_env.gdt_size       = GDT_SIZE;
-    core_env.idt_size       = IDT_SIZE;
-    core_env.page_dir       = core_page_dir;
+        core_env.core_space_free_start + 0x100000; // 1MB
+
+    core_env.core_space_end = (uint)KP2V(16 * 1024 * 1024); // 16MB
+
+    core_env.gdt_size = GDT_SIZE;
+    core_env.idt_size = IDT_SIZE;
+    core_env.page_dir = core_page_dir;
+
+    core_init_memory(&core_env);
+
+    volatile uint32_t *TEST = (uint32_t *)0x801234;
+    *TEST                   = 123;
+    printf_serial("%d", *TEST);
+
+    TEST = (uint32_t *)0x80801234;
+    printf_serial("%d", *TEST);
+    *TEST = 321;
+    printf_serial("%d", *TEST);
 
     memset((void *)core_env.core_space_start, 0,
            core_env.core_space_end - core_env.core_space_start);
-
-    core_init_memory(&core_env);
 
     /*
     u32 fb_addr = multiboot_header->framebuffer_addr & 0xFFFFFFFF;
@@ -146,7 +157,7 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     memset((void *)buf, 0xBF, 512 * 2);
 
-    BOOL result = read(&hba->ports[0], 0, 0, 2, buf);
+    BOOL result = read(&hba->ports[0], 0, 0, 2, buf - KERN_BASE);
 
     kprintf("result: %d, last is : 0x%x\n", result, buf[0]);
     for (int i = 0; i < 512; i++) {
@@ -159,9 +170,17 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
         ;
 }
 
-// map 4MB
+// PDE enable large Page Size - 4MB
+// clang-format off
 __attribute__((__aligned__(PG_SIZE))) pde_t core_page_dir[PDE_SIZE] = {
     [0]               = (0) | PG_Present | PG_Writable | PG_PS,
-    [1]               = (0x1000) | PG_Present | PG_Writable | PG_PS,
-    [2]               = (0x2000) | PG_Present | PG_Writable | PG_PS,
-    [KERN_BASE >> 22] = (0) | PG_Present | PG_Writable | PG_PS};
+    [1]               = (0x00400000) | PG_Present | PG_Writable | PG_PS,
+    [2]               = (0x00800000) | PG_Present | PG_Writable | PG_PS | PG_PCD,
+    [3]               = (0x00C00000) | PG_Present | PG_Writable | PG_PS,
+
+    [KERN_BASE >> 22] = (0) | PG_Present | PG_Writable | PG_PS | PG_User,
+    [(KERN_BASE >> 22)+1] = (0x00400000) | PG_Present | PG_Writable | PG_PS,
+    [(KERN_BASE >> 22)+2] = (0x00800000) | PG_Present | PG_Writable | PG_PS | PG_PCD,
+    [(KERN_BASE >> 22)+3] = (0x00C00000) | PG_Present | PG_Writable | PG_PS,
+};
+// clang-format on

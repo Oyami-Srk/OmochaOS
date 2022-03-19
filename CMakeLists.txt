@@ -21,7 +21,8 @@ endif (APPLE)
 
 if(UNIX AND NOT APPLE)
     set(CMAKE_C_LINK_EXECUTABLE "ld <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
-    set(CMAKE_C_COMPILER_NM "nm")
+    find_program(CMAKE_C_COMPILER_NM nm)
+    find_program(CMAKE_C_OBJDUMP objdump)
 endif(UNIX AND NOT APPLE)
 
 
@@ -112,6 +113,13 @@ add_custom_target(kernel.bsb
 )
 # End of Generate Symbol File
 
+# Generate Disassembly Code
+add_custom_target(kernel.disasm
+        COMMAND ${CMAKE_C_OBJDUMP} -S kernel.elf > kernel.disasm
+        DEPENDS kernel.elf
+)
+# End of Generate Disassembly Code
+
 # Generate HD.img
 set(BUILD_IMAGE ${TOOLS}/build_image.sh)
 set(BOOT_IMG boot.img)
@@ -152,5 +160,10 @@ add_custom_target(bochsrc
                         > bochsrc\"
         DEPENDS kernel.bsb
         DEPENDS ${BOOT_IMG}
+)
+
+add_custom_target(bochs
+        COMMAND ${BOCHS} -q -f bochsrc 2>&1
+        DEPENDS bochsrc
 )
 # End of Running Bochs
