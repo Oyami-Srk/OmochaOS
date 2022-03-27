@@ -86,15 +86,6 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     core_init_memory(&core_env);
 
-    volatile uint32_t *TEST = (uint32_t *)0x801234;
-    *TEST                   = 123;
-    printf_serial("%d", *TEST);
-
-    TEST = (uint32_t *)0x80801234;
-    printf_serial("%d", *TEST);
-    *TEST = 321;
-    printf_serial("%d", *TEST);
-
     memset((void *)core_env.core_space_start, 0,
            core_env.core_space_end - core_env.core_space_start);
 
@@ -157,7 +148,7 @@ _Noreturn void core_main(multiboot_info_t *multiboot_header, u32 magic) {
 
     memset((void *)buf, 0xBF, 512 * 2);
 
-    BOOL result = read(&hba->ports[0], 0, 0, 2, buf - KERN_BASE);
+    BOOL result = read(&hba->ports[0], 0, 0, 2, KV2P(buf));
 
     kprintf("result: %d, last is : 0x%x\n", result, buf[0]);
     for (int i = 0; i < 512; i++) {
