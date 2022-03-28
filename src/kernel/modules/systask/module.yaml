@@ -1,6 +1,0 @@
-module:
-  name: SysTask
-  author: Shiroko
-  summary: System Task's process
-  entry: SysTask
-  preferred_pid: 2

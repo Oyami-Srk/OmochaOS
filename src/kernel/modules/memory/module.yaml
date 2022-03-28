@@ -1,5 +1,0 @@
-module:
-  name: Memory
-  author: Shiroko
-  summary: Memory Process
-  entry: Task_Memory

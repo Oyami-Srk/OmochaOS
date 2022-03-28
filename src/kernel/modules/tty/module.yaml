@@ -1,5 +1,0 @@
-module:
-  name: TTY
-  author: Shiroko
-  summary: TTY process
-  entry: Task_TTY
