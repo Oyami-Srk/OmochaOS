@@ -20,7 +20,8 @@ if (APPLE)
 endif (APPLE)
 
 if(UNIX AND NOT APPLE)
-    set(CMAKE_C_LINK_EXECUTABLE "ld <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
+    find_program(LD_LINKER ld)
+    set(CMAKE_C_LINK_EXECUTABLE "${LD_LINKER} <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
     find_program(CMAKE_C_COMPILER_NM nm)
     find_program(CMAKE_C_OBJDUMP objdump)
 endif(UNIX AND NOT APPLE)
@@ -44,66 +45,26 @@ find_program(CAT cat)
 find_program(BOCHS bochs)
 
 
-file(GLOB_RECURSE CORE_C_SRCS "src/kernel/core/*.c")
-file(GLOB_RECURSE CORE_ASM_SRCS "src/kernel/core/*.asm")
-file(GLOB_RECURSE DRIVER_SRCS "src/kernel/driver/*.c")
-file(GLOB_RECURSE LIB_SRCS "src/kernel/lib/*.c")
-file(GLOB_RECURSE BUILTIN_MOD_SRCS "src/kernel/modules/*/*.c")
-file(GLOB_RECURSE LIBSYS_SRCS src/kernel/lib/*.c)
-file(GLOB_RECURSE INIT_C_SRCS "src/kernel/init/*.c")
+file(GLOB_RECURSE ASM_SRCS "src/kernel/*/*.S")
+file(GLOB_RECURSE C_SRCS "src/kernel/*/*.c")
 
 set(TOOLS ${PROJECT_SOURCE_DIR}/tools)
 message("Tools at " ${TOOLS})
 
-set(SRCS ${CORE_C_SRCS} ${CORE_ASM_SRCS} ${DRIVER_SRCS} ${LIB_SRCS} ${BUILTIN_MOD_SRCS})
-include_directories(src/kernel/header)
+set(SRCS ${ASM_SRCS} ${C_SRCS})
+include_directories(src/kernel/headers)
 
-foreach (SRC in ITEMS ${CORE_ASM_SRCS})
-    set_source_files_properties(${SRC} PROPERTIES LANGUAGE ASM_NASM)
+foreach (SRC in ITEMS ${ASM_SRCS})
+    set_source_files_properties(${SRC} PROPERTIES COMPILE_DEFINITIONS ASM_FILE)
+    set_source_files_properties(${SRC} PROPERTIES COMPILE_FLAGS -m32)
 endforeach ()
 
 set(CFLAGS_LIST ${CMAKE_C_FLAGS})
 string(REPLACE " " ";" CFLAGS_LIST "${CFLAGS_LIST}")
 
-# Generated code
-set(MULTIBOOT_I_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/multiboot.i)
-set(MULTIBOOT_H ${CMAKE_CURRENT_SOURCE_DIR}/src/kernel/header/core/multiboot.h)
-add_custom_command(
-        OUTPUT ${MULTIBOOT_I_OUTPUT}
-        DEPENDS src/kernel/header/core/multiboot.h
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-        COMMAND ${CMAKE_C_COMPILER} ${CFLAGS_LIST} -E -dM ${MULTIBOOT_H} |
-        ${AWK} -F' ' 'substr\($$2,0,1\)!="_" {gsub\(/\#/,"%"\)\; print}'
-        > ${MULTIBOOT_I_OUTPUT}
-        COMMENT "Generates the nasm multiboot header file."
-)
-
-add_custom_target(generate_precompiled DEPENDS
-        "${MULTIBOOT_I_OUTPUT}")
-# End of Generated code
-
-# Compile sys
-add_library(sys STATIC ${LIBSYS_SRCS})
-# set_target_properties(libos PROPERTIES PREFIX "") # remove prefix for compiled object
-# End of Compile libos
-
-# Compile init binary
-add_executable(init.out ${INIT_C_SRCS})
-target_link_libraries(init.out sys)
-target_link_options(init.out PRIVATE -m elf_i386 -e init -Ttext 0x0)
-
-add_library(init.bin OBJECT ${CMAKE_SOURCE_DIR}/src/kernel/init/package.S)
-set_source_files_properties(${CMAKE_SOURCE_DIR}/src/kernel/init/package.S PROPERRIES LANGUAGE ASM)
-target_compile_options(init.bin PRIVATE -m32)
-target_compile_definitions(init.bin PRIVATE __BIN_PATH__="${CMAKE_BINARY_DIR}/init.out")
-add_dependencies(init.bin init.out)
-# End of Compile init binary
-
 # Compile kernel.elf
 add_executable(kernel.elf ${SRCS})
-add_dependencies(kernel.elf generate_precompiled)
-target_link_libraries(kernel.elf init.bin)
-set_target_properties(kernel.elf PROPERTIES LINK_FLAGS "-m elf_i386 -N -T${CMAKE_SOURCE_DIR}/src/kernel/kernel.ld ")
+set_target_properties(kernel.elf PROPERTIES LINK_FLAGS "-m elf_i386 -N -T${CMAKE_SOURCE_DIR}/src/kernel/kernel.ld")
 # End of Compile kernel.elf
 
 # Generate Symbol File
@@ -162,7 +123,7 @@ add_custom_target(bochsrc
         DEPENDS ${BOOT_IMG}
 )
 
-add_custom_target(bochs
+add_custom_target(Bochs
         COMMAND ${BOCHS} -q -f bochsrc 2>&1
         DEPENDS bochsrc
 )

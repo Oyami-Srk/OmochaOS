@@ -1,52 +1,43 @@
 # OmochaOS
-OmochaOS is my personal studying project. Some code and lower design is inherited from my old project archive branch [OmochaOS(original archive)](https://github.com/Oyami-Srk/OmochaOS/tree/original_omochaos). Why am I interseted in OS-Developing is under the readme of that branch.
-> This branch of OmochaOS is directly forked from VenlafaxOS which was already archived.
-> I will face my future and break the dependence of medicine. So I deciced not to use VenlafaxOS as a name anymore.
+![Image](resource/OmochaLogo.bmp)
 
-# Build
-Run `make` in project root dir.
-* #### dependencies
-    * python3 (with pyyaml supported)
-    * compiling-toolchain (gcc ar ld nm objdump objcopy)
-        * set `TOOLCHAIN_PREFIX` in Makefile to use croee-compiler, this project is developed under MacOS and built passed on Linux-based system. If you are using MacOS, install `x86_64-elf-binutils` and `x86_64-elf-gcc` is good enough. If you are using Linux, just make sure above tools is installed. Otherwise you may figure it out on your platform.
-    * nasm
-    * useful utilities (cat sed awk tee)
-* #### build process
-    * compile kernel's core and modules within kernel space into object
-    * link some general used code and syscall wrapping into `libos.a`
-    * compile init code (linked with `libos.a`) into elf executable file `init.out`
-    * compile init `package.S` to object `init.out.o` which contains full content of `init.out` by using `.incbin`
-    * link kernel object and `init.out.o` to `kernel.out`
-    * build modules (not modules in kernel dir that's builtin modules)
+[中文Readme] | [[English Readme]](README_en.md)
 
-# Build boot image
-Run `make boot` in project root dir.
-This command is depend on `make attach` and `make detach` which only implement on MacOS (based on `hdiutil` and `diskutil` comes with macos) and Linux (based on `udisksctl` controlled loop-device). If you cannot make it, try to implement it yourself or build image yourself.
-This command uses `rsync` to copy everything in `tools/root_dir` to image's root dir and `cp` to copy `grub.cfg` to `/boot/grub/grub.cfg` of image.
-This command copies `tools/HD_grub2.img` (which contains a formatted disk image with grub2 installed and a FAT32 part. FAT32 part is the first part of disk, contains grub2 boot files.)
+--------------------------------------------------------
 
-# Run
-Run `make qemu` or `make bochs` in project root dir.
-* #### dependencies
-    * bochs or qemu
+OmochaOS 是我的个人操作系统学习用项目。其中某些代码和底层设计参考了于渊的《Orange's 一个操作系统的实现》和 OSDev Wiki 。
+部分代码由此项目的旧版本（该项目重写了多次，已经数不清了）直接继承而来，
+关于我为什么对于操作系统内核开发如此感兴趣也在那个版本的 ReadMe 里。（[版本链接](https://github.com/Oyami-Srk/OmochaOS/tree/original_omochaos)）
 
-# Debug
-If qemu/bochs is installed and `make attach/detach` is implemented. You can use `make debug DEBUG_WAY=qemu/bochs` to build and run in one command.
+这个版本的 OmochaOS 将尽可能地进行文档的编写。
 
-# System Design
-Omochaos is micro-kernel but with *memory* and *systask* running in kernel space (has kernel symbol linked)
-Currently most of modules are running in kernel space. Those modules will exit when modules from disk is properly loaded.
-All of modules are running under ring 1. Only two syscall `__recv_msg` and `__send_msg`, `interrupt_handler` are running under ring 0 after core finish boot up.
-`systask` should give a common way to access core data in `struct environment`(not impl yet)
+## 目录
+---------------
+  * [内核构建](#内核构建)
+    * [所需依赖](#所需依赖)
+    * [构建流程](#构建流程)
+  * [创建磁盘镜像](#创建磁盘镜像)
+  * [运行磁盘镜像](#运行磁盘镜像)
+  * [调试内核](#调试内核)
+  * [内核设计概要](#内核设计概要)
+  * [规划](#规划)
+  * [详细内容目录](#详细目录)
+  * [鸣谢](#鸣谢)
 
-# Road Map
-* VFS
-* Port Newlib
-* Shabby Shell
-* ACPI
-* SMP Support
-* Process scheduler
-* Graphic Interface
 
-# Thanks
-[![CLion](./resource/icon_CLion.png)](https://www.jetbrains.com/?from=OmochaOS)
+
+## 内核构建
+----------
+
+### 所需依赖
+
+### 构建流程
+
+## 创建磁盘镜像
+-------------
+
+## 运行磁盘镜像
+-------------
+
+## 调试内核
+-------------
