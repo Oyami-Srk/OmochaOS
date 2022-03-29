@@ -2,6 +2,8 @@
 OmochaOS is my personal studying project. Some code and lower design is inherited from my old project archive branch [OmochaOS(original archive)](https://github.com/Oyami-Srk/OmochaOS/tree/original_omochaos). Why am I interseted in OS-Developing is under the readme of that branch.
 This version of OmochaOS will be rewrite from scratch.
 
+> English version of README may be different from Chinese version. The Chinese version is edited as primary README.
+
 
 # Build
 This Project is cmake-based, simply built the target `kernel.elf` for the `multiboot` standard kernel executable.
@@ -42,6 +44,7 @@ All of modules are running under ring 1. Only two syscall `__recv_msg` and `__se
 
 # Road Map
 * VFS
+* FATFS
 * Port Newlib
 * Shabby Shell
 * ACPI
